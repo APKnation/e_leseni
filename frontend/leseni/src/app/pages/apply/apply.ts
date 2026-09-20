@@ -18,7 +18,7 @@ interface NewBusinessForm {
 }
 
 @Component({
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule],
   selector: 'app-apply',
   templateUrl: './apply.html',
 })
