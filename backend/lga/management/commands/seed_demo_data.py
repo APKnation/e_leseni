@@ -214,13 +214,17 @@ class Command(BaseCommand):
             self._reset()
 
         self._seed_lgas()
-        self._seed_licence_types()
+        self._seed_standard_licences()
+        self._seed_demo_licences()
         self._seed_users()
         self._seed_assignments()
         self._seed_businesses()
         self._seed_demo_application()
 
-        self._stdout(self.style.SUCCESS('Done. Demo accounts (password: %s):' % DEMO_PASSWORD))
+        self._stdout(self.style.SUCCESS(
+            f'Done. LGAs: {LGA.objects.count()}, licence types: {LicenceType.objects.count()}. '
+            f'Demo accounts (password: {DEMO_PASSWORD}):'
+        ))
         for u in USERS:
             self._stdout(f'  - {u["username"]:12s} {u["role"]:10s} staff={u["is_staff"]}')
 
@@ -235,39 +239,65 @@ class Command(BaseCommand):
             (OfficerAssignment, {}),
             (Requirement, {}),
             (LicenceType, {}),
-            (LGA, {'code__in': [l['code'] for l in LGAS]}),
+            (LGA, {}),
         ):
             count, _ = model.objects.filter(**lookup).delete()
             deleted += count
         self._stdout(f'Reset: deleted {deleted} rows.')
 
     def _seed_lgas(self):
-        for spec in LGAS:
-            lga, created = LGA.objects.update_or_create(
-                code=spec['code'],
-                defaults={'name': spec['name'], 'region': spec['region']},
-            )
-            self._log(lga, created)
-
-    def _seed_licence_types(self):
-        for spec in LICENCE_TYPES:
-            lga = LGA.objects.get(code=spec['lga'])
-            lt, created = LicenceType.objects.update_or_create(
-                lga=lga, code=spec['code'],
-                defaults={
-                    'name': spec['name'],
-                    'fee': spec['fee'],
-                    'validity_months': spec['validity_months'],
-                    'requires_inspection': spec['requires_inspection'],
-                    'description': spec['description'],
-                },
-            )
-            for order, req in enumerate(spec['requirements'], start=1):
-                Requirement.objects.update_or_create(
-                    licence_type=lt, name=req['name'],
-                    defaults={'kind': req['kind'], 'is_mandatory': True, 'order': order},
+        created_count = 0
+        for region, names in TANZANIA_LGAS.items():
+            for name in names:
+                code = lga_code(region, name)
+                _, created = LGA.objects.update_or_create(
+                    code=code,
+                    defaults={'name': name, 'region': region},
                 )
+                created_count += 1 if created else 0
+        self._stdout(f'  + LGAs: {LGA.objects.count()} total across {len(TANZANIA_LGAS)} regions.')
+
+    def _seed_standard_licences(self):
+        """Create the standard licences for every LGA (area-based selection)."""
+        created_count = 0
+        lgas = LGA.objects.all()
+        for lga in lgas:
+            for spec in STANDARD_LICENCES:
+                code = f'{lga.code}-BUS' if spec['category'] == LicenceType.Category.BUSINESS and spec['name'] == 'Business Licence' else None
+                if code is None:
+                    # Deterministic per-LGA code from the licence name.
+                    slug = spec['name'].upper().replace(' ', '_')[:20]
+                    code = f'{lga.code}-{slug}'
+                lt, created = self._upsert_licence(lga, code, spec)
+                created_count += 1 if created else 0
+        self._stdout(f'  + Standard licences: {created_count} created for {lgas.count()} LGAs.')
+
+    def _seed_demo_licences(self):
+        """Richer demo licence types for the key LGAs (codes FOOD/RETAIL/HW/KIOSK kept)."""
+        for spec in LICENCE_TYPES:
+            lga = LGA.objects.get(code=spec['lga_code'])
+            lt, created = self._upsert_licence(lga, spec['code'], spec)
             self._log(lt, created)
+
+    def _upsert_licence(self, lga, code, spec):
+        lt, created = LicenceType.objects.update_or_create(
+            code=code,
+            defaults={
+                'name': spec['name'],
+                'category': spec.get('category', LicenceType.Category.BUSINESS),
+                'fee': spec['fee'],
+                'validity_months': spec['validity_months'],
+                'requires_inspection': spec['requires_inspection'],
+                'description': spec['description'],
+                'lga': lga,
+            },
+        )
+        for order, req in enumerate(spec.get('requirements', []), start=1):
+            Requirement.objects.update_or_create(
+                licence_type=lt, name=req['name'],
+                defaults={'kind': req['kind'], 'is_mandatory': True, 'order': order},
+            )
+        return lt, created
 
     def _seed_users(self):
         for spec in USERS:
