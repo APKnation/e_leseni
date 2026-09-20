@@ -1,0 +1,191 @@
+<section class="mx-auto w-full max-w-3xl px-4 py-12 sm:px-6">
+  @if (created(); as app) {
+    <!-- Success card: lime bg / purple text -->
+    <div class="card bg-brand-lime text-brand-purple">
+      <h1 class="text-2xl font-black">Application submitted 🎉</h1>
+      <p class="mt-2 font-semibold">
+        Reference number:
+        <span class="rounded-lg bg-brand-purple px-3 py-1 font-mono text-brand-lime">
+          {{ app.reference_number }}
+        </span>
+      </p>
+      <p class="mt-3 text-sm text-brand-purple/80">
+        {{ app.licence_type_name }} — {{ app.business_name }} ({{ app.lga_name }}).
+        Your LGA will review it and you will get an SMS at every status change.
+      </p>
+      <div class="mt-6 flex gap-4">
+        <button type="button" class="btn-primary" (click)="goHome()">Go to dashboard</button>
+        <a routerLink="/apply" class="btn-secondary">Apply for another</a>
+      </div>
+    </div>
+  } @else {
+    <h1 class="text-3xl font-black">Apply for a licence</h1>
+    <p class="mt-2 text-brand-lime/70">
+      Hi {{ userName }} — pick your business, choose a licence type, and submit.
+    </p>
+
+    @if (errorMessage()) {
+      <p class="mt-6 rounded-lg bg-red-500/15 px-4 py-3 text-sm font-semibold text-red-300">
+        {{ errorMessage() }}
+      </p>
+    }
+
+    <form class="mt-8 flex flex-col gap-6" (ngSubmit)="submit()">
+      <!-- Business -->
+      <div class="card flex flex-col gap-4">
+        <h2 class="text-lg font-black">1. Business</h2>
+
+        @if (!creatingNewBusiness()) {
+          <label class="flex flex-col gap-2 text-sm font-semibold">
+            Select your business
+            <select
+              class="input-field"
+              name="business"
+              [ngModel]="businessId()"
+              (ngModelChange)="selectBusiness($event)"
+              required
+            >
+              <option [ngValue]="null" disabled>— choose a business —</option>
+              @for (business of businesses(); track business.id) {
+                <option [ngValue]="business.id">
+                  {{ business.name }}{{ business.is_verified ? ' ✓' : ' (unverified)' }}
+                </option>
+              }
+            </select>
+          </label>
+
+          <button type="button" class="btn-secondary self-start !py-2" (click)="toggleNewBusiness()">
+            + Register a new business
+          </button>
+        } @else {
+          <div class="grid gap-4 sm:grid-cols-2">
+            <label class="flex flex-col gap-2 text-sm font-semibold">
+              Business name
+              <input class="input-field" type="text" name="nb_name" required
+                     [ngModel]="newBusiness().name"
+                     (ngModelChange)="newBusiness.update(v => ({ ...v, name: $event }))" />
+            </label>
+            <label class="flex flex-col gap-2 text-sm font-semibold">
+              Sector (optional)
+              <input class="input-field" type="text" name="nb_sector"
+                     [ngModel]="newBusiness().sector"
+                     (ngModelChange)="newBusiness.update(v => ({ ...v, sector: $event }))" />
+            </label>
+            <label class="flex flex-col gap-2 text-sm font-semibold">
+              TRA TIN
+              <input class="input-field" type="text" name="nb_tin" inputmode="numeric"
+                     [ngModel]="newBusiness().tin_number"
+                     (ngModelChange)="newBusiness.update(v => ({ ...v, tin_number: $event }))" />
+            </label>
+            <label class="flex flex-col gap-2 text-sm font-semibold">
+              BRELA registration no.
+              <input class="input-field" type="text" name="nb_brela"
+                     [ngModel]="newBusiness().brela_registration_number"
+                     (ngModelChange)="newBusiness.update(v => ({ ...v, brela_registration_number: $event }))" />
+            </label>
+          </div>
+
+          <div class="grid gap-4 sm:grid-cols-2">
+            <label class="flex flex-col gap-2 text-sm font-semibold">
+              LGA
+              <select class="input-field" name="nb_lga" required
+                      [ngModel]="newBusiness().lga"
+                      (ngModelChange)="newBusiness.update(v => ({ ...v, lga: $event }))">
+                <option [ngValue]="null" disabled>— choose LGA —</option>
+                @for (lga of lgas(); track lga.id) {
+                  <option [ngValue]="lga.id">{{ lga.name }} ({{ lga.region }})</option>
+                }
+              </select>
+            </label>
+            <label class="flex flex-col gap-2 text-sm font-semibold">
+              Ward
+              <input class="input-field" type="text" name="nb_ward" required
+                     [ngModel]="newBusiness().ward"
+                     (ngModelChange)="newBusiness.update(v => ({ ...v, ward: $event }))" />
+            </label>
+            <label class="flex flex-col gap-2 text-sm font-semibold">
+              Street
+              <input class="input-field" type="text" name="nb_street" required
+                     [ngModel]="newBusiness().street"
+                     (ngModelChange)="newBusiness.update(v => ({ ...v, street: $event }))" />
+            </label>
+            <label class="flex flex-col gap-2 text-sm font-semibold">
+              Plot number (optional)
+              <input class="input-field" type="text" name="nb_plot"
+                     [ngModel]="newBusiness().plot_number"
+                     (ngModelChange)="newBusiness.update(v => ({ ...v, plot_number: $event }))" />
+            </label>
+          </div>
+
+          @if (businesses().length > 0) {
+            <button type="button" class="btn-secondary self-start !py-2" (click)="toggleNewBusiness()">
+              ← Use an existing business
+            </button>
+          }
+        }
+      </div>
+
+      <!-- Licence type -->
+      <div class="card flex flex-col gap-4">
+        <h2 class="text-lg font-black">2. Licence type</h2>
+        <label class="flex flex-col gap-2 text-sm font-semibold">
+          Choose a licence
+          <select class="input-field" name="licence_type" required
+                  [ngModel]="licenceTypeId()"
+                  (ngModelChange)="licenceTypeId.set($event)">
+            <option [ngValue]="null" disabled>— choose a licence type —</option>
+            @for (lt of licenceTypes(); track lt.id) {
+              <option [ngValue]="lt.id">
+                {{ lt.name }} — {{ lt.lga_name }} ({{ lt.fee }} TZS / {{ lt.validity_months }} months)
+              </option>
+            }
+          </select>
+        </label>
+
+        @if (selectedLicenceType; as lt) {
+          <div class="rounded-xl border border-brand-lime/30 p-4 text-sm">
+            <p class="font-bold">{{ lt.description || lt.name }}</p>
+            <ul class="mt-2 list-inside list-disc space-y-1 text-brand-lime/80">
+              <li>Fee: <span class="font-bold">{{ lt.fee }} TZS</span></li>
+              <li>Validity: {{ lt.validity_months }} months</li>
+              <li>Inspection: {{ lt.requires_inspection ? 'required' : 'not required' }}</li>
+              @for (req of lt.requirements; track req.id) {
+                <li>
+                  {{ req.name }}
+                  <span class="badge-outline ml-1 !px-2 !py-0.5">{{ req.kind_display }}</span>
+                  @if (req.is_mandatory) {
+                    <span class="font-bold text-brand-lime">*</span>
+                  }
+                </li>
+              }
+            </ul>
+          </div>
+        }
+      </div>
+
+      <!-- Purpose -->
+      <div class="card flex flex-col gap-4">
+        <h2 class="text-lg font-black">3. Purpose of the application</h2>
+        <label class="flex flex-col gap-2 text-sm font-semibold">
+          Tell the LGA what this licence is for
+          <textarea
+            class="input-field min-h-28"
+            name="purpose"
+            rows="4"
+            [ngModel]="purpose()"
+            (ngModelChange)="purpose.set($event)"
+            placeholder="e.g. Operating a retail shop selling hardware and building materials…"
+          ></textarea>
+        </label>
+      </div>
+
+      <button type="submit" class="btn-primary w-full sm:w-auto" [disabled]="!canSubmit || submitting()">
+        @if (submitting()) {
+          Submitting…
+        } @else {
+          Submit application
+        }
+      </button>
+    </form>
+  }
+</section>

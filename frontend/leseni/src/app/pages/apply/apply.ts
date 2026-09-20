@@ -157,7 +157,7 @@ export class Apply implements OnInit {
             });
           },
           error: (err) => {
-            const detail = err?.error ? Object.values(err.error).error : null;
+            const detail = err?.error ? Object.values(err.error).flat()[0] : null;
             this.errorMessage.set(
               typeof detail === 'string' ? detail : 'Could not create the business.',
             );

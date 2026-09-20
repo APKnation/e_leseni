@@ -4,41 +4,142 @@
       <h1 class="text-3xl font-black">
         Karibu{{ user()?.first_name ? ', ' + user()?.first_name : '' }} 👋
       </h1>
-      <p class="mt-1 text-brand-lime/70">
-        Track your licence applications and licences here.
-      </p>
+      <p class="mt-1 text-brand-lime/70">Your licence applications, payments and licences.</p>
     </div>
-    <span class="badge-lime">{{ user()?.role }}</span>
-  </div>
-
-  <div class="mt-10 grid gap-6 md:grid-cols-3">
-    <div class="card flex flex-col gap-3 bg-brand-lime text-brand-purple">
-      <h2 class="text-lg font-black">Applications</h2>
-      <p class="text-sm text-brand-purple/80">
-        Your licence applications and their current statuses will appear here.
-      </p>
-      <span class="mt-auto text-3xl font-black">0</span>
-    </div>
-    <div class="card flex flex-col gap-3">
-      <h2 class="text-lg font-black">Licences</h2>
-      <p class="text-sm text-brand-lime/80">
-        Issued licences with QR codes ready to print or verify.
-      </p>
-      <span class="mt-auto text-3xl font-black">0</span>
-    </div>
-    <div class="card flex flex-col gap-3">
-      <h2 class="text-lg font-black">Invoices</h2>
-      <p class="text-sm text-brand-lime/80">
-        Control numbers and payment status for your applications.
-      </p>
-      <span class="mt-auto text-3xl font-black">0</span>
+    <div class="flex items-center gap-3">
+      <span class="badge-lime">{{ user()?.role }}</span>
+      <a routerLink="/apply" class="btn-primary !py-2">+ New application</a>
     </div>
   </div>
 
-  <p class="mt-10 text-sm text-brand-lime/60">
-    Full dashboard with live data coming next — the API endpoints
-    (<code class="text-brand-lime">/api/applications/</code>,
-    <code class="text-brand-lime">/api/licences/</code>,
-    <code class="text-brand-lime">/api/invoices/</code>) are ready.
-  </p>
+  @if (errorMessage()) {
+    <p class="mt-8 rounded-lg bg-red-500/15 px-4 py-3 text-sm font-semibold text-red-300">
+      {{ errorMessage() }}
+    </p>
+  }
+
+  @if (loading()) {
+    <p class="mt-10 animate-pulse text-brand-lime/60">Loading your data…</p>
+  } @else {
+    <!-- Stats -->
+    <div class="mt-10 grid gap-6 md:grid-cols-3">
+      @for (stat of stats; track stat.label) {
+        <div
+          class="card flex flex-col gap-3"
+          [class.bg-brand-lime]="stat.highlight"
+          [class.text-brand-purple]="stat.highlight"
+        >
+          <h2 class="text-sm font-black uppercase tracking-wide" [class.text-brand-purple/70]="stat.highlight">
+            {{ stat.label }}
+          </h2>
+          <span class="text-4xl font-black">{{ stat.value }}</span>
+        </div>
+      }
+    </div>
+
+    <!-- Applications -->
+    <h2 class="mt-12 text-xl font-black">Applications</h2>
+    @if (applications().length === 0) {
+      <p class="mt-4 text-brand-lime/70">
+        No applications yet.
+        <a routerLink="/apply" class="font-bold underline">Apply for your first licence →</a>
+      </p>
+    } @else {
+      <div class="mt-4 grid gap-4">
+        @for (app of applications(); track app.id) {
+          <div class="card flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p class="font-mono text-sm text-brand-lime/70">{{ app.reference_number }}</p>
+              <p class="text-lg font-bold">{{ app.business_name }}</p>
+              <p class="text-sm text-brand-lime/70">
+                {{ app.licence_type_name }} — {{ app.lga_name }}
+              </p>
+            </div>
+            <div class="flex flex-col items-start gap-2 sm:items-end">
+              <span class="rounded-full px-3 py-1 text-xs font-bold" [class]="STATUS_STYLES[app.status]">
+                {{ STATUS_LABELS[app.status] }}
+              </span>
+              @if (app.status === 'RETURNED_FOR_CORRECTION' && app.rejection_reason) {
+                <p class="max-w-xs text-xs text-orange-300">{{ app.rejection_reason }}</p>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Invoices -->
+    <h2 class="mt-12 text-xl font-black">Invoices</h2>
+    @if (invoices().length === 0) {
+      <p class="mt-4 text-brand-lime/70">No invoices yet.</p>
+    } @else {
+      <div class="mt-4 grid gap-4">
+        @for (invoice of invoices(); track invoice.id) {
+          <div class="card flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p class="font-mono text-sm text-brand-lime/70">
+                {{ invoice.control_number || 'control number pending' }}
+              </p>
+              <p class="text-lg font-bold">
+                {{ invoice.amount }} {{ invoice.currency }}
+              </p>
+              <p class="text-sm text-brand-lime/70">
+                {{ invoice.application_reference }} — {{ invoice.licence_type_name }}
+              </p>
+            </div>
+            <div class="flex flex-col items-start gap-2 sm:items-end">
+              <span class="badge-outline">{{ invoice.status }}</span>
+              @if (invoice.status === 'WAITING_PAYMENT' || invoice.status === 'PENDING') {
+                <button
+                  type="button"
+                  class="btn-primary !py-2"
+                  [disabled]="payingInvoiceId() === invoice.id"
+                  (click)="payInvoice(invoice)"
+                >
+                  @if (payingInvoiceId() === invoice.id) {
+                    Paying…
+                  } @else {
+                    Pay {{ invoice.amount }} {{ invoice.currency }}
+                  }
+                </button>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Licences -->
+    <h2 class="mt-12 text-xl font-black">Licences</h2>
+    @if (licences().length === 0) {
+      <p class="mt-4 text-brand-lime/70">No licences issued yet.</p>
+    } @else {
+      <div class="mt-4 grid gap-4 md:grid-cols-2">
+        @for (licence of licences(); track licence.id) {
+          <!-- Issued licence card: lime bg / purple text -->
+          <div class="card bg-brand-lime text-brand-purple">
+            <div class="flex items-start justify-between gap-4">
+              <div>
+                <p class="font-mono text-sm font-bold">{{ licence.licence_number }}</p>
+                <p class="text-lg font-black">{{ licence.business_name }}</p>
+                <p class="text-sm text-brand-purple/80">{{ licence.licence_type_name }} — {{ licence.lga_name }}</p>
+              </div>
+              <span
+                class="rounded-full bg-brand-purple px-3 py-1 text-xs font-bold text-brand-lime"
+              >
+                {{ licence.status }}
+              </span>
+            </div>
+            <p class="mt-4 text-sm text-brand-purple/80">
+              Valid {{ licence.valid_from }} → {{ licence.valid_until }}
+              ({{ licence.days_until_expiry }} days left)
+            </p>
+            <p class="mt-2 font-mono text-xs text-brand-purple/60">
+              QR: {{ licence.qr_payload }}
+            </p>
+          </div>
+        }
+      </div>
+    }
+  }
 </section>
