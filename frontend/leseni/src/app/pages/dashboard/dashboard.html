@@ -1,0 +1,44 @@
+<section class="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6">
+  <div class="flex flex-wrap items-center justify-between gap-4">
+    <div>
+      <h1 class="text-3xl font-black">
+        Karibu{{ user()?.first_name ? ', ' + user()?.first_name : '' }} 👋
+      </h1>
+      <p class="mt-1 text-brand-lime/70">
+        Track your licence applications and licences here.
+      </p>
+    </div>
+    <span class="badge-lime">{{ user()?.role }}</span>
+  </div>
+
+  <div class="mt-10 grid gap-6 md:grid-cols-3">
+    <div class="card flex flex-col gap-3 bg-brand-lime text-brand-purple">
+      <h2 class="text-lg font-black">Applications</h2>
+      <p class="text-sm text-brand-purple/80">
+        Your licence applications and their current statuses will appear here.
+      </p>
+      <span class="mt-auto text-3xl font-black">0</span>
+    </div>
+    <div class="card flex flex-col gap-3">
+      <h2 class="text-lg font-black">Licences</h2>
+      <p class="text-sm text-brand-lime/80">
+        Issued licences with QR codes ready to print or verify.
+      </p>
+      <span class="mt-auto text-3xl font-black">0</span>
+    </div>
+    <div class="card flex flex-col gap-3">
+      <h2 class="text-lg font-black">Invoices</h2>
+      <p class="text-sm text-brand-lime/80">
+        Control numbers and payment status for your applications.
+      </p>
+      <span class="mt-auto text-3xl font-black">0</span>
+    </div>
+  </div>
+
+  <p class="mt-10 text-sm text-brand-lime/60">
+    Full dashboard with live data coming next — the API endpoints
+    (<code class="text-brand-lime">/api/applications/</code>,
+    <code class="text-brand-lime">/api/licences/</code>,
+    <code class="text-brand-lime">/api/invoices/</code>) are ready.
+  </p>
+</section>

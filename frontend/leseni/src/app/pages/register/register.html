@@ -1,0 +1,105 @@
+<section class="mx-auto flex w-full max-w-md flex-col gap-8 px-4 py-16">
+  <div class="text-center">
+    <h1 class="text-3xl font-black">Create your account</h1>
+    <p class="mt-2 text-brand-lime/70">Start applying for LGA business licences today.</p>
+  </div>
+
+  <form class="card flex flex-col gap-4" (ngSubmit)="submit()">
+    <div class="grid gap-4 sm:grid-cols-2">
+      <label class="flex flex-col gap-2 text-sm font-semibold">
+        First name
+        <input
+          class="input-field"
+          type="text"
+          name="first_name"
+          required
+          [ngModel]="form().first_name"
+          (ngModelChange)="update('first_name', $event)"
+        />
+      </label>
+      <label class="flex flex-col gap-2 text-sm font-semibold">
+        Last name
+        <input
+          class="input-field"
+          type="text"
+          name="last_name"
+          required
+          [ngModel]="form().last_name"
+          (ngModelChange)="update('last_name', $event)"
+        />
+      </label>
+    </div>
+
+    <label class="flex flex-col gap-2 text-sm font-semibold">
+      Username
+      <input
+        class="input-field"
+        type="text"
+        name="username"
+        autocomplete="username"
+        required
+        [ngModel]="form().username"
+        (ngModelChange)="update('username', $event)"
+      />
+    </label>
+
+    <label class="flex flex-col gap-2 text-sm font-semibold">
+      Email
+      <input
+        class="input-field"
+        type="email"
+        name="email"
+        autocomplete="email"
+        required
+        [ngModel]="form().email"
+        (ngModelChange)="update('email', $event)"
+      />
+    </label>
+
+    <label class="flex flex-col gap-2 text-sm font-semibold">
+      Phone number
+      <input
+        class="input-field"
+        type="tel"
+        name="phone_number"
+        placeholder="07xx xxx xxx"
+        required
+        [ngModel]="form().phone_number"
+        (ngModelChange)="update('phone_number', $event)"
+      />
+    </label>
+
+    <label class="flex flex-col gap-2 text-sm font-semibold">
+      Password
+      <input
+        class="input-field"
+        type="password"
+        name="password"
+        autocomplete="new-password"
+        minlength="8"
+        required
+        [ngModel]="form().password"
+        (ngModelChange)="update('password', $event)"
+      />
+    </label>
+
+    @if (errorMessage()) {
+      <p class="rounded-lg bg-red-500/15 px-4 py-3 text-sm font-semibold text-red-300">
+        {{ errorMessage() }}
+      </p>
+    }
+
+    <button type="submit" class="btn-primary w-full" [disabled]="submitting()">
+      @if (submitting()) {
+        Creating account…
+      } @else {
+        Register
+      }
+    </button>
+
+    <p class="text-center text-sm text-brand-lime/70">
+      Already registered?
+      <a routerLink="/login" class="font-bold underline hover:text-brand-lime-soft">Log in</a>
+    </p>
+  </form>
+</section>
