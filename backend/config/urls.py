@@ -7,7 +7,7 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/auth/', include('accounts.urls')),
+    path('api/', include('accounts.urls')),
     path('api/', include('applications.urls')),
     path('api/', include('businesses.urls')),
     path('api/', include('lga.urls')),
