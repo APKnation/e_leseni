@@ -1,0 +1,298 @@
+"""Seed demo data for local development and testing.
+
+Usage:
+    python manage.py seed_demo_data            # create anything missing
+    python manage.py seed_demo_data --reset    # delete demo data first, then reseed
+
+Creates: LGAs, licence types (+ requirements), users with roles, officer
+assignments, businesses with locations, and one submitted demo application.
+Idempotent: safe to run repeatedly; existing rows are updated, not duplicated.
+"""
+from decimal import Decimal
+
+from django.contrib.auth import get_user_model
+from django.core.management.base import BaseCommand
+from django.db import transaction
+
+from applications.models import Application
+from businesses.models import Business, BusinessLocation
+from lga.models import LGA, LicenceType, OfficerAssignment, Requirement
+
+User = get_user_model()
+
+DEMO_PASSWORD = 'Demo@1234'
+
+LGAS = [
+    {'name': 'Ilala', 'region': 'Dar es Salaam', 'code': 'IL'},
+    {'name': 'Kinondoni', 'region': 'Dar es Salaam', 'code': 'KN'},
+    {'name': 'Temeke', 'region': 'Dar es Salaam', 'code': 'TK'},
+    {'name': 'Moshi', 'region': 'Kilimanjaro', 'code': 'MO'},
+]
+
+LICENCE_TYPES = [
+    {
+        'lga': 'IL',
+        'name': 'Food Vendor Licence',
+        'code': 'FOOD',
+        'fee': Decimal('50000'),
+        'validity_months': 12,
+        'requires_inspection': True,
+        'description': 'For restaurants, food stalls and catering businesses.',
+        'requirements': [
+            {'name': 'TIN Certificate', 'kind': Requirement.Kind.DOCUMENT},
+            {'name': 'Food Handling Permit', 'kind': Requirement.Kind.DOCUMENT},
+            {'name': 'Premises Inspection', 'kind': Requirement.Kind.INSPECTION},
+        ],
+    },
+    {
+        'lga': 'IL',
+        'name': 'Retail Shop Licence',
+        'code': 'RETAIL',
+        'fee': Decimal('120000'),
+        'validity_months': 12,
+        'requires_inspection': True,
+        'description': 'For retail and wholesale shops.',
+        'requirements': [
+            {'name': 'TIN Certificate', 'kind': Requirement.Kind.DOCUMENT},
+            {'name': 'Lease Agreement', 'kind': Requirement.Kind.DOCUMENT},
+        ],
+    },
+    {
+        'lga': 'KN',
+        'name': 'Hardware Shop Licence',
+        'code': 'HW',
+        'fee': Decimal('80000'),
+        'validity_months': 12,
+        'requires_inspection': False,
+        'description': 'For hardware and building-material vendors.',
+        'requirements': [
+            {'name': 'TIN Certificate', 'kind': Requirement.Kind.DOCUMENT},
+        ],
+    },
+    {
+        'lga': 'MO',
+        'name': 'Kiosk Licence',
+        'code': 'KIOSK',
+        'fee': Decimal('30000'),
+        'validity_months': 12,
+        'requires_inspection': False,
+        'description': 'For small kiosks and street-side vendors.',
+        'requirements': [],
+    },
+]
+
+USERS = [
+    {
+        'username': 'admin',
+        'first_name': 'System', 'last_name': 'Admin',
+        'email': 'admin@leseni.local', 'phone_number': '0700000001',
+        'role': User.Roles.ADMIN, 'is_staff': True, 'is_superuser': True,
+        'lga': 'IL',
+    },
+    {
+        'username': 'officer1',
+        'first_name': 'Amina', 'last_name': 'Juma',
+        'email': 'officer1@leseni.local', 'phone_number': '0700000002',
+        'role': User.Roles.OFFICER, 'is_staff': True, 'is_superuser': False,
+        'lga': 'IL',
+    },
+    {
+        'username': 'inspector1',
+        'first_name': 'Baraka', 'last_name': 'Mushi',
+        'email': 'inspector1@leseni.local', 'phone_number': '0700000003',
+        'role': User.Roles.INSPECTOR, 'is_staff': True, 'is_superuser': False,
+        'lga': 'IL',
+    },
+    {
+        'username': 'applicant1',
+        'first_name': 'Neema', 'last_name': 'Robert',
+        'email': 'applicant1@leseni.local', 'phone_number': '0712000111',
+        'role': User.Roles.APPLICANT, 'is_staff': False, 'is_superuser': False,
+        'lga': None,
+    },
+    {
+        'username': 'applicant2',
+        'first_name': 'Joseph', 'last_name': 'Komba',
+        'email': 'applicant2@leseni.local', 'phone_number': '0712000222',
+        'role': User.Roles.APPLICANT, 'is_staff': False, 'is_superuser': False,
+        'lga': None,
+    },
+]
+
+BUSINESSES = [
+    {
+        'owner': 'applicant1',
+        'name': 'Mama Neema Foods',
+        'tin_number': '123456789',
+        'brela_registration_number': '100987654',
+        'sector': 'Food & Beverage',
+        'lga': 'IL', 'ward': 'Upanga', 'street': 'Ocean Road', 'plot_number': '12',
+    },
+    {
+        'owner': 'applicant2',
+        'name': 'Komba Hardware',
+        'tin_number': '987654321',
+        'brela_registration_number': '102345678',
+        'sector': 'Retail',
+        'lga': 'MO', 'ward': 'Pasua', 'street': 'Old Moshi Road', 'plot_number': '45',
+    },
+]
+
+
+class Command(BaseCommand):
+    help = 'Seed demo LGAs, licence types, users, businesses and a demo application.'
+
+    def add_arguments(self, parser):
+        parser.add_argument(
+            '--reset', action='store_true',
+            help='Delete previously seeded demo rows first (identifies them by fixed usernames/codes).',
+        )
+
+    # -- helpers -----------------------------------------------------------
+
+    def _stdout(self, msg):
+        self.stdout.write(msg)
+
+    @transaction.atomic
+    def handle(self, *args, **options):
+        if options['reset']:
+            self._reset()
+
+        self._seed_lgas()
+        self._seed_licence_types()
+        self._seed_users()
+        self._seed_assignments()
+        self._seed_businesses()
+        self._seed_demo_application()
+
+        self._stdout(self.style.SUCCESS('Done. Demo accounts (password: %s):' % DEMO_PASSWORD))
+        for u in USERS:
+            self._stdout(f'  - {u["username"]:12s} {u["role"]:10s} staff={u["is_staff"]}')
+
+    # -- sections ----------------------------------------------------------
+
+    def _reset(self):
+        deleted = 0
+        for model, lookup in (
+            (Application, {'applicant__username__in': [u['username'] for u in USERS]}),
+            (Business, {'owner__username__in': [u['username'] for u in USERS]}),
+            (User, {'username__in': [u['username'] for u in USERS]}),
+            (OfficerAssignment, {}),
+            (Requirement, {}),
+            (LicenceType, {}),
+            (LGA, {'code__in': [l['code'] for l in LGAS]}),
+        ):
+            count, _ = model.objects.filter(**lookup).delete()
+            deleted += count
+        self._stdout(f'Reset: deleted {deleted} rows.')
+
+    def _seed_lgas(self):
+        for spec in LGAS:
+            lga, created = LGA.objects.update_or_create(
+                code=spec['code'],
+                defaults={'name': spec['name'], 'region': spec['region']},
+            )
+            self._log(lga, created)
+
+    def _seed_licence_types(self):
+        for spec in LICENCE_TYPES:
+            lga = LGA.objects.get(code=spec['lga'])
+            lt, created = LicenceType.objects.update_or_create(
+                lga=lga, code=spec['code'],
+                defaults={
+                    'name': spec['name'],
+                    'fee': spec['fee'],
+                    'validity_months': spec['validity_months'],
+                    'requires_inspection': spec['requires_inspection'],
+                    'description': spec['description'],
+                },
+            )
+            for order, req in enumerate(spec['requirements'], start=1):
+                Requirement.objects.update_or_create(
+                    licence_type=lt, name=req['name'],
+                    defaults={'kind': req['kind'], 'is_mandatory': True, 'order': order},
+                )
+            self._log(lt, created)
+
+    def _seed_users(self):
+        for spec in USERS:
+            lga = LGA.objects.filter(code=spec['lga']).first() if spec['lga'] else None
+            user, created = User.objects.get_or_create(
+                username=spec['username'],
+                defaults={
+                    'first_name': spec['first_name'],
+                    'last_name': spec['last_name'],
+                    'email': spec['email'],
+                    'phone_number': spec['phone_number'],
+                    'role': spec['role'],
+                    'is_staff': spec['is_staff'],
+                    'is_superuser': spec['is_superuser'],
+                    'lga': lga,
+                },
+            )
+            if created:
+                user.set_password(DEMO_PASSWORD)
+                user.save(update_fields=['password'])
+            self._log(user, created)
+
+    def _seed_assignments(self):
+        pairs = [
+            ('officer1', 'FOOD', True, False, True),
+            ('officer1', 'RETAIL', True, False, True),
+            ('inspector1', 'FOOD', False, True, False),
+        ]
+        for username, code, review, inspect, approve in pairs:
+            officer = User.objects.get(username=username)
+            licence_type = LicenceType.objects.get(code=code)
+            assignment, created = OfficerAssignment.objects.update_or_create(
+                officer=officer, licence_type=licence_type,
+                defaults={
+                    'can_review': review, 'can_inspect': inspect,
+                    'can_approve': approve, 'is_active': True,
+                },
+            )
+            self._log(assignment, created)
+
+    def _seed_businesses(self):
+        for spec in BUSINESSES:
+            owner = User.objects.get(username=spec['owner'])
+            business, created = Business.objects.get_or_create(
+                owner=owner, name=spec['name'],
+                defaults={
+                    'tin_number': spec['tin_number'],
+                    'brela_registration_number': spec['brela_registration_number'],
+                    'sector': spec['sector'],
+                    'is_verified': False,
+                },
+            )
+            if created:
+                BusinessLocation.objects.create(
+                    business=business,
+                    lga=LGA.objects.get(code=spec['lga']),
+                    ward=spec['ward'], street=spec['street'],
+                    plot_number=spec['plot_number'], is_primary=True,
+                )
+            self._log(business, created)
+
+    def _seed_demo_application(self):
+        """One submitted application so the dashboard/staff queue are not empty."""
+        applicant = User.objects.get(username='applicant1')
+        business = Business.objects.get(owner=applicant, name='Mama Neema Foods')
+        licence_type = LicenceType.objects.get(code='FOOD')
+        location = BusinessLocation.objects.get(business=business)
+
+        if Application.objects.filter(applicant=applicant, licence_type=licence_type).exists():
+            self._stdout('  = Demo application already exists, skipping.')
+            return
+
+        application = Application.objects.create(
+            applicant=applicant, business=business,
+            licence_type=licence_type, location=location,
+            purpose_statement='Selling grilled chicken and beverages near the market.',
+        )
+        application.transition_to(Application.Status.SUBMITTED, by=applicant)
+        self._stdout(f'  + Demo application {application.reference_number} submitted.')
+
+    def _log(self, obj, created):
+        verb = '+' if created else '='
+        self._stdout(f'  {verb} {obj}')
