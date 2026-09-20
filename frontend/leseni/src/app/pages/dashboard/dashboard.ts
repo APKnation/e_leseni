@@ -19,7 +19,7 @@ import {
   templateUrl: './dashboard.html',
   styles: ``,
 })
-export class Dashboard implements OnInit {
+export class Dashboard {
   private readonly api = inject(ApiService);
   protected readonly auth = inject(AuthService);
 
@@ -34,7 +34,7 @@ export class Dashboard implements OnInit {
 
   protected readonly payingInvoiceId = signal<number | null>(null);
 
-  protected ngOnInit(): void {
+  constructor() {
     this.loadAll();
   }
 
