@@ -333,7 +333,7 @@ class Command(BaseCommand):
         ilala = LGA.objects.get(code='DS-ILALA')
         for username, licence_name, review, inspect, approve in pairs:
             officer = User.objects.get(username=username)
-            licence_type = LicenceType.objects.get(lga=ilala, name=licence_name)
+            licence_type = LicenceType.objects.filter(lga=ilala, name=licence_name).first()
             assignment, created = OfficerAssignment.objects.update_or_create(
                 officer=officer, licence_type=licence_type,
                 defaults={
@@ -369,11 +369,15 @@ class Command(BaseCommand):
         applicant = User.objects.get(username='applicant1')
         business = Business.objects.get(owner=applicant, name='Mama Neema Foods')
         ilala = LGA.objects.get(code='DS-ILALA')
-        licence_type = LicenceType.objects.get(lga=ilala, name='Food Vendor Licence')
+        licence_type = LicenceType.objects.filter(lga=ilala, name='Food Vendor Licence').first()
         location = BusinessLocation.objects.get(business=business)
 
         if Application.objects.filter(applicant=applicant, licence_type=licence_type).exists():
             self._stdout('  = Demo application already exists, skipping.')
+            return
+
+        if licence_type is None:
+            self._stdout('  = No Food Vendor Licence in Ilala; skipping demo application.')
             return
 
         application = Application.objects.create(

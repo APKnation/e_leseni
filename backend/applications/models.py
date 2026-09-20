@@ -55,7 +55,7 @@ class Application(models.Model):
         NORMAL = 'NORMAL', 'Normal'
         URGENT = 'URGENT', 'Urgent'
 
-    reference_number = models.CharField(max_length=30, unique=True, blank=True)
+    reference_number = models.CharField(max_length=60, unique=True, blank=True)
     applicant = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='applications'
     )

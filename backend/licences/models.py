@@ -18,7 +18,7 @@ class Licence(models.Model):
     application = models.OneToOneField(
         'applications.Application', on_delete=models.PROTECT, related_name='licence'
     )
-    licence_number = models.CharField(max_length=30, unique=True, blank=True)
+    licence_number = models.CharField(max_length=60, unique=True, blank=True)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.ACTIVE, db_index=True)
     business_name = models.CharField(max_length=200)
     holder = models.ForeignKey(
