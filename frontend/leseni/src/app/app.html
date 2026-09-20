@@ -15,6 +15,9 @@
           <a routerLink="/dashboard" class="rounded-lg px-3 py-2 hover:bg-brand-lime/10">
             Dashboard
           </a>
+          @if (auth.isStaff()) {
+            <a routerLink="/staff" class="rounded-lg px-3 py-2 hover:bg-brand-lime/10">Staff queue</a>
+          }
           <button type="button" class="btn-secondary !px-4 !py-2" (click)="logout()">
             Log out
           </button>

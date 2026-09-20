@@ -153,6 +153,7 @@ export interface Licence {
   valid_from: string;
   valid_until: string;
   days_until_expiry: number;
+  is_expired: boolean;
   qr_payload: string;
 }
 

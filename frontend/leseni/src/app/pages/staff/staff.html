@@ -1,0 +1,81 @@
+<section class="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6">
+  <div class="flex flex-wrap items-center justify-between gap-4">
+    <div>
+      <h1 class="text-3xl font-black">Staff queue</h1>
+      <p class="mt-1 text-brand-lime/70">All applications across the licensing flow.</p>
+    </div>
+    <span class="badge-lime">LGA STAFF</span>
+  </div>
+
+  @if (errorMessage()) {
+    <p class="mt-8 rounded-lg bg-red-500/15 px-4 py-3 text-sm font-semibold text-red-300">
+      {{ errorMessage() }}
+    </p>
+  }
+
+  @if (loading()) {
+    <p class="mt-10 animate-pulse text-brand-lime/60">Loading queue…</p>
+  } @else {
+    <!-- Filter tabs -->
+    <div class="mt-8 flex flex-wrap gap-2">
+      @for (filter of queueFilters; track filter.label) {
+        <button
+          type="button"
+          class="rounded-full px-4 py-2 text-sm font-bold transition"
+          [class]="
+            activeFilter().label === filter.label
+              ? 'bg-brand-lime text-brand-purple'
+              : 'border border-brand-lime/40 text-brand-lime hover:bg-brand-lime/10'
+          "
+          (click)="activeFilter.set(filter)"
+        >
+          {{ filter.label }} ({{ countFor(filter) }})
+        </button>
+      }
+    </div>
+
+    <!-- Queue -->
+    <div class="mt-6 grid gap-4">
+      @for (app of filteredApplications; track app.id) {
+        <div class="card flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div class="min-w-0">
+            <div class="flex flex-wrap items-center gap-3">
+              <p class="font-mono text-sm text-brand-lime/70">{{ app.reference_number }}</p>
+              <span class="rounded-full px-3 py-1 text-xs font-bold" [class]="STATUS_STYLES[app.status]">
+                {{ STATUS_LABELS[app.status] }}
+              </span>
+            </div>
+            <p class="mt-1 text-lg font-bold">{{ app.business_name }}</p>
+            <p class="text-sm text-brand-lime/70">
+              {{ app.licence_type_name }} — {{ app.lga_name }} · applicant: {{ app.applicant_name }}
+            </p>
+            @if (app.purpose_statement) {
+              <p class="mt-2 max-w-2xl text-sm text-brand-lime/60">“{{ app.purpose_statement }}”</p>
+            }
+          </div>
+
+          <div class="flex shrink-0 flex-wrap items-center gap-2">
+            @if (app.status === 'SUBMITTED') {
+              <button type="button" class="btn-primary !py-2" (click)="startReview(app)">
+                Start review
+              </button>
+            } @else {
+              @for (status of app.allowed_next_statuses; track status) {
+                <button
+                  type="button"
+                  class="btn-secondary !py-2 !px-3 text-xs"
+                  [disabled]="processingId() === app.id"
+                  (click)="advance(app, status)"
+                >
+                  → {{ STATUS_LABELS[status] }}
+                </button>
+              }
+            }
+          </div>
+        </div>
+      } @empty {
+        <p class="text-brand-lime/70">Nothing in this queue.</p>
+      }
+    </div>
+  }
+</section>
