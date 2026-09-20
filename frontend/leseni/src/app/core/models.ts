@@ -48,11 +48,17 @@ export interface Paginated<T> {
   results: T[];
 }
 
+export interface RegionInfo {
+  region: string;
+  lga_count: number;
+}
+
 export interface LGA {
   id: number;
   name: string;
   region: string;
   code: string;
+  licence_type_count: number;
 }
 
 export interface Requirement {
@@ -64,10 +70,13 @@ export interface Requirement {
   order: number;
 }
 
+export type LicenceCategory = 'BUSINESS' | 'DRIVING' | 'GENERAL';
+
 export interface LicenceType {
   id: number;
   name: string;
   code: string;
+  category: LicenceCategory;
   description: string;
   fee: string;
   validity_months: number;

@@ -12,6 +12,7 @@ import {
   LicenceType,
   NewBusinessPayload,
   Paginated,
+  RegionInfo,
 } from './models';
 
 /** Small helper so list endpoints are easy to page/filter. */
@@ -40,12 +41,16 @@ export class ApiService {
 
   // -- Catalog (public reference data) ------------------------------------
 
-  lgas(): Observable<Paginated<LGA>> {
-    return this.list<LGA>('lgas');
+  regions(): Observable<RegionInfo[]> {
+    return this.http.get<RegionInfo[]>(`${this.baseUrl}/regions/`);
+  }
+
+  lgas(filters?: ListOptions['filters']): Observable<Paginated<LGA>> {
+    return this.list<LGA>('lgas', { filters, pageSize: 250 });
   }
 
   licenceTypes(filters?: ListOptions['filters']): Observable<Paginated<LicenceType>> {
-    return this.list<LicenceType>('licence-types', { filters });
+    return this.list<LicenceType>('licence-types', { filters, pageSize: 250 });
   }
 
   // -- Businesses ----------------------------------------------------------
@@ -58,7 +63,10 @@ export class ApiService {
     return this.http.post<Business>(`${this.baseUrl}/businesses/`, payload);
   }
 
-  createLocation(businessId: number, data: Omit<NewBusinessPayload['location'], 'lga'> & { lga: number }) {
+  createLocation(
+    businessId: number,
+    data: Omit<NewBusinessPayload['location'], 'lga'> & { lga: number; is_primary?: boolean },
+  ) {
     return this.http.post(`${this.baseUrl}/business-locations/`, { business: businessId, ...data });
   }
 
