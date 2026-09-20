@@ -24,6 +24,7 @@ export class Dashboard {
   protected readonly auth = inject(AuthService);
 
   protected readonly STATUS_LABELS = STATUS_LABELS;
+  protected readonly STATUS_STYLES = STATUS_STYLES;
 
   protected readonly loading = signal(true);
   protected readonly errorMessage = signal('');

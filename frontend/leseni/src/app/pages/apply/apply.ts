@@ -12,7 +12,7 @@ import { Application, Business, LGA, LicenceType } from '../../core/models';
   selector: 'app-apply',
   templateUrl: './apply.html',
 })
-export class Apply implements OnInit {
+export class Apply {
   private readonly api = inject(ApiService);
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
@@ -45,7 +45,7 @@ export class Apply implements OnInit {
     plot_number: '',
   });
 
-  protected ngOnInit(): void {
+  constructor() {
     this.api.lgas().subscribe((page) => this.lgas.set(page.results));
     this.api.licenceTypes().subscribe((page) => this.licenceTypes.set(page.results));
     this.api.businesses().subscribe((page) => {
