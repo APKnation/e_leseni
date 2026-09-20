@@ -1,0 +1,53 @@
+<!-- Hero: purple background, lime text (inverse pair) -->
+<section class="relative overflow-hidden">
+  <div class="mx-auto grid w-full max-w-6xl gap-10 px-4 py-16 sm:px-6 lg:grid-cols-2 lg:py-24">
+    <div class="flex flex-col justify-center gap-6">
+      <span class="badge-lime w-fit">LGA Business Licensing</span>
+      <h1 class="text-4xl font-black leading-tight tracking-tight sm:text-5xl lg:text-6xl">
+        Apply for your business licence in <span class="text-brand-lime">minutes</span>, not weeks.
+      </h1>
+      <p class="max-w-md text-lg text-brand-lime/80">
+        e-Leseni brings the whole licensing journey online — application, inspection,
+        payment via control number, and instant QR-verifiable licences.
+      </p>
+      <div class="flex flex-wrap gap-4">
+        @if (auth.isLoggedIn()) {
+          <a routerLink="/dashboard" class="btn-primary">Go to dashboard →</a>
+        } @else {
+          <a routerLink="/register" class="btn-primary">Apply now</a>
+          <a routerLink="/login" class="btn-secondary">Log in</a>
+        }
+      </div>
+    </div>
+
+    <!-- Status-flow card: lime background, purple text (inverse pair) -->
+    <div class="card flex flex-col justify-center gap-4 bg-brand-lime text-brand-purple">
+      <h2 class="text-xl font-black">How it works</h2>
+      <ol class="space-y-3">
+        @for (step of steps; track step) {
+          <li class="flex items-center gap-3 font-semibold">
+            <span class="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-brand-purple text-sm text-brand-lime">
+              {{ $index + 1 }}
+            </span>
+            {{ step }}
+          </li>
+        }
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- Feature strip: lime background, purple text (inverse pair) -->
+<section class="bg-brand-lime text-brand-purple">
+  <div class="mx-auto grid w-full max-w-6xl gap-8 px-4 py-16 sm:px-6 md:grid-cols-3">
+    @for (feature of features; track feature.title) {
+      <div class="flex flex-col gap-3">
+        <span class="grid h-12 w-12 place-items-center rounded-xl bg-brand-purple text-xl text-brand-lime">
+          {{ feature.icon }}
+        </span>
+        <h3 class="text-lg font-black">{{ feature.title }}</h3>
+        <p class="text-sm leading-relaxed text-brand-purple/80">{{ feature.body }}</p>
+      </div>
+    }
+  </div>
+</section>

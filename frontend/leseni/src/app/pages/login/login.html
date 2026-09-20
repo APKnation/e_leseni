@@ -1,0 +1,53 @@
+<section class="mx-auto flex w-full max-w-md flex-col gap-8 px-4 py-16">
+  <div class="text-center">
+    <h1 class="text-3xl font-black">Welcome back</h1>
+    <p class="mt-2 text-brand-lime/70">Log in to manage your licence applications.</p>
+  </div>
+
+  <form class="card flex flex-col gap-4" (ngSubmit)="submit()">
+    <label class="flex flex-col gap-2 text-sm font-semibold">
+      Username
+      <input
+        class="input-field"
+        type="text"
+        name="username"
+        autocomplete="username"
+        required
+        [ngModel]="username()"
+        (ngModelChange)="username.set($event)"
+      />
+    </label>
+
+    <label class="flex flex-col gap-2 text-sm font-semibold">
+      Password
+      <input
+        class="input-field"
+        type="password"
+        name="password"
+        autocomplete="current-password"
+        required
+        [ngModel]="password()"
+        (ngModelChange)="password.set($event)"
+      />
+    </label>
+
+    @if (errorMessage()) {
+      <p class="rounded-lg bg-red-500/15 px-4 py-3 text-sm font-semibold text-red-300">
+        {{ errorMessage() }}
+      </p>
+    }
+
+    <button type="submit" class="btn-primary w-full" [disabled]="submitting()">
+      @if (submitting()) {
+        Logging in…
+      } @else {
+        Log in
+      }
+    </button>
+
+    <p class="text-center text-sm text-brand-lime/70">
+      No account yet?
+      <a routerLink="/register" class="font-bold underline hover:text-brand-lime-soft">Register</a>
+    </p>
+  </form>
+</section>
