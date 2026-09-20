@@ -17,8 +17,18 @@ export const routes: Routes = [
   },
   {
     path: 'dashboard',
-    component: undefined, // placeholder replaced below
+    loadComponent: () => import('./pages/dashboard/dashboard').then((m) => m.Dashboard),
     canActivate: [authGuard],
+  },
+  {
+    path: 'apply',
+    loadComponent: () => import('./pages/apply/apply').then((m) => m.Apply),
+    canActivate: [authGuard],
+  },
+  {
+    path: 'staff',
+    loadComponent: () => import('./pages/staff/staff').then((m) => m.Staff),
+    canActivate: [staffGuard],
   },
   { path: '**', redirectTo: '' },
 ];
