@@ -6,7 +6,7 @@ class LGA(models.Model):
 
     name = models.CharField(max_length=100)
     region = models.CharField(max_length=100)
-    code = models.CharField(max_length=20, unique=True)
+    code = models.CharField(max_length=30, unique=True)
 
     class Meta:
         verbose_name = 'LGA'
@@ -26,7 +26,7 @@ class LicenceType(models.Model):
         GENERAL = 'GENERAL', 'General'
 
     name = models.CharField(max_length=150)
-    code = models.CharField(max_length=30, unique=True)
+    code = models.CharField(max_length=60, unique=True)
     category = models.CharField(
         max_length=20, choices=Category.choices, default=Category.BUSINESS, db_index=True
     )

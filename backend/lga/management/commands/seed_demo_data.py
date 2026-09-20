@@ -86,13 +86,13 @@ STANDARD_LICENCES = [
 
 LICENCE_TYPES = [
     {
-        'lga': 'IL',
+        'lga_code': 'DS-ILALA',
         'name': 'Food Vendor Licence',
-        'code': 'FOOD',
+        'code': 'FOOD-ILALA',
         'fee': Decimal('50000'),
         'validity_months': 12,
         'requires_inspection': True,
-        'description': 'For restaurants, food stalls and catering businesses.',
+        'description': 'For restaurants, food stalls and catering businesses in Ilala.',
         'requirements': [
             {'name': 'TIN Certificate', 'kind': Requirement.Kind.DOCUMENT},
             {'name': 'Food Handling Permit', 'kind': Requirement.Kind.DOCUMENT},
@@ -100,38 +100,38 @@ LICENCE_TYPES = [
         ],
     },
     {
-        'lga': 'IL',
+        'lga_code': 'DS-ILALA',
         'name': 'Retail Shop Licence',
-        'code': 'RETAIL',
+        'code': 'RETAIL-ILALA',
         'fee': Decimal('120000'),
         'validity_months': 12,
         'requires_inspection': True,
-        'description': 'For retail and wholesale shops.',
+        'description': 'For retail and wholesale shops in Ilala.',
         'requirements': [
             {'name': 'TIN Certificate', 'kind': Requirement.Kind.DOCUMENT},
             {'name': 'Lease Agreement', 'kind': Requirement.Kind.DOCUMENT},
         ],
     },
     {
-        'lga': 'KN',
+        'lga_code': 'DS-KINONDONI',
         'name': 'Hardware Shop Licence',
-        'code': 'HW',
+        'code': 'HW-KINONDONI',
         'fee': Decimal('80000'),
         'validity_months': 12,
         'requires_inspection': False,
-        'description': 'For hardware and building-material vendors.',
+        'description': 'For hardware and building-material vendors in Kinondoni.',
         'requirements': [
             {'name': 'TIN Certificate', 'kind': Requirement.Kind.DOCUMENT},
         ],
     },
     {
-        'lga': 'MO',
+        'lga_code': 'KI-MOSHI_MUNICIPAL',
         'name': 'Kiosk Licence',
-        'code': 'KIOSK',
+        'code': 'KIOSK-MOSHI',
         'fee': Decimal('30000'),
         'validity_months': 12,
         'requires_inspection': False,
-        'description': 'For small kiosks and street-side vendors.',
+        'description': 'For small kiosks and street-side vendors in Moshi.',
         'requirements': [],
     },
 ]
@@ -142,21 +142,21 @@ USERS = [
         'first_name': 'System', 'last_name': 'Admin',
         'email': 'admin@leseni.local', 'phone_number': '0700000001',
         'role': User.Roles.ADMIN, 'is_staff': True, 'is_superuser': True,
-        'lga': 'IL',
+        'lga': 'DS-ILALA',
     },
     {
         'username': 'officer1',
         'first_name': 'Amina', 'last_name': 'Juma',
         'email': 'officer1@leseni.local', 'phone_number': '0700000002',
         'role': User.Roles.OFFICER, 'is_staff': True, 'is_superuser': False,
-        'lga': 'IL',
+        'lga': 'DS-ILALA',
     },
     {
         'username': 'inspector1',
         'first_name': 'Baraka', 'last_name': 'Mushi',
         'email': 'inspector1@leseni.local', 'phone_number': '0700000003',
         'role': User.Roles.INSPECTOR, 'is_staff': True, 'is_superuser': False,
-        'lga': 'IL',
+        'lga': 'DS-ILALA',
     },
     {
         'username': 'applicant1',
@@ -181,7 +181,7 @@ BUSINESSES = [
         'tin_number': '123456789',
         'brela_registration_number': '100987654',
         'sector': 'Food & Beverage',
-        'lga': 'IL', 'ward': 'Upanga', 'street': 'Ocean Road', 'plot_number': '12',
+        'lga': 'DS-ILALA', 'ward': 'Upanga', 'street': 'Ocean Road', 'plot_number': '12',
     },
     {
         'owner': 'applicant2',
@@ -189,7 +189,7 @@ BUSINESSES = [
         'tin_number': '987654321',
         'brela_registration_number': '102345678',
         'sector': 'Retail',
-        'lga': 'MO', 'ward': 'Pasua', 'street': 'Old Moshi Road', 'plot_number': '45',
+        'lga': 'KI-MOSHI_MUNICIPAL', 'ward': 'Pasua', 'street': 'Old Moshi Road', 'plot_number': '45',
     },
 ]
 
@@ -276,6 +276,10 @@ class Command(BaseCommand):
         """Richer demo licence types for the key LGAs (codes FOOD/RETAIL/HW/KIOSK kept)."""
         for spec in LICENCE_TYPES:
             lga = LGA.objects.get(code=spec['lga_code'])
+            # Skip if a standard licence with the same name already covers this LGA.
+            if LicenceType.objects.filter(lga=lga, name=spec['name']).exclude(code=spec['code']).exists():
+                self._stdout(f'  = {spec["name"]} in {lga.name} already covered by a standard licence.')
+                continue
             lt, created = self._upsert_licence(lga, spec['code'], spec)
             self._log(lt, created)
 
@@ -322,13 +326,14 @@ class Command(BaseCommand):
 
     def _seed_assignments(self):
         pairs = [
-            ('officer1', 'FOOD', True, False, True),
-            ('officer1', 'RETAIL', True, False, True),
-            ('inspector1', 'FOOD', False, True, False),
+            ('officer1', 'Food Vendor Licence', True, False, True),
+            ('officer1', 'Retail Shop Licence', True, False, True),
+            ('inspector1', 'Food Vendor Licence', False, True, False),
         ]
-        for username, code, review, inspect, approve in pairs:
+        ilala = LGA.objects.get(code='DS-ILALA')
+        for username, licence_name, review, inspect, approve in pairs:
             officer = User.objects.get(username=username)
-            licence_type = LicenceType.objects.get(code=code)
+            licence_type = LicenceType.objects.get(lga=ilala, name=licence_name)
             assignment, created = OfficerAssignment.objects.update_or_create(
                 officer=officer, licence_type=licence_type,
                 defaults={
@@ -363,7 +368,8 @@ class Command(BaseCommand):
         """One submitted application so the dashboard/staff queue are not empty."""
         applicant = User.objects.get(username='applicant1')
         business = Business.objects.get(owner=applicant, name='Mama Neema Foods')
-        licence_type = LicenceType.objects.get(code='FOOD')
+        ilala = LGA.objects.get(code='DS-ILALA')
+        licence_type = LicenceType.objects.get(lga=ilala, name='Food Vendor Licence')
         location = BusinessLocation.objects.get(business=business)
 
         if Application.objects.filter(applicant=applicant, licence_type=licence_type).exists():
