@@ -62,14 +62,15 @@ class PaymentReconciliationTests(PaymentsFlowTestBase):
         from payments.services import record_payment
 
         invoice = self.application.invoice
-        payment, settled = record_payment(
-            invoice,
-            amount=invoice.amount,
-            method='MOBILE_MONEY',
-            payer_name='Kariakoo Traders',
-            payer_phone='0712345678',
-            reference='MPESA-001',
-        )
+        with self.captureOnCommitCallbacks(execute=True):
+            payment, settled = record_payment(
+                invoice,
+                amount=invoice.amount,
+                method='MOBILE_MONEY',
+                payer_name='Kariakoo Traders',
+                payer_phone='0712345678',
+                reference='MPESA-001',
+            )
         self.assertTrue(settled)
         invoice.refresh_from_db()
         self.application.refresh_from_db()
