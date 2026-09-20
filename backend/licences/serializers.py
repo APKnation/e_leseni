@@ -44,6 +44,8 @@ class LicenceSerializer(serializers.ModelSerializer):
 class LicenceVerifySerializer(serializers.Serializer):
     """Response shape for the public QR verification endpoint."""
 
+    valid = serializers.BooleanField()
+    checked_at = serializers.DateTimeField()
     licence_number = serializers.CharField()
     business_name = serializers.CharField()
     licence_type = serializers.CharField()

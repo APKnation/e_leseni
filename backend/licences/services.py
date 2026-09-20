@@ -1,6 +1,7 @@
 """Licence services: issuance on PAID, QR payloads, renewal helpers."""
 import logging
 
+from dateutil.relativedelta import relativedelta
 from django.utils import timezone
 
 from applications.models import Application
@@ -25,7 +26,7 @@ def issue_licence_for_application(application):
         licence_type=application.licence_type,
         lga=application.licence_type.lga,
         valid_until=timezone.now().date()
-        + timezone.timedelta(days=30 * application.licence_type.validity_months),
+        + relativedelta(months=application.licence_type.validity_months),
     )
     logger.info('Licence %s issued for %s', licence.licence_number, application.reference_number)
     return licence, True

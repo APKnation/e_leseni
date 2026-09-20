@@ -1,13 +1,17 @@
 """Adapters for external government systems.
 
 Each adapter wraps an HTTP client, logs every call to IntegrationLog, and
-exposes a small, typed surface for the rest of the codebase. Point the base
-URLs at the mock endpoints in this app for development, or at the real
-systems in production via settings.INTEGRATIONS.
+exposes a small, typed surface for the rest of the codebase.
+
+When the configured base URL points at this same Django process (localhost),
+the call is dispatched in-process via Django's request handler instead of a
+network hop - so the mock endpoints in this app work without running a second
+server. Point the base URLs at the real systems in production to get real HTTP.
 """
+import json
 import logging
-import uuid
 from dataclasses import dataclass, field
+from urllib.parse import urlsplit
 
 import requests
 from django.conf import settings
@@ -15,6 +19,9 @@ from django.conf import settings
 from .models import IntegrationLog
 
 logger = logging.getLogger(__name__)
+
+# Hosts that mean "the mock endpoints hosted by this very process".
+LOCAL_MOCK_HOSTS = {'localhost', '127.0.0.1', '0.0.0.0', 'testserver'}
 
 
 @dataclass
@@ -25,7 +32,7 @@ class AdapterResult:
 
 
 class BaseAdapter:
-    """HTTP client wrapper with integration logging."""
+    """HTTP client wrapper with integration logging and in-process mock support."""
 
     system = 'UNKNOWN'
 
@@ -36,24 +43,53 @@ class BaseAdapter:
     def _default_base_url(self):
         return settings.INTEGRATIONS.get(f'{self.system}_BASE_URL', '')
 
+    def _build_url(self, path):
+        return f'{self.base_url}/{path.lstrip("/")}'
+
+    def _call_direct(self, path, payload):
+        """POST to our own mock endpoint in-process (no network)."""
+        from django.test import Client
+
+        parts = urlsplit(self._build_url(path))
+        client = Client()
+        response = client.post(parts.path, data=json.dumps(payload), content_type='application/json')
+        try:
+            data = json.loads(response.content)
+        except (ValueError, UnicodeDecodeError):
+            data = {'raw': response.content[:2000].decode(errors='replace')}
+        return response.status_code, data
+
+    def _call_http(self, path, payload):
+        """POST to a real external endpoint over the network."""
+        url = self._build_url(path)
+        response = requests.post(url, json=payload, timeout=self.timeout)
+        try:
+            data = response.json()
+        except ValueError:
+            data = {'raw': response.text[:2000]}
+        return response.status_code, data
+
     def _post(self, path, payload):
-        url = f'{self.base_url}/{path.lstrip("/")}'
+        url = self._build_url(path)
+        host = urlsplit(url).hostname or ''
+        use_direct = host in LOCAL_MOCK_HOSTS and not getattr(settings, 'INTEGRATIONS_FORCE_HTTP', False)
+
         log = IntegrationLog(
-            system=self.system, direction=IntegrationLog.Direction.OUTBOUND, endpoint=url,
-            request_payload=payload,
+            system=self.system, direction=IntegrationLog.Direction.OUTBOUND,
+            endpoint=url, request_payload=payload,
         )
         try:
-            response = requests.post(url, json=payload, timeout=self.timeout)
-            log.status_code = response.status_code
-            try:
-                log.response_payload = response.json()
-            except ValueError:
-                log.response_payload = {'raw': response.text[:2000]}
-            log.is_success = response.status_code < 400
+            if use_direct:
+                status_code, data = self._call_direct(path, payload)
+            else:
+                status_code, data = self._call_http(path, payload)
+
+            log.status_code = status_code
+            log.response_payload = data
+            log.is_success = status_code < 400
             if not log.is_success:
-                log.error_message = f'HTTP {response.status_code}'
-            response.raise_for_status()
-            return AdapterResult(success=True, data=log.response_payload or {})
+                log.error_message = f'HTTP {status_code}'
+            return AdapterResult(success=log.is_success, data=data)
         except requests.RequestException as exc:
             log.is_success = False
             log.error_message = str(exc)[:500]

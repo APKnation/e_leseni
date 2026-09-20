@@ -90,8 +90,10 @@ def record_payment(invoice, *, amount, method, payer_name='', payer_phone='', re
             logger.error('GePG reconciliation failed for invoice %s: %s', invoice.pk, reconcile.error)
             return payment, False
 
-        payment.receipt_number = reconcile.data.get('receipt_number', '')
-        payment.save(update_fields=['receipt_number'])
+        receipt = reconcile.data.get('receipt_number', '')
+        if receipt:
+            payment.receipt_number = receipt
+            payment.save(update_fields=['receipt_number'])
 
         if not invoice.gepg_approval:
             invoice.gepg_approval = reconcile.data.get('receipt_number', '')

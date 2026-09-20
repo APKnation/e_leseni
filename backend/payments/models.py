@@ -62,7 +62,10 @@ class Payment(models.Model):
         CASH = 'CASH', 'Cash (government office)'
 
     invoice = models.ForeignKey(Invoice, on_delete=models.PROTECT, related_name='payments')
-    receipt_number = models.CharField(max_length=30, unique=True, blank=True)
+    receipt_number = models.CharField(
+        max_length=30, unique=True, blank=True,
+        help_text='GePG receipt; empty until reconciliation succeeds.',
+    )
     amount = models.DecimalField(max_digits=12, decimal_places=2)
     method = models.CharField(max_length=20, choices=Method.choices, default=Method.MOBILE_MONEY)
     payer_name = models.CharField(max_length=150, blank=True)
