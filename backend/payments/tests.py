@@ -75,7 +75,8 @@ class PaymentReconciliationTests(PaymentsFlowTestBase):
         self.application.refresh_from_db()
         self.assertEqual(invoice.status, 'PAID')
         self.assertTrue(payment.receipt_number.startswith('RCP-'))
-        self.assertEqual(self.application.status, 'PAID')
+        # Licence auto-issuance completes the flow: PAID -> ISSUED.
+        self.assertEqual(self.application.status, 'ISSUED')
 
     def test_licence_auto_issued_after_payment_signal(self):
         from payments.services import record_payment
@@ -86,7 +87,7 @@ class PaymentReconciliationTests(PaymentsFlowTestBase):
             record_payment(invoice, amount=invoice.amount, method='BANK')
 
         self.application.refresh_from_db()
-        self.assertEqual(self.application.status, 'PAID')
+        self.assertEqual(self.application.status, 'ISSUED')
         # The signal issued the licence already (on_commit runs inline in tests).
         licence = getattr(self.application, 'licence', None)
         self.assertIsNotNone(licence)

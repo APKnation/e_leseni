@@ -54,7 +54,26 @@ def request_control_number(invoice):
     invoice.status = Invoice.Status.WAITING_PAYMENT
     invoice.control_number_expires_at = timezone.now() + timezone.timedelta(days=30)
     invoice.save(update_fields=['control_number', 'gepg_bill_id', 'status', 'control_number_expires_at', 'updated_at'])
+
+    _notify_control_number(application=invoice.application, invoice=invoice)
     return invoice, True
+
+
+def _notify_control_number(*, application, invoice):
+    """Best-effort SMS with the control number once GePG issues one."""
+    try:
+        from notifications import services as notifications_services
+
+        phone = (application.applicant.phone_number or '').strip()
+        if phone:
+            notifications_services.control_number_issued(
+                application, phone,
+                control_number=invoice.control_number,
+                amount=invoice.amount,
+                currency=invoice.currency,
+            )
+    except Exception:  # noqa: BLE001 - SMS must never break payments
+        logger.exception('Control-number SMS failed for %s', application.reference_number)
 
 
 def record_payment(invoice, *, amount, method, payer_name='', payer_phone='', reference=''):

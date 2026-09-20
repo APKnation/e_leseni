@@ -13,6 +13,7 @@ urlpatterns = [
     path('api/', include('lga.urls')),
     path('api/', include('payments.urls')),
     path('api/', include('licences.urls')),
+    path('api/', include('notifications.urls')),
     path('', include('integrations.urls')),
 ]
 

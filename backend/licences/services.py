@@ -29,6 +29,11 @@ def issue_licence_for_application(application):
         + relativedelta(months=application.licence_type.validity_months),
     )
     logger.info('Licence %s issued for %s', licence.licence_number, application.reference_number)
+
+    # Complete the status flow: PAID -> ISSUED (fires the issuance SMS).
+    if application.status == Application.Status.PAID:
+        application.transition_to(Application.Status.ISSUED, by=None,
+                                  note=f'Licence {licence.licence_number} issued')
     return licence, True
 
 
