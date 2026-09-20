@@ -17,16 +17,71 @@ from django.db import transaction
 from applications.models import Application
 from businesses.models import Business, BusinessLocation
 from lga.models import LGA, LicenceType, OfficerAssignment, Requirement
+from lga.tanzania_lgas import TANZANIA_LGAS, lga_code
 
 User = get_user_model()
 
 DEMO_PASSWORD = 'Demo@1234'
 
-LGAS = [
-    {'name': 'Ilala', 'region': 'Dar es Salaam', 'code': 'IL'},
-    {'name': 'Kinondoni', 'region': 'Dar es Salaam', 'code': 'KN'},
-    {'name': 'Temeke', 'region': 'Dar es Salaam', 'code': 'TK'},
-    {'name': 'Moshi', 'region': 'Kilimanjaro', 'code': 'MO'},
+# Detailed LGAs kept for the demo application fixtures below.
+KEY_LGAS = [
+    {'name': 'Ilala', 'region': 'Dar es Salaam', 'code': 'DS-ILALA'},
+    {'name': 'Kinondoni', 'region': 'Dar es Salaam', 'code': 'DS-KINONDONI'},
+    {'name': 'Temeke', 'region': 'Dar es Salaam', 'code': 'DS-TEMEKE'},
+    {'name': 'Moshi Municipal', 'region': 'Kilimanjaro', 'code': 'KI-MOSHI_MUNICIPAL'},
+]
+
+# Standard licences created for EVERY LGA so area-based selection always works.
+STANDARD_LICENCES = [
+    {
+        'name': 'Business Licence',
+        'category': LicenceType.Category.BUSINESS,
+        'fee': Decimal('50000'),
+        'validity_months': 12,
+        'requires_inspection': True,
+        'description': 'General licence to operate a business within this council.',
+        'requirements': [
+            {'name': 'TIN Certificate', 'kind': Requirement.Kind.DOCUMENT},
+            {'name': 'BRELA Registration', 'kind': Requirement.Kind.DOCUMENT},
+            {'name': 'Premises Inspection', 'kind': Requirement.Kind.INSPECTION},
+        ],
+    },
+    {
+        'name': 'Food Vendor Licence',
+        'category': LicenceType.Category.BUSINESS,
+        'fee': Decimal('30000'),
+        'validity_months': 12,
+        'requires_inspection': True,
+        'description': 'For food stalls, restaurants and catering businesses.',
+        'requirements': [
+            {'name': 'Food Handling Permit', 'kind': Requirement.Kind.DOCUMENT},
+            {'name': 'Premises Inspection', 'kind': Requirement.Kind.INSPECTION},
+        ],
+    },
+    {
+        'name': 'Driving Licence Renewal',
+        'category': LicenceType.Category.DRIVING,
+        'fee': Decimal('70000'),
+        'validity_months': 36,
+        'requires_inspection': False,
+        'description': 'Renewal of a national driving licence processed at council level.',
+        'requirements': [
+            {'name': 'Existing Driving Licence', 'kind': Requirement.Kind.DOCUMENT},
+            {'name': 'TRA Clearance', 'kind': Requirement.Kind.CLEARANCE},
+        ],
+    },
+    {
+        'name': 'New Driving Licence',
+        'category': LicenceType.Category.DRIVING,
+        'fee': Decimal('120000'),
+        'validity_months': 36,
+        'requires_inspection': False,
+        'description': 'First-time driving licence issued after passing the TRA/Traffic test.',
+        'requirements': [
+            {'name': 'Traffic Test Certificate', 'kind': Requirement.Kind.CLEARANCE},
+            {'name': 'ID/Passport Copy', 'kind': Requirement.Kind.DOCUMENT},
+        ],
+    },
 ]
 
 LICENCE_TYPES = [

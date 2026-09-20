@@ -4,9 +4,11 @@ from .models import LGA, LicenceType, OfficerAssignment, Requirement
 
 
 class LGASerializer(serializers.ModelSerializer):
+    licence_type_count = serializers.IntegerField(read_only=True)
+
     class Meta:
         model = LGA
-        fields = ['id', 'name', 'region', 'code']
+        fields = ['id', 'name', 'region', 'code', 'licence_type_count']
 
 
 class RequirementSerializer(serializers.ModelSerializer):
@@ -24,7 +26,7 @@ class LicenceTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = LicenceType
         fields = [
-            'id', 'name', 'code', 'description', 'fee', 'validity_months',
+            'id', 'name', 'code', 'category', 'description', 'fee', 'validity_months',
             'requires_inspection', 'lga', 'lga_name', 'requirements',
         ]
 

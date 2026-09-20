@@ -10,5 +10,6 @@ router.register(r'requirements', views.RequirementViewSet, basename='requirement
 router.register(r'officer-assignments', views.OfficerAssignmentViewSet, basename='officer-assignment')
 
 urlpatterns = [
+    path('regions/', views.regions, name='regions'),
     path('', include(router.urls)),
 ]

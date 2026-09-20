@@ -4,9 +4,9 @@ from django.db import models
 class LGA(models.Model):
     """Local Government Authority."""
 
-    name = models.CharField(max_length=100, unique=True)
+    name = models.CharField(max_length=100)
     region = models.CharField(max_length=100)
-    code = models.CharField(max_length=10, unique=True)
+    code = models.CharField(max_length=20, unique=True)
 
     class Meta:
         verbose_name = 'LGA'
@@ -18,10 +18,18 @@ class LGA(models.Model):
 
 
 class LicenceType(models.Model):
-    """A category of business licence issued by an LGA."""
+    """A licence issued by an LGA, grouped by category (business, driving, ...)."""
+
+    class Category(models.TextChoices):
+        BUSINESS = 'BUSINESS', 'Business'
+        DRIVING = 'DRIVING', 'Driving'
+        GENERAL = 'GENERAL', 'General'
 
     name = models.CharField(max_length=150)
-    code = models.CharField(max_length=20, unique=True)
+    code = models.CharField(max_length=30, unique=True)
+    category = models.CharField(
+        max_length=20, choices=Category.choices, default=Category.BUSINESS, db_index=True
+    )
     description = models.TextField(blank=True)
     fee = models.DecimalField(max_digits=12, decimal_places=2)
     validity_months = models.PositiveIntegerField(default=12)
