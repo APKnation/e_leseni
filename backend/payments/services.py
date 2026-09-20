@@ -9,8 +9,8 @@ from django.db import transaction
 from django.utils import timezone
 
 from applications.models import Application
+from integrations.adapters import GePGAdapter
 
-from .adapters import GePGAdapter
 from .models import Invoice, Payment
 
 logger = logging.getLogger(__name__)
@@ -64,8 +64,6 @@ def record_payment(invoice, *, amount, method, payer_name='', payer_phone='', re
     fully covered. When the invoice settles, the application is moved from
     PAYMENT_PENDING to PAID - which in turn triggers licence issuance.
     """
-    from applications.models import application_status_changed  # noqa: F401  (documentation of the hook)
-
     if invoice.status == Invoice.Status.CANCELLED:
         raise ValueError('Cannot pay a cancelled invoice.')
     if invoice.status == Invoice.Status.PAID:
