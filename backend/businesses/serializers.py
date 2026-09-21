@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Business, BusinessDocument, BusinessLocation
+from .models import Business, BusinessDocument, BusinessLocation, TINApplication
 
 
 class BusinessDocumentSerializer(serializers.ModelSerializer):
@@ -21,6 +21,16 @@ class BusinessLocationSerializer(serializers.ModelSerializer):
             'id', 'business', 'lga', 'lga_name', 'ward', 'street', 'plot_number',
             'latitude', 'longitude', 'is_primary',
         ]
+
+
+class TINApplicationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TINApplication
+        fields = [
+            'id', 'business_name', 'taxpayer_name', 'tin_number', 'status',
+            'created_at', 'processed_at',
+        ]
+        read_only_fields = fields
 
 
 class BusinessSerializer(serializers.ModelSerializer):

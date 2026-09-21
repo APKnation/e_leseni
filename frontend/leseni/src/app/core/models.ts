@@ -220,3 +220,14 @@ export interface NewBusinessPayload {
     plot_number: string;
   };
 }
+
+/** A TIN application submitted to TRA (demo workflow). */
+export interface TINApplication {
+  id: number;
+  business_name: string;
+  taxpayer_name: string;
+  tin_number: string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  created_at: string;
+  processed_at: string | null;
+}

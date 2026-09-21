@@ -124,6 +124,7 @@ export class Apply {
     this.licenceTypes.set([]);
     this.wards.set([]);
     this.newBusiness.update((nb) => ({ ...nb, ward: '' }));
+    this.syncNewBusinessLga();
     if (lgaId) {
       this.api.licenceTypes({ lga: lgaId }).subscribe((page) => {
         const all = page.results;
@@ -240,9 +241,14 @@ export class Apply {
 
   protected toggleNewBusiness(): void {
     this.creatingNewBusiness.update((v) => !v);
-    // Default the inline business LGA to the selected area.
-    if (this.creatingNewBusiness() && this.lgaId()) {
-      this.newBusiness.update((nb) => ({ ...nb, lga: this.lgaId() }));
+    this.syncNewBusinessLga();
+  }
+
+  /** The inline business always registers in the council chosen in step 1. */
+  private syncNewBusinessLga(): void {
+    const lga = this.lgaId();
+    if (lga !== null) {
+      this.newBusiness.update((nb) => (nb.lga === lga ? nb : { ...nb, lga }));
     }
   }
 

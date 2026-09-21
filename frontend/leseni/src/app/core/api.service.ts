@@ -14,6 +14,7 @@ import {
   NewBusinessPayload,
   Paginated,
   RegionInfo,
+  TINApplication,
 } from './models';
 
 /** Small helper so list endpoints are easy to page/filter. */
@@ -79,6 +80,36 @@ export class ApiService {
       tra: { success: boolean; valid: boolean };
       brela: { success: boolean; registered: boolean };
     }>(`${this.baseUrl}/businesses/${businessId}/verify/`, {});
+  }
+
+  /** DEMO BRELA: register the business and receive a registration number. */
+  brelaRegister(businessName: string): Observable<{
+    registered: boolean;
+    registration_number: string;
+    entity_name: string;
+    status: string;
+    source: string;
+  }> {
+    return this.http.post<{
+      registered: boolean;
+      registration_number: string;
+      entity_name: string;
+      status: string;
+      source: string;
+    }>(`${this.baseUrl}/businesses/demo/brela-register/`, { business_name: businessName });
+  }
+
+  /** DEMO TRA: apply for a TIN and receive it once processed. */
+  applyForTin(businessName: string, taxpayerName: string): Observable<TINApplication> {
+    return this.http.post<TINApplication>(`${this.baseUrl}/businesses/demo/apply-tin/`, {
+      business_name: businessName,
+      taxpayer_name: taxpayerName,
+    });
+  }
+
+  /** The caller's TRA TIN applications, newest first. */
+  tinApplications(): Observable<TINApplication[]> {
+    return this.http.get<TINApplication[]>(`${this.baseUrl}/businesses/tin-applications/`);
   }
 
   createLocation(
