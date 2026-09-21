@@ -5,7 +5,16 @@ import { Router, RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
 import { TanzaniaGeoService } from '../../core/tanzania-geo.service';
-import { Application, Business, BusinessLocation, LGA, LicenceCategory, LicenceType, RegionInfo } from '../../core/models';
+import {
+  Application,
+  Business,
+  BusinessLocation,
+  LGA,
+  LicenceCategory,
+  LicenceType,
+  RegionInfo,
+  Requirement,
+} from '../../core/models';
 
 interface NewBusinessForm {
   name: string;
@@ -18,8 +27,18 @@ interface NewBusinessForm {
   plot_number: string;
 }
 
+/** One row of the document checklist. */
+interface UploadRow {
+  requirement: Requirement | null; // null = extra/other document
+  label: string;
+  mandatory: boolean;
+  uploaded: boolean;
+  uploading: boolean;
+  fileName: string;
+}
+
 @Component({
-  imports: [FormsModule],
+  imports: [FormsModule, RouterLink],
   selector: 'app-apply',
   templateUrl: './apply.html',
 })
@@ -50,6 +69,7 @@ export class Apply {
   protected readonly locations = signal<BusinessLocation[]>([]);
   protected readonly locationId = signal<number | null>(null);
   protected readonly creatingNewBusiness = signal(false);
+  protected readonly verifying = signal(false);
   protected readonly newBusiness = signal<NewBusinessForm>({
     name: '', tin_number: '', brela_registration_number: '',
     sector: '', lga: null, ward: '', street: '', plot_number: '',
@@ -59,6 +79,10 @@ export class Apply {
 
   /** Wards of the selected council, from the tanzaniageodata dataset. */
   protected readonly wards = signal<string[]>([]);
+
+  // Document checklist (built after the licence type is chosen)
+  protected readonly uploadRows = signal<UploadRow[]>([]);
+  protected readonly draftApplication = signal<Application | null>(null);
 
   protected readonly categories: { value: LicenceCategory; label: string; icon: string; hint: string }[] = [
     { value: 'BUSINESS', label: 'Business', icon: '🏪', hint: 'Shops, food vendors, services' },
@@ -140,16 +164,30 @@ export class Apply {
     return [];
   }
 
-  // Step 3: category chosen -> filter licences
+  // Step 3: category chosen -> filter licences; licence chosen -> build checklist
   protected onCategoryChange(category: LicenceCategory | null): void {
     this.categoryId.set(category);
-    this.licenceTypeId.set(null);
+    this.selectLicence(null);
   }
 
-  protected get licencesForCategory(): LicenceType[] {
-    const category = this.categoryId();
-    if (!category) return [];
-    return this.licenceTypes().filter((t) => t.category === category);
+  protected selectLicence(id: number | null): void {
+    this.licenceTypeId.set(id);
+    this.uploadRows.set([]);
+    this.draftApplication.set(null);
+    const licence = this.selectedLicenceType;
+    if (licence) {
+      const rows: UploadRow[] = licence.requirements
+        .filter((r) => r.kind === 'DOCUMENT')
+        .map((r) => ({
+          requirement: r,
+          label: r.name,
+          mandatory: r.is_mandatory,
+          uploaded: false,
+          uploading: false,
+          fileName: '',
+        }));
+      this.uploadRows.set(rows);
+    }
   }
 
   protected get selectedLicenceType(): LicenceType | null {
@@ -164,9 +202,20 @@ export class Apply {
     if (!this.licenceTypeId()) return false;
     if (this.creatingNewBusiness()) {
       const nb = this.newBusiness();
-      return !!nb.name && !!nb.lga && !!nb.ward && !!nb.street;
+      if (!nb.name || !nb.lga || !nb.ward || !nb.street) return false;
+    } else if (!this.businessId() || !this.locationId()) {
+      return false;
     }
-    return !!this.businessId() && !!this.locationId();
+    // All mandatory documents must be uploaded (or be on an existing draft).
+    const draft = this.draftApplication();
+    if (draft) {
+      return this.uploadRows().every((row) => !row.mandatory || row.uploaded);
+    }
+    return this.uploadRows().every((row) => !row.mandatory || row.uploaded);
+  }
+
+  protected get uploadedCount(): number {
+    return this.uploadRows().filter((r) => r.uploaded).length;
   }
 
   protected selectBusiness(id: number | null): void {
@@ -187,10 +236,115 @@ export class Apply {
     }
   }
 
+  protected get businessVerificationHint(): string {
+    const nb = this.newBusiness();
+    if (nb.tin_number && nb.brela_registration_number) {
+      return 'We will verify your TIN with TRA and your registration with BRELA automatically when you continue.';
+    }
+    if (!nb.tin_number && !nb.brela_registration_number) {
+      return 'TRA TIN and BRELA registration are optional here — businesses without them stay marked “unverified”.';
+    }
+    return 'Provide both TRA TIN and BRELA registration number to get your business verified automatically.';
+  }
+
+  protected onFileSelected(row: UploadRow, event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    const draft = this.draftApplication();
+    if (!draft) {
+      // No draft yet: remember the file and upload after the draft is created.
+      row.fileName = file.name;
+      row.uploaded = true; // staged
+      row['pendingFile' as keyof UploadRow] = file as never;
+      return;
+    }
+
+    row.uploading = true;
+    this.api.uploadDocument(draft.id, file, row.requirement?.id).subscribe({
+      next: () => {
+        row.uploaded = true;
+        row.fileName = file.name;
+        row.uploading = false;
+      },
+      error: () => {
+        row.uploading = false;
+        this.errorMessage.set(`Could not upload ${file.name}.`);
+      },
+    });
+  }
+
+  /** Create the draft application now so documents can be attached. */
+  protected createDraft(businessId: number, locationId: number): void {
+    this.api
+      .createApplication({
+        business: businessId,
+        licence_type: this.licenceTypeId()!,
+        location: locationId,
+        purpose_statement: this.purpose(),
+      })
+      .subscribe({
+        next: (application) => {
+          this.draftApplication.set(application);
+          this.submitting.set(false);
+        },
+        error: (err) => {
+          const detail = err?.error ? Object.values(err.error).flat()[0] : null;
+          this.errorMessage.set(typeof detail === 'string' ? detail : 'Could not create the application draft.');
+          this.submitting.set(false);
+        },
+      });
+  }
+
   protected submit(): void {
     if (!this.canSubmit || this.submitting()) return;
     this.submitting.set(true);
     this.errorMessage.set('');
+
+    const submitDraft = (application: Application) => {
+      // Upload any staged files first, then submit the application.
+      const staged = this.uploadRows().filter((row) => row.uploaded && !row.persisted);
+      let pending = staged.length;
+      const afterUploads = () => {
+        this.api.transitionApplication(application.id, 'SUBMITTED').subscribe({
+          next: (submitted) => {
+            this.created.set(submitted);
+            this.submitting.set(false);
+          },
+          error: (err) => {
+            const detail = err?.error?.detail ?? null;
+            this.errorMessage.set(
+              typeof detail === 'string' ? detail : 'Could not submit the application.',
+            );
+            this.submitting.set(false);
+          },
+        });
+      };
+      if (pending === 0) {
+        afterUploads();
+        return;
+      }
+      for (const row of staged) {
+        const file = (row as unknown as { pendingFile?: File }).pendingFile;
+        this.api.uploadDocument(application.id, file!, row.requirement?.id ?? undefined).subscribe({
+          next: () => {
+            row.persisted = true;
+            if (--pending === 0) afterUploads();
+          },
+          error: () => {
+            row.uploaded = false;
+            if (--pending === 0) afterUploads();
+          },
+        });
+      }
+    };
+
+    const existingDraft = this.draftApplication();
+    if (existingDraft) {
+      submitDraft(existingDraft);
+      return;
+    }
 
     const createAndSubmit = (businessId: number, locationId: number) => {
       this.api
@@ -201,18 +355,7 @@ export class Apply {
           purpose_statement: this.purpose(),
         })
         .subscribe({
-          next: (application) => {
-            this.api.transitionApplication(application.id, 'SUBMITTED').subscribe({
-              next: (submitted) => {
-                this.created.set(submitted);
-                this.submitting.set(false);
-              },
-              error: () => {
-                this.created.set(application);
-                this.submitting.set(false);
-              },
-            });
-          },
+          next: (application) => submitDraft(application),
           error: (err) => {
             const detail = err?.error ? Object.values(err.error).flat()[0] : null;
             this.errorMessage.set(typeof detail === 'string' ? detail : 'Could not create the application.');
@@ -237,7 +380,9 @@ export class Apply {
               lga: nb.lga!, ward: nb.ward, street: nb.street,
               plot_number: nb.plot_number, is_primary: true,
             }).subscribe({
-              next: (location) => createAndSubmit(business.id, (location as { id: number }).id),
+              next: (location) => {
+                createAndSubmit(business.id, (location as { id: number }).id);
+              },
               error: () => {
                 this.errorMessage.set('Business created but the location could not be saved.');
                 this.submitting.set(false);
@@ -258,6 +403,8 @@ export class Apply {
   protected reset(): void {
     this.created.set(null);
     this.errorMessage.set('');
+    this.draftApplication.set(null);
+    this.uploadRows.set([]);
     // Reload businesses: a just-registered business should appear for the next application.
     this.api.businesses().subscribe((page) => {
       this.businesses.set(page.results);

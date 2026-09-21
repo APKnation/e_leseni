@@ -23,7 +23,30 @@ class BusinessViewSet(viewsets.ModelViewSet):
         return qs.filter(owner=user)
 
     def perform_create(self, serializer):
-        serializer.save(owner=self.request.user)
+        business = serializer.save(owner=self.request.user)
+        self._auto_verify(business)
+
+    def perform_update(self, serializer):
+        business = serializer.save()
+        self._auto_verify(business)
+
+    def _auto_verify(self, business):
+        """Verify TIN with TRA and registration with BRELA when both numbers
+        are present (mock adapters in dev; real HTTP in production).
+        Marks the business verified only if both pass."""
+        if business.is_verified or not business.tin_number or not business.brela_registration_number:
+            return
+        tin_result = TRAAdapter().verify_tin(business.tin_number, business.name)
+        brela_result = BRELAdapter().verify_registration(
+            business.brela_registration_number, business.name
+        )
+        verified = (
+            tin_result.success and tin_result.data.get('valid') is True
+            and brela_result.success and brela_result.data.get('registered') is True
+        )
+        if verified:
+            business.is_verified = True
+            business.save(update_fields=['is_verified', 'updated_at'])
 
     @action(detail=True, methods=['post'])
     def verify(self, request, pk=None):

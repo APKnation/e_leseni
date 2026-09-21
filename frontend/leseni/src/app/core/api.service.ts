@@ -68,6 +68,19 @@ export class ApiService {
     return this.http.post<Business>(`${this.baseUrl}/businesses/`, payload);
   }
 
+  /** Ask TRA/BRELA to verify the business's TIN + registration number. */
+  verifyBusiness(businessId: number): Observable<{
+    is_verified: boolean;
+    tra: { success: boolean; valid: boolean };
+    brela: { success: boolean; registered: boolean };
+  }> {
+    return this.http.post<{
+      is_verified: boolean;
+      tra: { success: boolean; valid: boolean };
+      brela: { success: boolean; registered: boolean };
+    }>(`${this.baseUrl}/businesses/${businessId}/verify/`, {});
+  }
+
   createLocation(
     businessId: number,
     data: Omit<NewBusinessPayload['location'], 'lga'> & { lga: number; is_primary?: boolean },
@@ -88,6 +101,21 @@ export class ApiService {
     purpose_statement: string;
   }): Observable<Application> {
     return this.http.post<Application>(`${this.baseUrl}/applications/`, payload);
+  }
+
+  /** Upload a document for a licence-type requirement (multipart). */
+  uploadDocument(
+    applicationId: number,
+    file: File,
+    requirementId?: number,
+  ): Observable<unknown> {
+    const form = new FormData();
+    form.append('file', file);
+    if (requirementId != null) form.append('requirement', String(requirementId));
+    return this.http.post(
+      `${this.baseUrl}/applications/${applicationId}/upload_document/`,
+      form,
+    );
   }
 
   transitionApplication(id: number, toStatus: string, note = ''): Observable<Application> {

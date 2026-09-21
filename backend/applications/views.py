@@ -1,6 +1,10 @@
 from django.db.models import Q
 from rest_framework import generics, permissions, status, viewsets
+from rest_framework.decorators import action
+from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
+
+from lga.models import Requirement
 
 from .models import Application, ApplicationDocument, Inspection
 from .permissions import allowed_statuses_for
@@ -69,6 +73,51 @@ class ApplicationViewSet(viewsets.ModelViewSet):
         context['actions_by_role'] = True
         return context
 
+    @action(detail=True, methods=['post'], parser_classes=[MultiPartParser, FormParser])
+    def upload_document(self, request, pk=None):
+        """POST multipart {file, requirement?} to attach a document.
+
+        Applicants may upload while the application is DRAFT or
+        RETURNED_FOR_CORRECTION; staff may upload at any stage (e.g. a
+        missing certificate collected during review).
+        """
+        application = self.get_object()
+        user = request.user
+        if not user.is_lga_staff and application.status not in {
+            Application.Status.DRAFT,
+            Application.Status.RETURNED_FOR_CORRECTION,
+        }:
+            return Response(
+                {'detail': 'Documents can only be added while the application is a draft or returned for correction.'},
+                status=status.HTTP_409_CONFLICT,
+            )
+
+        file = request.FILES.get('file')
+        if file is None:
+            return Response({'detail': 'A file is required.'}, status=status.HTTP_400_BAD_REQUEST)
+        if file.size > 10 * 1024 * 1024:
+            return Response({'detail': 'File too large (max 10 MB).'}, status=status.HTTP_400_BAD_REQUEST)
+
+        requirement_id = request.data.get('requirement')
+        requirement = None
+        if requirement_id not in (None, '', 'null'):
+            requirement = Requirement.objects.filter(
+                pk=requirement_id, licence_type=application.licence_type
+            ).first()
+            if requirement is None:
+                return Response(
+                    {'detail': 'Requirement does not belong to this licence type.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        document = ApplicationDocument.objects.create(
+            application=application, requirement=requirement, file=file
+        )
+        return Response(
+            ApplicationDocumentSerializer(document, context={'request': request}).data,
+            status=status.HTTP_201_CREATED,
+        )
+
 
 class ApplicationTransitionView(generics.GenericAPIView):
     """POST {"to_status": "SUBMITTED", "note": "..."} to move an application.
@@ -105,6 +154,24 @@ class ApplicationTransitionView(generics.GenericAPIView):
                 },
                 status=status.HTTP_403_FORBIDDEN,
             )
+
+        # Applicants must attach every mandatory document before submitting.
+        if (
+            to_status == Application.Status.SUBMITTED
+            and not (request.user.is_authenticated and request.user.is_lga_staff)
+        ):
+            missing = [
+                req.name
+                for req in application.licence_type.requirements.filter(
+                    is_mandatory=True, kind=Requirement.Kind.DOCUMENT
+                )
+                if not application.documents.filter(requirement=req).exists()
+            ]
+            if missing:
+                return Response(
+                    {'detail': f'Missing required documents: {", ".join(missing)}. Upload them before submitting.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
         serializer = self.get_serializer(data=request.data, context={'application': application, 'request': request})
         serializer.is_valid(raise_exception=True)
