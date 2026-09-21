@@ -351,3 +351,47 @@ class RoleWorkflowAPITests(APITestCase):
         app = self._application(self.licence_a, self.location_a)
         response = self._transition(self.applicant, app, 'UNDER_REVIEW')
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_inspector_lists_inscriptions_scoped_to_lga(self):
+        """Regression: non-admin staff can list inspections without FieldError.
+
+        The Inspection queryset filters through application__licence_type,
+        which previously crashed with 'Cannot resolve keyword licence_type'.
+        """
+        from applications.models import Inspection
+        from django.utils import timezone
+
+        app = self._application(self.licence_a, self.location_a)
+        Inspection.objects.create(
+            application=app, inspector=self.inspector, scheduled_for=timezone.now()
+        )
+
+        self.client.force_authenticate(user=self.inspector)
+        response = self.client.get('/api/inspections/')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['count'], 1)
+
+        # Inspector belongs to lga_a; the Moshi application must stay hidden.
+        app_b = self._application(self.licence_b, self.location_b)
+        Inspection.objects.create(
+            application=app_b, inspector=self.inspector, scheduled_for=timezone.now()
+        )
+        response = self.client.get('/api/inspections/')
+        self.assertEqual(response.data['count'], 1)
+
+        # Admin sees both.
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.get('/api/inspections/')
+        self.assertEqual(response.data['count'], 2)
+
+    def test_officer_schedules_inspection_via_api(self):
+        """Officers can create an inspection record for their LGA."""
+        app = self._application(self.licence_a, self.location_a)
+        self.client.force_authenticate(user=self.officer)
+        response = self.client.post(
+            '/api/inspections/',
+            {'application': app.id, 'scheduled_for': '2026-10-01T09:00:00Z'},
+            format='json',
+        )
+        self.assertEqual(response.status_code, 201, response.data)
+        self.assertEqual(response.data['inspector'], self.officer.id)
