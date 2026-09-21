@@ -163,25 +163,68 @@
             </select>
           </label>
 
-          @if (businessId() && locations().length > 0) {
-            <label class="flex flex-col gap-2 text-sm font-semibold">
-              Business location (premises)
-              <select
-                class="input-field"
-                name="location"
-                [ngModel]="locationId()"
-                (ngModelChange)="locationId.set($event)"
-                required
-              >
-                <option [ngValue]="null" disabled>— choose a location —</option>
-                @for (location of locations(); track location.id) {
-                  <option [ngValue]="location.id">
-                    {{ location.ward }}, {{ location.street }}{{ location.is_primary ? ' (main)' : '' }}
-                  </option>
-                }
-              </select>
-            </label>
-        }
+          @if (businessId()) {
+            @if (locations().length > 0) {
+              <label class="flex flex-col gap-2 text-sm font-semibold">
+                Business location (premises)
+                <select
+                  class="input-field"
+                  name="location"
+                  [ngModel]="locationId()"
+                  (ngModelChange)="locationId.set($event)"
+                  required
+                >
+                  <option [ngValue]="null" disabled>— choose a location —</option>
+                  @for (location of locations(); track location.id) {
+                    <option [ngValue]="location.id">
+                      {{ location.ward }}, {{ location.street }}{{ location.is_primary ? ' (main)' : '' }}
+                    </option>
+                  }
+                </select>
+              </label>
+            } @else {
+              <p class="rounded-lg bg-amber-500/15 px-4 py-3 text-xs text-amber-200">
+                This business has no premises saved yet — add one below to continue.
+              </p>
+              <button type="button" class="btn-secondary self-start !py-2" (click)="toggleAddLocation()">
+                + Add premises
+              </button>
+            }
+            @if (addingLocation()) {
+              <div class="grid gap-4 rounded-xl border border-brand-lime/20 p-4 sm:grid-cols-2">
+                <label class="flex flex-col gap-2 text-sm font-semibold">
+                  Ward
+                  @if (wards().length > 0) {
+                    <select class="input-field" name="loc_ward" required
+                            [ngModel]="newLocationWard()"
+                            (ngModelChange)="newLocationWard.set($event)">
+                      <option [ngValue]="''" disabled>— choose a ward —</option>
+                      @for (ward of wards(); track ward) {
+                        <option [value]="ward">{{ ward }}</option>
+                      }
+                    </select>
+                  } @else {
+                    <input class="input-field" type="text" name="loc_ward" required
+                           [ngModel]="newLocationWard()"
+                           (ngModelChange)="newLocationWard.set($event)" />
+                  }
+                </label>
+                <label class="flex flex-col gap-2 text-sm font-semibold">
+                  Street
+                  <input class="input-field" type="text" name="loc_street" required
+                         [ngModel]="newLocationStreet()"
+                         (ngModelChange)="newLocationStreet.set($event)" />
+                </label>
+                <div class="flex gap-3 sm:col-span-2">
+                  <button type="button" class="btn-primary !py-2" [disabled]="!newLocationWard() || !newLocationStreet() || savingLocation()"
+                          (click)="saveNewLocation()">
+                    @if (savingLocation()) { Saving… } @else { Save premises }
+                  </button>
+                  <button type="button" class="btn-secondary !py-2" (click)="toggleAddLocation()">Cancel</button>
+                </div>
+              </div>
+            }
+          }
           <button type="button" class="btn-secondary self-start !py-2" (click)="toggleNewBusiness()">
             + Register a new business
           </button>
@@ -333,13 +376,26 @@
         }
       </div>
 
-      <button type="submit" class="btn-primary w-full sm:w-auto" [disabled]="!canSubmit || submitting()">
-        @if (submitting()) {
-          Submitting…
-        } @else {
-          Submit application
+      <!-- Submit: button + visible list of what is blocking it -->
+      <div class="flex flex-col gap-3">
+        <button type="submit" class="btn-primary w-full sm:w-auto" [disabled]="!canSubmit || submitting()">
+          @if (submitting()) {
+            Submitting…
+          } @else {
+            Submit application
+          }
+        </button>
+        @if (submitBlockers.length > 0 && !submitting()) {
+          <div class="rounded-xl border border-amber-400/30 bg-amber-500/10 px-4 py-3 text-sm">
+            <p class="font-bold text-amber-200">To submit, first:</p>
+            <ul class="mt-1 list-inside list-disc text-amber-200/90">
+              @for (blocker of submitBlockers; track blocker) {
+                <li>{{ blocker }}</li>
+              }
+            </ul>
+          </div>
         }
-      </button>
+      </div>
     </form>
   }
 </section>

@@ -1,6 +1,6 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
@@ -42,7 +42,7 @@ interface UploadRow {
 }
 
 @Component({
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule],
   selector: 'app-apply',
   templateUrl: './apply.html',
 })
@@ -80,6 +80,12 @@ export class Apply {
   });
 
   protected readonly purpose = signal('');
+
+  /** Inline add-premises form for an existing business that has no location. */
+  protected readonly addingLocation = signal(false);
+  protected readonly newLocationWard = signal('');
+  protected readonly newLocationStreet = signal('');
+  protected readonly savingLocation = signal(false);
 
   /** Wards of the selected council, from the tanzaniageodata dataset. */
   protected readonly wards = signal<string[]>([]);
@@ -229,6 +235,33 @@ export class Apply {
     return this.uploadRows().filter((r) => r.uploaded).length;
   }
 
+  /** Human-readable list of everything blocking submission (shown near the button). */
+  protected get submitBlockers(): string[] {
+    const blockers: string[] = [];
+    if (!this.licenceTypeId()) blockers.push('Choose a licence in step 2.');
+    if (this.creatingNewBusiness()) {
+      const nb = this.newBusiness();
+      if (!nb.name) blockers.push('Enter the business name in step 3.');
+      if (!this.lgaId()) blockers.push('Choose the council in step 1 — the business is registered there.');
+      if (!nb.ward) blockers.push('Choose or enter the business ward in step 3.');
+      if (!nb.street) blockers.push('Enter the business street in step 3.');
+    } else {
+      if (!this.businessId()) {
+        blockers.push('Select your business in step 3.');
+      } else if (!this.locationId()) {
+        blockers.push('Select or add a business location (premises) in step 3.');
+      }
+    }
+    const missing = this.uploadRows().filter((row) => row.mandatory && !row.uploaded);
+    if (missing.length > 0) {
+      blockers.push(
+        `Attach mandatory document${missing.length > 1 ? 's' : ''} in step 4: ` +
+          missing.map((m) => m.label).join(', '),
+      );
+    }
+    return blockers;
+  }
+
   protected selectBusiness(id: number | null): void {
     this.businessId.set(id);
     const business = this.businesses().find((b) => b.id === id);
@@ -237,6 +270,44 @@ export class Apply {
     // Auto-select the primary (or first) location; clear if none exist.
     const primary = locs.find((l) => l.is_primary) ?? locs[0] ?? null;
     this.locationId.set(primary?.id ?? null);
+  }
+
+  protected toggleAddLocation(): void {
+    this.addingLocation.update((v) => !v);
+    this.newLocationWard.set('');
+    this.newLocationStreet.set('');
+  }
+
+  /** Save a new premises for the selected business, then select it. */
+  protected saveNewLocation(): void {
+    const businessId = this.businessId();
+    const ward = this.newLocationWard().trim();
+    const street = this.newLocationStreet().trim();
+    if (!businessId || !ward || !street || this.savingLocation()) return;
+    this.savingLocation.set(true);
+    this.api
+      .createLocation(businessId, {
+        lga: this.lgaId()!,
+        ward,
+        street,
+        plot_number: '',
+        is_primary: this.locations().length === 0,
+      })
+      .subscribe({
+        next: (location) => {
+          const loc = location as BusinessLocation;
+          this.locations.update((list) => [...list, loc]);
+          this.locationId.set(loc.id);
+          this.addingLocation.set(false);
+          this.newLocationWard.set('');
+          this.newLocationStreet.set('');
+          this.savingLocation.set(false);
+        },
+        error: () => {
+          this.errorMessage.set('Could not save the premises. Please try again.');
+          this.savingLocation.set(false);
+        },
+      });
   }
 
   protected toggleNewBusiness(): void {
