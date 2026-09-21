@@ -186,6 +186,48 @@ export class Dashboard {
     });
   }
 
+  /** Applicant onboarding checklist: BRELA -> TRA -> business -> licence. */
+  protected get onboardingSteps(): { label: string; done: boolean; link: string | null; cta: string }[] {
+    if (this.isStaff()) return [];
+    const businesses = this.businesses();
+    const verified = businesses.some((b) => b.is_verified);
+    const hasBusiness = businesses.length > 0;
+    const hasApplication = this.applications().length > 0;
+    const hasLicence = this.licences().length > 0;
+    return [
+      {
+        label: 'Register your business with BRELA',
+        done: hasBusiness,
+        link: '/businesses',
+        cta: 'Start registration',
+      },
+      {
+        label: 'Get your TIN from TRA',
+        done: businesses.some((b) => !!b.tin_number),
+        link: '/businesses',
+        cta: 'Apply for TIN',
+      },
+      {
+        label: 'Get verified (TRA + BRELA check)',
+        done: verified,
+        link: '/businesses',
+        cta: 'Verify business',
+      },
+      {
+        label: 'Apply for your first LGA licence',
+        done: hasApplication,
+        link: '/apply',
+        cta: 'Apply now',
+      },
+      {
+        label: 'Receive your licence',
+        done: hasLicence,
+        link: null,
+        cta: '',
+      },
+    ];
+  }
+
   protected get stats() {
     const active = this.applications().filter(
       (a) => !['ISSUED', 'REJECTED'].includes(a.status),

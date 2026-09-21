@@ -41,6 +41,34 @@
       }
     </div>
 
+    <!-- Onboarding: the BRELA -> TRA -> licence journey -->
+    @if (onboardingSteps.length > 0) {
+      <div class="card mt-10 flex flex-col gap-4">
+        <div>
+          <h2 class="text-lg font-black">Your licensing journey</h2>
+          <p class="text-sm text-brand-lime/60">
+            Before a council licence, every business needs BRELA registration and a TRA TIN — we handle both online.
+          </p>
+        </div>
+        <ol class="flex flex-col gap-2">
+          @for (s of onboardingSteps; track s.label) {
+            <li class="flex items-center justify-between gap-3 rounded-lg px-3 py-2" [class]="s.done ? 'bg-emerald-500/10' : 'bg-brand-purple-soft/40'">
+              <span class="flex items-center gap-3 text-sm font-semibold">
+                <span
+                  class="grid h-6 w-6 shrink-0 place-items-center rounded-full text-xs"
+                  [class]="s.done ? 'bg-emerald-500/25 text-emerald-300' : 'bg-brand-lime/10 text-brand-lime/50'"
+                >{{ s.done ? '✓' : '○' }}</span>
+                <span [class.text-brand-lime/40]="s.done">{{ s.label }}</span>
+              </span>
+              @if (!s.done && s.link) {
+                <a [routerLink]="s.link" class="btn-secondary !py-1.5 !px-3 text-xs">{{ s.cta }}</a>
+              }
+            </li>
+          }
+        </ol>
+      </div>
+    }
+
     <!-- Applications -->
     <h2 class="mt-12 text-xl font-black">Applications</h2>
     @if (applications().length === 0) {
@@ -189,10 +217,20 @@
     <!-- My businesses / activities -->
     <div class="mt-12 flex flex-wrap items-center justify-between gap-3">
       <h2 class="text-xl font-black">My businesses & activities</h2>
-      <a routerLink="/apply" class="btn-secondary !py-2">+ Apply for another activity</a>
+      <div class="flex flex-wrap gap-2">
+        @if (!isStaff()) {
+          <a routerLink="/businesses" class="btn-secondary !py-2">Manage businesses</a>
+        }
+        <a routerLink="/apply" class="btn-secondary !py-2">+ Apply for another activity</a>
+      </div>
     </div>
     @if (businesses().length === 0) {
-      <p class="mt-4 text-brand-lime/70">No businesses registered yet — start one from the apply form.</p>
+      <p class="mt-4 text-brand-lime/70">
+        No businesses registered yet.
+        @if (!isStaff()) {
+          <a routerLink="/businesses" class="font-bold underline">Register one with BRELA + TRA →</a>
+        }
+      </p>
     } @else {
       <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         @for (business of businesses(); track business.id) {

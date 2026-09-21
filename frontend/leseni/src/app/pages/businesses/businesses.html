@@ -1,0 +1,327 @@
+<section class="mx-auto w-full max-w-5xl px-4 py-12 sm:px-6">
+  <div class="flex flex-wrap items-center justify-between gap-4">
+    <div>
+      <h1 class="text-3xl font-black">My businesses</h1>
+      <p class="mt-1 max-w-2xl text-brand-lime/70">
+        Register a business with <strong>BRELA</strong>, get a <strong>TRA TIN</strong>,
+        then bring both to your council to apply for a licence.
+      </p>
+    </div>
+    <button type="button" class="btn-primary" (click)="openWizard()">+ Register a business</button>
+  </div>
+
+  @if (errorMessage()) {
+    <p class="mt-6 rounded-lg bg-red-500/15 px-4 py-3 text-sm font-semibold text-red-300">
+      {{ errorMessage() }}
+    </p>
+  }
+
+  @if (loading()) {
+    <p class="mt-10 animate-pulse text-brand-lime/60">Loading…</p>
+  } @else if (!wizardOpen()) {
+    <!-- Journey explainer -->
+    <div class="mt-8 grid gap-4 md:grid-cols-4">
+      @for (s of journeySteps; track s.title; let i = $index) {
+        <div class="card flex flex-col gap-1 p-4">
+          <span class="text-xs font-black text-brand-lime/50">STEP {{ i + 1 }}</span>
+          <p class="font-bold">{{ s.title }}</p>
+          <p class="text-xs text-brand-lime/60">{{ s.hint }}</p>
+        </div>
+      }
+    </div>
+
+    <!-- Businesses list -->
+    <h2 class="mt-12 text-xl font-black">Registered businesses</h2>
+    @if (businesses().length === 0) {
+      <div class="card mt-4 flex flex-col items-start gap-4">
+        <p class="text-brand-lime/70">
+          You have no businesses yet. Register your first one — it takes about a minute and
+          we will handle BRELA and TRA for you.
+        </p>
+        <button type="button" class="btn-primary" (click)="openWizard()">
+          Start registration →
+        </button>
+      </div>
+    } @else {
+      <div class="mt-4 grid gap-4 sm:grid-cols-2">
+        @for (business of businesses(); track business.id) {
+          <div class="card flex flex-col gap-3">
+            <div class="flex items-start justify-between gap-2">
+              <div>
+                <p class="text-lg font-bold">{{ business.name }}</p>
+                <p class="text-sm text-brand-lime/70">{{ business.sector || 'General' }}</p>
+              </div>
+              @if (business.is_verified) {
+                <span class="badge-lime !px-2 !py-0.5">verified ✓</span>
+              } @else {
+                <span class="badge-outline !px-2 !py-0.5">unverified</span>
+              }
+            </div>
+            <p class="text-xs text-brand-lime/50">
+              TIN: {{ business.tin_number || '—' }} · BRELA: {{ business.brela_registration_number || '—' }}
+            </p>
+            @if (business.locations.length > 0) {
+              <p class="text-xs text-brand-lime/50">
+                📍 {{ business.locations[0].ward }}, {{ business.locations[0].street }} — {{ business.locations[0].lga_name }}
+              </p>
+            }
+            <div class="mt-1 flex flex-wrap gap-2">
+              @if (!business.is_verified && business.tin_number && business.brela_registration_number) {
+                <button type="button" class="btn-secondary !py-1.5 !px-3 text-xs" (click)="verifyNow(business)">
+                  Verify with TRA & BRELA
+                </button>
+              }
+              <a routerLink="/apply" class="btn-secondary !py-1.5 !px-3 text-xs">
+                Apply for licence →
+              </a>
+            </div>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- TIN applications history -->
+    @if (tinApps().length > 0) {
+      <h2 class="mt-12 text-xl font-black">TRA TIN applications</h2>
+      <div class="mt-4 grid gap-2">
+        @for (app of tinApps(); track app.id) {
+          <div class="card flex items-center justify-between !py-3">
+            <div>
+              <p class="text-sm font-bold">{{ app.business_name }}</p>
+              <p class="text-xs text-brand-lime/50">{{ app.taxpayer_name }} · {{ app.created_at | date: 'mediumDate' }}</p>
+            </div>
+            <div class="flex items-center gap-3">
+              @if (app.tin_number) {
+                <span class="font-mono text-sm text-brand-lime">{{ app.tin_number }}</span>
+              }
+              <span class="badge-outline">{{ app.status }}</span>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  }
+
+  <!-- ==================== Registration wizard ==================== -->
+  @if (wizardOpen()) {
+    <div class="card mt-8 flex flex-col gap-6">
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <h2 class="text-xl font-black">Register a new business</h2>
+          <p class="mt-1 text-sm text-brand-lime/70">
+            BRELA registration → TRA TIN → council licence. We handle the agencies for you.
+          </p>
+        </div>
+        @if (!createdBusiness()) {
+          <button type="button" class="text-sm text-brand-lime/60 underline hover:text-brand-lime" (click)="closeWizard()">
+            Cancel
+          </button>
+        }
+      </div>
+
+      <!-- Stepper -->
+      <ol class="flex flex-wrap items-center gap-2 text-xs font-bold">
+        @for (label of stepLabels; track label; let i = $index) {
+          <li
+            class="flex items-center gap-2 rounded-full px-3 py-1.5"
+            [class]="
+              step() === i + 1
+                ? 'bg-brand-lime text-brand-purple'
+                : step() > i + 1
+                  ? 'bg-emerald-500/15 text-emerald-300'
+                  : 'bg-brand-purple-soft/60 text-brand-lime/40'
+            "
+          >
+            <span>{{ step() > i + 1 ? '✓' : i + 1 }}</span>
+            {{ label }}
+          </li>
+        }
+      </ol>
+
+      <!-- DONE state -->
+      @if (createdBusiness(); as biz) {
+        <div class="rounded-xl bg-emerald-500/10 p-6">
+          <h3 class="text-lg font-black text-emerald-300">Business registered ✓</h3>
+          <p class="mt-2 text-sm text-brand-lime/80">
+            <strong>{{ biz.name }}</strong> is now
+            @if (biz.is_verified) {
+              <span class="badge-lime !px-2 !py-0.5">verified ✓</span>
+            } @else {
+              <span class="badge-outline !px-2 !py-0.5">unverified</span>
+            }
+            and ready to use for licence applications.
+          </p>
+          <p class="mt-2 font-mono text-xs text-brand-lime/60">
+            TIN: {{ biz.tin_number }} · BRELA: {{ biz.brela_registration_number }}
+          </p>
+          @if (verificationMessage()) {
+            <p class="mt-2 text-xs text-brand-lime/60">{{ verificationMessage() }}</p>
+          }
+          <div class="mt-5 flex flex-wrap gap-3">
+            <a routerLink="/apply" class="btn-primary">Apply for a licence →</a>
+            <button type="button" class="btn-secondary" (click)="wizardDone()">Back to my businesses</button>
+          </div>
+        </div>
+      }
+
+      <!-- STEP 1: details -->
+      @else if (step() === 1) {
+        <div class="grid gap-4 sm:grid-cols-2">
+          <label class="flex flex-col gap-2 text-sm font-semibold">
+            Business name *
+            <input class="input-field" type="text" name="bz_name" required
+                   placeholder="e.g. Neema Fresh Produce"
+                   [ngModel]="name()" (ngModelChange)="name.set($event)" />
+          </label>
+          <label class="flex flex-col gap-2 text-sm font-semibold">
+            Sector (optional)
+            <input class="input-field" type="text" name="bz_sector"
+                   placeholder="e.g. Food, Retail, Services"
+                   [ngModel]="sector()" (ngModelChange)="sector.set($event)" />
+          </label>
+          <label class="flex flex-col gap-2 text-sm font-semibold sm:col-span-2">
+            Owner / taxpayer full name *
+            <input class="input-field" type="text" name="bz_taxpayer" required
+                   placeholder="As it appears on your ID"
+                   [ngModel]="taxpayerName()" (ngModelChange)="taxpayerName.set($event)" />
+          </label>
+        </div>
+        <p class="text-xs text-brand-lime/60">
+          Next: we register this name with <strong>BRELA</strong> (step 2) and then apply for a
+          <strong>TIN at TRA</strong> (step 3) — you do not need to visit either office.
+        </p>
+        <button type="button" class="btn-primary self-start" [disabled]="!detailsValid || working()"
+                (click)="goToStep(2)">
+          @if (working()) { Please wait… } @else { Continue to BRELA → }
+        </button>
+      }
+
+      <!-- STEP 2: BRELA -->
+      @else if (step() === 2) {
+        <div class="rounded-xl border border-brand-lime/20 bg-brand-purple-deep/60 p-5">
+          <p class="text-sm text-brand-lime/80">
+            <strong>BRELA</strong> — Business Registrations and Licensing Agency.
+            Submitting <strong>{{ name() }}</strong> for official registration.
+          </p>
+          <button type="button" class="btn-primary mt-4" [disabled]="working()" (click)="registerWithBrela()">
+            @if (working()) { Submitting to BRELA… } @else { Register with BRELA → }
+          </button>
+        </div>
+        @if (brelaReceipt(); as receipt) {
+          <div class="rounded-xl bg-emerald-500/10 p-5">
+            <p class="font-black text-emerald-300">{{ receipt.title }}</p>
+            <dl class="mt-3 grid gap-x-8 gap-y-2 sm:grid-cols-2">
+              @for (line of receipt.lines; track line.label) {
+                <div class="flex justify-between gap-4 border-b border-brand-lime/10 pb-1 text-sm">
+                  <dt class="text-brand-lime/60">{{ line.label }}</dt>
+                  <dd class="font-mono font-bold">{{ line.value }}</dd>
+                </div>
+              }
+            </dl>
+          </div>
+        }
+      }
+
+      <!-- STEP 3: TRA TIN -->
+      @else if (step() === 3) {
+        <div class="rounded-xl border border-brand-lime/20 bg-brand-purple-deep/60 p-5">
+          <p class="text-sm text-brand-lime/80">
+            <strong>TRA</strong> — Tanzania Revenue Authority.
+            Applying for a Taxpayer Identification Number (TIN) for <strong>{{ name() }}</strong>.
+          </p>
+          <button type="button" class="btn-primary mt-4" [disabled]="working()" (click)="applyForTin()">
+            @if (working()) { Applying at TRA… } @else { Apply for TIN → }
+          </button>
+        </div>
+        @if (tinReceipt(); as receipt) {
+          <div class="rounded-xl bg-emerald-500/10 p-5">
+            <p class="font-black text-emerald-300">{{ receipt.title }}</p>
+            <dl class="mt-3 grid gap-x-8 gap-y-2 sm:grid-cols-2">
+              @for (line of receipt.lines; track line.label) {
+                <div class="flex justify-between gap-4 border-b border-brand-lime/10 pb-1 text-sm">
+                  <dt class="text-brand-lime/60">{{ line.label }}</dt>
+                  <dd class="font-mono font-bold">{{ line.value }}</dd>
+                </div>
+              }
+            </dl>
+          </div>
+        }
+      }
+
+      <!-- STEP 4: location & finish -->
+      @else if (step() === 4) {
+        <div class="rounded-xl bg-brand-lime/10 p-5 text-sm text-brand-lime/90">
+          <p>
+            ✓ BRELA no. <span class="font-mono font-bold">{{ brelaNumber() }}</span>
+            · TIN <span class="font-mono font-bold">{{ tinNumber() }}</span>
+          </p>
+          <p class="mt-1 text-xs text-brand-lime/60">
+            Now tell us where the business operates. We will verify both numbers with the
+            agencies when we save.
+          </p>
+        </div>
+        <div class="grid gap-4 sm:grid-cols-2">
+          <label class="flex flex-col gap-2 text-sm font-semibold">
+            Region *
+            <select class="input-field" name="bz_region" required
+                    [ngModel]="regionName()" (ngModelChange)="onRegionChange($event)">
+              <option [ngValue]="null" disabled>— choose a region —</option>
+              @for (region of regions(); track region.region) {
+                <option [value]="region.region">{{ region.region }}</option>
+              }
+            </select>
+          </label>
+          <label class="flex flex-col gap-2 text-sm font-semibold">
+            Council / LGA *
+            <select class="input-field" name="bz_lga" required [disabled]="!regionName()"
+                    [ngModel]="lgaId()" (ngModelChange)="onLgaChange($event)">
+              <option [ngValue]="null" disabled>
+                {{ regionName() ? '— choose a council —' : 'select a region first' }}
+              </option>
+              @for (lga of lgas(); track lga.id) {
+                <option [ngValue]="lga.id">{{ lga.name }}</option>
+              }
+            </select>
+          </label>
+          <label class="flex flex-col gap-2 text-sm font-semibold">
+            Ward *
+            @if (wards().length > 0) {
+              <select class="input-field" name="bz_ward" required
+                      [ngModel]="ward()" (ngModelChange)="ward.set($event)">
+                <option [ngValue]="'null'" hidden disabled>— choose a ward —</option>
+                @for (w of wards(); track w) {
+                  <option [value]="w">{{ w }}</option>
+                }
+              </select>
+            } @else {
+              <input class="input-field" type="text" name="bz_ward" required
+                     placeholder="e.g. Kariakoo"
+                     [ngModel]="ward()" (ngModelChange)="ward.set($event)" />
+            }
+          </label>
+          <label class="flex flex-col gap-2 text-sm font-semibold">
+            Street *
+            <input class="input-field" type="text" name="bz_street" required
+                   [ngModel]="street()" (ngModelChange)="street.set($event)" />
+          </label>
+          <label class="flex flex-col gap-2 text-sm font-semibold">
+            Plot number (optional)
+            <input class="input-field" type="text" name="bz_plot"
+                   [ngModel]="plotNumber()" (ngModelChange)="plotNumber.set($event)" />
+          </label>
+        </div>
+        @if (errorMessage()) {
+          <p class="rounded-lg bg-red-500/15 px-4 py-3 text-sm font-semibold text-red-300">
+            {{ errorMessage() }}
+          </p>
+        }
+        <div class="flex flex-wrap items-center gap-3">
+          <button type="button" class="btn-secondary" (click)="goToStep(3)">← Back</button>
+          <button type="button" class="btn-primary" [disabled]="!canFinish || working()" (click)="saveBusiness()">
+            @if (working()) { Saving & verifying… } @else { Save business ✓ }
+          </button>
+        </div>
+      }
+    </div>
+  }
+</section>
