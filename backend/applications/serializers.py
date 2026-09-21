@@ -1,5 +1,7 @@
 from rest_framework import serializers
 
+from accounts.models import User
+
 from .permissions import allowed_statuses_for
 from .models import Application, ApplicationDocument, Inspection
 
@@ -62,6 +64,10 @@ class ApplicationTransitionSerializer(serializers.Serializer):
 class InspectionSerializer(serializers.ModelSerializer):
     inspector_name = serializers.CharField(source='inspector.get_full_name', read_only=True)
     application_reference = serializers.CharField(source='application.reference_number', read_only=True)
+    # Optional on create: the view defaults the inspector to the requesting user.
+    inspector = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.all(), required=False, allow_null=True
+    )
 
     class Meta:
         model = Inspection

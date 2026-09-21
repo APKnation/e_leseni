@@ -89,10 +89,9 @@ class ApplicationTransitionView(generics.GenericAPIView):
                     status=status.HTTP_403_FORBIDDEN,
                 )
 
-        serializer = self.get_serializer(data=request.data, context={'application': application, 'request': request})
-        serializer.is_valid(raise_exception=True)
-
-        to_status = serializer.validated_data['to_status']
+        # Role check FIRST: a forbidden transition returns 403 even when the
+        # state machine would also reject it (clearer error for the client).
+        to_status = request.data.get('to_status')
         allowed = allowed_statuses_for(request.user, application)
         if to_status not in allowed:
             return Response(
@@ -102,6 +101,9 @@ class ApplicationTransitionView(generics.GenericAPIView):
                 },
                 status=status.HTTP_403_FORBIDDEN,
             )
+
+        serializer = self.get_serializer(data=request.data, context={'application': application, 'request': request})
+        serializer.is_valid(raise_exception=True)
 
         try:
             application.transition_to(
