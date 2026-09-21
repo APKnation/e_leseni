@@ -3,7 +3,7 @@ from rest_framework import serializers
 from accounts.models import User
 
 from .permissions import allowed_statuses_for
-from .models import Application, ApplicationDocument, Inspection
+from .models import Application, ApplicationDocument, Inspection, StatusHistory
 
 
 class ApplicationDocumentSerializer(serializers.ModelSerializer):
@@ -15,6 +15,18 @@ class ApplicationDocumentSerializer(serializers.ModelSerializer):
         read_only_fields = ['uploaded_at', 'verified']
 
 
+class StatusHistorySerializer(serializers.ModelSerializer):
+    """Audit-trail entries powering the applicant's status timeline."""
+
+    changed_by_name = serializers.CharField(
+        source='changed_by.get_full_name', read_only=True, default=''
+    )
+
+    class Meta:
+        model = StatusHistory
+        fields = ['from_status', 'to_status', 'changed_by_name', 'note', 'changed_at']
+
+
 class ApplicationSerializer(serializers.ModelSerializer):
     applicant_name = serializers.CharField(source='applicant.get_full_name', read_only=True)
     business_name = serializers.CharField(source='business.name', read_only=True)
@@ -23,6 +35,7 @@ class ApplicationSerializer(serializers.ModelSerializer):
     lga_name = serializers.CharField(source='licence_type.lga.name', read_only=True)
     allowed_next_statuses = serializers.SerializerMethodField()
     documents = ApplicationDocumentSerializer(many=True, read_only=True)
+    history = StatusHistorySerializer(many=True, read_only=True)
 
     class Meta:
         model = Application
@@ -31,7 +44,7 @@ class ApplicationSerializer(serializers.ModelSerializer):
             'business', 'business_name', 'business_is_verified', 'licence_type', 'licence_type_name', 'lga_name',
             'location', 'status', 'priority', 'purpose_statement', 'rejection_reason',
             'assigned_officer', 'submitted_at', 'decided_at', 'created_at', 'updated_at',
-            'allowed_next_statuses', 'documents',
+            'allowed_next_statuses', 'documents', 'history',
         ]
         read_only_fields = [
             'applicant', 'reference_number', 'status', 'rejection_reason', 'assigned_officer',
