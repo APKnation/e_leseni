@@ -35,6 +35,10 @@ interface UploadRow {
   uploaded: boolean;
   uploading: boolean;
   fileName: string;
+  /** File staged in memory before the draft application exists. */
+  pendingFile?: File;
+  /** True once the file has been persisted to the backend. */
+  persisted?: boolean;
 }
 
 @Component({
@@ -190,6 +194,12 @@ export class Apply {
     }
   }
 
+  protected get licencesForCategory(): LicenceType[] {
+    const category = this.categoryId();
+    if (!category) return [];
+    return this.licenceTypes().filter((t) => t.category === category);
+  }
+
   protected get selectedLicenceType(): LicenceType | null {
     return this.licenceTypes().find((t) => t.id === this.licenceTypeId()) ?? null;
   }
@@ -254,10 +264,11 @@ export class Apply {
 
     const draft = this.draftApplication();
     if (!draft) {
-      // No draft yet: remember the file and upload after the draft is created.
+      // No draft yet: stage the file; it is uploaded right after submission creates the application.
       row.fileName = file.name;
       row.uploaded = true; // staged
-      row['pendingFile' as keyof UploadRow] = file as never;
+      row.persisted = false;
+      row.pendingFile = file;
       return;
     }
 
@@ -326,8 +337,7 @@ export class Apply {
         return;
       }
       for (const row of staged) {
-        const file = (row as unknown as { pendingFile?: File }).pendingFile;
-        this.api.uploadDocument(application.id, file!, row.requirement?.id ?? undefined).subscribe({
+        this.api.uploadDocument(application.id, row.pendingFile!, row.requirement?.id ?? undefined).subscribe({
           next: () => {
             row.persisted = true;
             if (--pending === 0) afterUploads();
