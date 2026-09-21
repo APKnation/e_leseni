@@ -335,9 +335,16 @@ class RoleWorkflowAPITests(APITestCase):
         self.assertIn('UNDER_REVIEW', row['allowed_next_statuses'])
         self.assertNotIn('APPROVED', row['allowed_next_statuses'])
 
+        # A draft application offers its owner exactly one action: submit it.
+        draft = Application.objects.create(
+            applicant=self.applicant,
+            business=self.business,
+            licence_type=self.licence_a,
+            location=self.location_a,
+        )
         self.client.force_authenticate(user=self.applicant)
         response = self.client.get('/api/applications/')
-        row = next(r for r in response.data['results'] if r['id'] == app.id)
+        row = next(r for r in response.data['results'] if r['id'] == draft.id)
         self.assertEqual(row['allowed_next_statuses'], ['SUBMITTED'])
 
     def test_applicant_cannot_review_own_application(self):
