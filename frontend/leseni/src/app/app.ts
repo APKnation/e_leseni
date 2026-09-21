@@ -1,7 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { Router, RouterLink, RouterOutlet } from '@angular/router';
 
-import { AuthService } from './core/auth.service';
+import { AuthService, ROLE_LABELS } from './core/auth.service';
 
 @Component({
   imports: [RouterOutlet, RouterLink],
@@ -11,6 +11,7 @@ import { AuthService } from './core/auth.service';
 })
 export class App {
   protected readonly auth = inject(AuthService);
+  protected readonly roleLabel = ROLE_LABELS;
   protected readonly year = new Date().getFullYear();
   private readonly router = inject(Router);
 

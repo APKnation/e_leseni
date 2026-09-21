@@ -1,6 +1,15 @@
 import { Routes } from '@angular/router';
+import { inject } from '@angular/core';
 
-import { authGuard, staffGuard } from './core/guards';
+import {
+  approverGuard,
+  authGuard,
+  adminGuard,
+  inspectorGuard,
+  officerGuard,
+  staffGuard,
+} from './core/guards';
+import { AuthService } from './core/auth.service';
 
 export const routes: Routes = [
   {
@@ -26,9 +35,30 @@ export const routes: Routes = [
     canActivate: [authGuard],
   },
   {
+    // Lands each staff role on its own workspace.
     path: 'staff',
+    pathMatch: 'full',
+    redirectTo: () => inject(AuthService).homeRoute(),
+  },
+  {
+    path: 'staff/review',
     loadComponent: () => import('./pages/staff/staff').then((m) => m.Staff),
-    canActivate: [staffGuard],
+    canActivate: [officerGuard],
+  },
+  {
+    path: 'staff/inspections',
+    loadComponent: () => import('./pages/staff/staff').then((m) => m.Staff),
+    canActivate: [inspectorGuard],
+  },
+  {
+    path: 'staff/approvals',
+    loadComponent: () => import('./pages/staff/staff').then((m) => m.Staff),
+    canActivate: [approverGuard],
+  },
+  {
+    path: 'staff/admin',
+    loadComponent: () => import('./pages/staff/staff').then((m) => m.Staff),
+    canActivate: [adminGuard],
   },
   { path: '**', redirectTo: '' },
 ];

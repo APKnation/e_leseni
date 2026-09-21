@@ -6,6 +6,7 @@ import { API_BASE_URL } from './api.config';
 import {
   Application,
   Business,
+  Inspection,
   Invoice,
   Licence,
   LGA,
@@ -89,6 +90,19 @@ export class ApiService {
     return this.http.post<Application>(`${this.baseUrl}/applications/${id}/transition/`, {
       to_status: toStatus,
       note,
+    });
+  }
+
+  // -- Inspections (staff) -------------------------------------------------
+
+  inspections(filters?: ListOptions['filters']): Observable<Paginated<Inspection>> {
+    return this.list<Inspection>('inspections', { filters, pageSize: 250 });
+  }
+
+  scheduleInspection(applicationId: number, scheduledFor: string): Observable<Inspection> {
+    return this.http.post<Inspection>(`${this.baseUrl}/inspections/`, {
+      application: applicationId,
+      scheduled_for: scheduledFor,
     });
   }
 

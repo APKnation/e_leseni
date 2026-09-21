@@ -7,8 +7,12 @@
       <p class="mt-1 text-brand-lime/70">Your licence applications, payments and licences.</p>
     </div>
     <div class="flex items-center gap-3">
-      <span class="badge-lime">{{ user()?.role }}</span>
-      <a routerLink="/apply" class="btn-primary !py-2">+ New application</a>
+      <span class="badge-lime">{{ user()?.role ? roleLabel[user()!.role] : '' }}</span>
+      @if (!isStaff()) {
+        <a routerLink="/apply" class="btn-primary !py-2">+ New application</a>
+      } @else {
+        <a [routerLink]="auth.homeRoute()" class="btn-primary !py-2">Open my workspace →</a>
+      }
     </div>
   </div>
 

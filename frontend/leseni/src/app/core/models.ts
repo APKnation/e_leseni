@@ -132,6 +132,18 @@ export interface Application {
   decided_at: string | null;
 }
 
+export interface Inspection {
+  id: number;
+  application: number;
+  application_reference: string;
+  inspector: number;
+  inspector_name: string;
+  scheduled_for: string;
+  conducted_at: string | null;
+  findings: string;
+  passed: boolean | null;
+}
+
 export interface Invoice {
   id: number;
   application: number;

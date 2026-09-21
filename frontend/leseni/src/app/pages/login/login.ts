@@ -26,7 +26,8 @@ export class Login {
 
     this.auth.login(this.username(), this.password()).subscribe({
       next: () => {
-        const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') ?? '/dashboard';
+        // Staff land on their role workspace; applicants on the dashboard.
+        const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') ?? this.auth.homeRoute();
         void this.router.navigateByUrl(returnUrl);
       },
       error: () => {

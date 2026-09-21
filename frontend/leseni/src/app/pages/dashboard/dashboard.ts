@@ -2,7 +2,7 @@ import { Component, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { ApiService } from '../../core/api.service';
-import { AuthService } from '../../core/auth.service';
+import { AuthService, ROLE_LABELS } from '../../core/auth.service';
 import {
   Application,
   Business,
@@ -42,7 +42,7 @@ export class Dashboard {
     this.loading.set(true);
     this.errorMessage.set('');
 
-    let pending = 3;
+    let pending = 4;
     const done = () => {
       if (--pending === 0) this.loading.set(false);
     };
@@ -50,7 +50,7 @@ export class Dashboard {
     this.api.applications().subscribe({
       next: (page) => {
         this.applications.set(page.results);
-        this.loadInvoicesAndLicences();
+        done();
       },
       error: () => {
         this.errorMessage.set('Could not load your data. Is the backend running?');
@@ -66,24 +66,17 @@ export class Dashboard {
       error: () => done(),
     });
 
-    this.api.licences().subscribe({
+    this.api.invoices().subscribe({
       next: (page) => {
-        this.licences.set(page.results);
+        this.invoices.set(page.results);
         done();
       },
       error: () => done(),
     });
-  }
 
-  private loadInvoicesAndLicences(): void {
-    let pending = 2;
-    const done = () => {
-      if (--pending === 0) this.loading.set(false);
-    };
-
-    this.api.invoices().subscribe({
+    this.api.licences().subscribe({
       next: (page) => {
-        this.invoices.set(page.results);
+        this.licences.set(page.results);
         done();
       },
       error: () => done(),
@@ -127,4 +120,8 @@ export class Dashboard {
   }
 
   protected user = () => this.auth.currentUser();
+
+  /** Staff see admin actions instead of the applicant CTA. */
+  protected readonly isStaff = this.auth.isStaff;
+  protected readonly roleLabel = ROLE_LABELS;
 }

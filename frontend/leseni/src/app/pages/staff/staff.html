@@ -1,15 +1,27 @@
 <section class="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6">
   <div class="flex flex-wrap items-center justify-between gap-4">
     <div>
-      <h1 class="text-3xl font-black">Staff queue</h1>
-      <p class="mt-1 text-brand-lime/70">All applications across the licensing flow.</p>
+      <h1 class="text-3xl font-black">{{ workspace.title }}</h1>
+      <p class="mt-1 text-brand-lime/70">{{ workspace.subtitle }}</p>
     </div>
-    <span class="badge-lime">LGA STAFF</span>
+    <div class="flex items-center gap-3">
+      <span class="badge-lime">{{ workspace.badge }}</span>
+      @if (isAdmin) {
+        <a routerLink="/staff/review" class="text-sm font-semibold text-brand-lime/70 underline hover:text-brand-lime">
+          Switch workspace
+        </a>
+      }
+    </div>
   </div>
 
   @if (errorMessage()) {
     <p class="mt-8 rounded-lg bg-red-500/15 px-4 py-3 text-sm font-semibold text-red-300">
       {{ errorMessage() }}
+    </p>
+  }
+  @if (successMessage()) {
+    <p class="mt-8 rounded-lg bg-emerald-500/15 px-4 py-3 text-sm font-semibold text-emerald-300">
+      {{ successMessage() }}
     </p>
   }
 
@@ -18,7 +30,7 @@
   } @else {
     <!-- Filter tabs -->
     <div class="mt-8 flex flex-wrap gap-2">
-      @for (filter of queueFilters; track filter.label) {
+      @for (filter of workspace.queueFilters; track filter.label) {
         <button
           type="button"
           class="rounded-full px-4 py-2 text-sm font-bold transition"
@@ -52,15 +64,125 @@
             @if (app.purpose_statement) {
               <p class="mt-2 max-w-2xl text-sm text-brand-lime/60">“{{ app.purpose_statement }}”</p>
             }
+            @if (app.status === 'INSPECTION_SCHEDULED' && scheduledDate(app)) {
+              <p class="mt-2 text-sm text-blue-300">
+                🗓 Inspection {{ scheduledDate(app) }} @if (inspectorName(app)) { · {{ inspectorName(app) }} }
+              </p>
+            }
+            @if (app.status === 'REJECTED' && app.rejection_reason) {
+              <p class="mt-2 text-sm text-red-300">Reason: {{ app.rejection_reason }}</p>
+            }
           </div>
 
+          <!-- Role-scoped actions: only the buttons this role is allowed to use -->
           <div class="flex shrink-0 flex-wrap items-center gap-2">
-            @if (app.status === 'SUBMITTED') {
-              <button type="button" class="btn-primary !py-2" (click)="startReview(app)">
+            @if (canReview && app.status === 'SUBMITTED') {
+              <button
+                type="button"
+                class="btn-primary !py-2"
+                [disabled]="processingId() === app.id"
+                (click)="startReview(app)"
+              >
                 Start review
               </button>
-            } @else {
-              @for (status of app.allowed_next_statuses; track status) {
+            }
+
+            @if (canReview && app.status === 'UNDER_REVIEW') {
+              @if (schedulingId() === app.id) {
+                <div class="flex items-center gap-2 rounded-lg border border-brand-lime/30 p-2">
+                  <input
+                    type="datetime-local"
+                    class="rounded bg-brand-purple-deep px-2 py-1 text-sm text-brand-lime"
+                    [ngModel]="scheduledFor()"
+                    (ngModelChange)="scheduledFor.set($event)"
+                  />
+                  <button type="button" class="btn-primary !py-1.5 !px-3 text-xs" (click)="confirmSchedule(app)">
+                    Confirm
+                  </button>
+                  <button type="button" class="btn-secondary !py-1.5 !px-3 text-xs" (click)="cancelSchedule()">
+                    Cancel
+                  </button>
+                </div>
+              } @else {
+                <button
+                  type="button"
+                  class="btn-secondary !py-2 !px-3 text-xs"
+                  [disabled]="processingId() === app.id"
+                  (click)="schedule(app)"
+                >
+                  🗓 Schedule inspection
+                </button>
+              }
+            }
+
+            @if (canInspect && app.status === 'INSPECTION_SCHEDULED') {
+              <button
+                type="button"
+                class="btn-primary !py-2"
+                [disabled]="processingId() === app.id"
+                (click)="advance(app, 'INSPECTED')"
+              >
+                Record result — passed
+              </button>
+              <button
+                type="button"
+                class="btn-secondary !py-2 !px-3 text-xs !border-red-400/40 !text-red-300"
+                [disabled]="processingId() === app.id"
+                (click)="advance(app, 'REJECTED')"
+              >
+                Failed — reject
+              </button>
+            }
+
+            @if (canApprove && app.status === 'INSPECTED') {
+              <button
+                type="button"
+                class="btn-primary !py-2"
+                [disabled]="processingId() === app.id"
+                (click)="advance(app, 'APPROVED')"
+              >
+                ✓ Approve
+              </button>
+              <button
+                type="button"
+                class="btn-secondary !py-2 !px-3 text-xs"
+                [disabled]="processingId() === app.id"
+                (click)="advance(app, 'RETURNED_FOR_CORRECTION')"
+              >
+                Return for correction
+              </button>
+              <button
+                type="button"
+                class="btn-secondary !py-2 !px-3 text-xs !border-red-400/40 !text-red-300"
+                [disabled]="processingId() === app.id"
+                (click)="advance(app, 'REJECTED')"
+              >
+                Reject
+              </button>
+            }
+
+            @if (canApprove && app.status === 'APPROVED') {
+              <button
+                type="button"
+                class="btn-primary !py-2"
+                [disabled]="processingId() === app.id"
+                (click)="advance(app, 'PAYMENT_PENDING')"
+              >
+                → Invoice
+              </button>
+            }
+
+            <!-- Generic fallback: any other allowed transition for this role -->
+            @for (status of app.allowed_next_statuses; track status) {
+              @if (
+                !(
+                  (canReview && app.status === 'SUBMITTED' && status === 'UNDER_REVIEW') ||
+                  (canReview && app.status === 'UNDER_REVIEW' && status === 'INSPECTION_SCHEDULED') ||
+                  (canInspect && app.status === 'INSPECTION_SCHEDULED' && (status === 'INSPECTED' || status === 'REJECTED')) ||
+                  (canApprove && app.status === 'INSPECTED') ||
+                  (canApprove && app.status === 'APPROVED' && status === 'PAYMENT_PENDING')
+                )
+              ) {
                 <button
                   type="button"
                   class="btn-secondary !py-2 !px-3 text-xs"

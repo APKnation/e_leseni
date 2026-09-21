@@ -8,6 +8,11 @@
           >eL</span
         >
         <span class="text-lg font-bold tracking-tight">e-Leseni</span>
+        @if (auth.role(); as role) {
+          <span class="ml-1 hidden text-xs font-bold uppercase tracking-wide text-brand-lime/60 lg:inline">
+            {{ roleLabel[role] }}
+          </span>
+        }
       </a>
 
       <nav class="flex items-center gap-2 text-sm font-semibold sm:gap-4">
@@ -16,7 +21,9 @@
             Dashboard
           </a>
           @if (auth.isStaff()) {
-            <a routerLink="/staff" class="rounded-lg px-3 py-2 hover:bg-brand-lime/10">Staff queue</a>
+            <a [routerLink]="auth.homeRoute()" class="rounded-lg px-3 py-2 hover:bg-brand-lime/10">
+              My workspace
+            </a>
           }
           <button type="button" class="btn-secondary !px-4 !py-2" (click)="logout()">
             Log out
