@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 
 import { ApiService } from '../../core/api.service';
+import { AuthService } from '../../core/auth.service';
 import { TanzaniaGeoService } from '../../core/tanzania-geo.service';
 import {
   Business,
@@ -26,6 +27,7 @@ interface StepReceipt {
 export class Businesses {
   private readonly api = inject(ApiService);
   private readonly geo = inject(TanzaniaGeoService);
+  private readonly auth = inject(AuthService);
 
   // Data
   protected readonly businesses = signal<Business[]>([]);
@@ -39,24 +41,30 @@ export class Businesses {
 
   // Wizard state
   protected readonly wizardOpen = signal(false);
-  protected readonly step = signal(1); // 1 = details, 2 = BRELA, 3 = TRA TIN, 4 = location
+  protected readonly step = signal(1); // 1 = details, 2 = BRELA, 3 = TRA TIN, 4 = NIDA, 5 = location
   protected readonly working = signal(false);
 
   // Wizard form fields
   protected readonly name = signal('');
   protected readonly sector = signal('');
   protected readonly taxpayerName = signal('');
+  protected readonly nidaNumber = signal('');
   protected readonly regionName = signal<string | null>(null);
   protected readonly lgaId = signal<number | null>(null);
   protected readonly ward = signal('');
   protected readonly street = signal('');
   protected readonly plotNumber = signal('');
 
+  // Street identification letter (from the mtaa/street chairman)
+  protected readonly streetLetterFile = signal<File | null>(null);
+  protected readonly streetLetterName = signal('');
+
   // Results from the demo government systems
   protected readonly brelaNumber = signal('');
   protected readonly tinNumber = signal('');
   protected readonly brelaReceipt = signal<StepReceipt | null>(null);
   protected readonly tinReceipt = signal<StepReceipt | null>(null);
+  protected readonly nidaReceipt = signal<StepReceipt | null>(null);
 
   // Verification + save
   protected readonly verificationMessage = signal('');
@@ -64,7 +72,14 @@ export class Businesses {
 
   protected readonly canFinish = computed(() => {
     const lga = this.lgaId();
-    return !!(this.brelaNumber() && this.tinNumber() && lga && this.ward() && this.street());
+    return !!(
+      this.brelaNumber() &&
+      this.tinNumber() &&
+      this.nidaReceipt() &&
+      lga &&
+      this.ward() &&
+      this.street()
+    );
   });
 
   constructor() {
@@ -113,6 +128,7 @@ export class Businesses {
     this.name.set('');
     this.sector.set('');
     this.taxpayerName.set('');
+    this.nidaNumber.set(this.auth.currentUser()?.nida_number ?? '');
     this.regionName.set(null);
     this.lgaId.set(null);
     this.ward.set('');
@@ -122,6 +138,9 @@ export class Businesses {
     this.tinNumber.set('');
     this.brelaReceipt.set(null);
     this.tinReceipt.set(null);
+    this.nidaReceipt.set(null);
+    this.streetLetterFile.set(null);
+    this.streetLetterName.set('');
     this.verificationMessage.set('');
     this.createdBusiness.set(null);
     this.errorMessage.set('');
@@ -132,15 +151,85 @@ export class Businesses {
   }
 
   protected get stepLabels(): string[] {
-    return ['Business details', 'BRELA registration', 'TRA TIN', 'Location & finish'];
+    return ['Business details', 'BRELA registration', 'TRA TIN', 'NIDA & street letter', 'Location & finish'];
   }
 
   protected readonly journeySteps = [
     { title: 'Register with BRELA', hint: 'We submit your business to BRELA and get your registration number.' },
     { title: 'Get a TIN from TRA', hint: 'We apply for your Taxpayer Identification Number at TRA.' },
-    { title: 'Verified automatically', hint: 'Your numbers are checked with both agencies — no paperwork.' },
+    { title: 'Verify your NIDA', hint: 'Your national ID is checked and your street letter uploaded.' },
     { title: 'Apply for a licence', hint: 'Take your verified business to the council and apply online.' },
   ];
+
+  // ---- Step 4: NIDA + street identification letter ------------------------
+
+  protected get nidaValid(): boolean {
+    const nida = this.nidaNumber().trim();
+    return nida.length === 20 && /^\d+$/.test(nida);
+  }
+
+  protected get hasNidaOnProfile(): boolean {
+    return this.auth.currentUser()?.has_nida ?? false;
+  }
+
+  protected verifyNida(): void {
+    if (!this.nidaValid || this.working()) return;
+    this.working.set(true);
+    this.errorMessage.set('');
+    const user = this.auth.currentUser();
+    const nida = this.nidaNumber().trim();
+
+    const afterVerify = (nidaResult: { valid: boolean; full_name: string; source: string }) => {
+      if (!nidaResult.valid) {
+        this.errorMessage.set('NIDA could not be verified — check the 20-digit number and try again.');
+        this.working.set(false);
+        return;
+      }
+      this.nidaReceipt.set({
+        title: 'NIDA — Identity confirmed',
+        lines: [
+          { label: 'NIDA no.', value: nida },
+          { label: 'Name', value: nidaResult.full_name || this.taxpayerName() },
+          { label: 'Verified with', value: nidaResult.source },
+        ],
+      });
+      // Persist the NIDA on the profile so approvals can rely on it.
+      this.api.updateProfile({ nida_number: nida }).subscribe({
+        next: () => {
+          this.working.set(false);
+          this.goToStep(5);
+        },
+        error: () => {
+          this.errorMessage.set('NIDA verified but saving it failed — please try again.');
+          this.working.set(false);
+        },
+      });
+    };
+
+    this.api.verifyNida(nida, user?.first_name ?? '', user?.last_name ?? '').subscribe({
+      next: afterVerify,
+      error: () => {
+        this.errorMessage.set('NIDA verification failed. Please try again.');
+        this.working.set(false);
+      },
+    });
+  }
+
+  protected onLetterSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0] ?? null;
+    input.value = '';
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      this.errorMessage.set(`${file.name} is too large (max 10 MB).`);
+      return;
+    }
+    this.streetLetterFile.set(file);
+    this.streetLetterName.set(file.name);
+    this.errorMessage.set('');
+  }
+
+  // ---- Step 5: location + save -------------------------------------------
 
   // ---- Step 2: BRELA ------------------------------------------------------
 
@@ -202,7 +291,7 @@ export class Businesses {
     });
   }
 
-  // ---- Step 4: location + save -------------------------------------------
+
 
   protected onRegionChange(region: string | null): void {
     this.regionName.set(region);
@@ -249,21 +338,32 @@ export class Businesses {
       })
       .subscribe({
         next: (business) => {
-          // The backend auto-verifies when both numbers are present; make sure.
-          if (business.is_verified) {
+          const letter = this.streetLetterFile();
+          if (!letter) {
             this.finishCreate(business);
             return;
           }
-          this.api.verifyBusiness(business.id).subscribe({
-            next: (v) => {
-              this.verificationMessage.set(
-                v.is_verified
-                  ? 'Verified with TRA and BRELA — your business is trusted.'
-                  : 'Verification did not pass — officers will see this business as unverified.',
-              );
-              this.finishCreate({ ...business, is_verified: v.is_verified });
+          // Upload the street letter, then verify (verification requires it).
+          this.api.uploadStreetIdLetter(business.id, letter).subscribe({
+            next: () => {
+              this.api.verifyBusiness(business.id).subscribe({
+                next: (v) => {
+                  this.verificationMessage.set(
+                    v.is_verified
+                      ? 'Verified with TRA, BRELA and NIDA — your business is trusted.'
+                      : 'Verification did not pass — officers will see this business as unverified.',
+                  );
+                  this.finishCreate({ ...business, is_verified: v.is_verified, has_street_id_letter: true });
+                },
+                error: () => this.finishCreate(business),
+              });
             },
-            error: () => this.finishCreate(business),
+            error: () => {
+              this.errorMessage.set(
+                'Business saved but the street letter upload failed — you can upload it from the business card.',
+              );
+              this.finishCreate(business);
+            },
           });
         },
         error: (err) => {

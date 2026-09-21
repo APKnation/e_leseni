@@ -11,6 +11,11 @@ class Business(models.Model):
     name = models.CharField(max_length=200)
     tin_number = models.CharField(max_length=20, blank=True, help_text='TRA TIN, verified via integrations app.')
     brela_registration_number = models.CharField(max_length=30, blank=True)
+    nida_number = models.CharField(
+        max_length=20,
+        blank=True,
+        help_text='Owner NIDA captured with the registration (snapshot of the owner\'s NIDA).',
+    )
     sector = models.CharField(max_length=100, blank=True)
     is_verified = models.BooleanField(default=False, help_text='Set once BRELA/TRA verification passes.')
     created_at = models.DateTimeField(auto_now_add=True)
@@ -76,6 +81,7 @@ class BusinessDocument(models.Model):
     class Kinds(models.TextChoices):
         TIN_CERTIFICATE = 'TIN_CERTIFICATE', 'TIN Certificate'
         BRELA_CERTIFICATE = 'BRELA_CERTIFICATE', 'BRELA Registration Certificate'
+        STREET_ID_LETTER = 'STREET_ID_LETTER', 'Street Identification Letter'
         LEASE_AGREEMENT = 'LEASE_AGREEMENT', 'Lease Agreement'
         OTHER = 'OTHER', 'Other'
 

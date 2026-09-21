@@ -34,6 +34,7 @@ class StatusHistorySerializer(serializers.ModelSerializer):
 
 class ApplicationSerializer(serializers.ModelSerializer):
     applicant_name = serializers.CharField(source='applicant.get_full_name', read_only=True)
+    applicant_has_nida = serializers.SerializerMethodField()
     business_name = serializers.CharField(source='business.name', read_only=True)
     business_is_verified = serializers.BooleanField(source='business.is_verified', read_only=True)
     licence_type_name = serializers.CharField(source='licence_type.name', read_only=True)
@@ -45,7 +46,7 @@ class ApplicationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Application
         fields = [
-            'id', 'reference_number', 'applicant', 'applicant_name',
+            'id', 'reference_number', 'applicant', 'applicant_name', 'applicant_has_nida',
             'business', 'business_name', 'business_is_verified', 'licence_type', 'licence_type_name', 'lga_name',
             'location', 'status', 'priority', 'purpose_statement', 'rejection_reason',
             'assigned_officer', 'submitted_at', 'decided_at', 'created_at', 'updated_at',
@@ -55,6 +56,9 @@ class ApplicationSerializer(serializers.ModelSerializer):
             'applicant', 'reference_number', 'status', 'rejection_reason', 'assigned_officer',
             'submitted_at', 'decided_at', 'created_at', 'updated_at',
         ]
+
+    def get_applicant_has_nida(self, obj):
+        return bool(obj.applicant.nida_number)
 
     def get_allowed_next_statuses(self, obj):
         """Transitions valid for the state machine AND permitted for the

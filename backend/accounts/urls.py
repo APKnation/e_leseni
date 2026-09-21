@@ -17,5 +17,7 @@ urlpatterns = [
     path('auth/refresh/', TokenRefreshView.as_view(), name='auth-refresh'),
     path('auth/verify/', TokenVerifyView.as_view(), name='auth-verify'),
     path('auth/me/', views.MeView.as_view(), name='auth-me'),
+    path('auth/me/update/', views.MeUpdateView.as_view(), name='auth-me-update'),
+    path('auth/verify-nida/', views.mock_nida_verify, name='auth-verify-nida'),
     path('', include(router.urls)),
 ]

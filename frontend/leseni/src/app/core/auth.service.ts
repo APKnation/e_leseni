@@ -14,6 +14,8 @@ export interface User {
   email: string;
   role: UserRole;
   phone_number: string;
+  nida_number: string;
+  has_nida: boolean;
   lga: number | null;
   lga_name: string | null;
   is_lga_staff: boolean;

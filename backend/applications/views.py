@@ -173,6 +173,24 @@ class ApplicationTransitionView(generics.GenericAPIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
+        # NIDA gate: a licence cannot be approved for an applicant without a
+        # NIDA number (returns for correction instead of blocking silently).
+        if to_status in {
+            Application.Status.APPROVED,
+            Application.Status.PAYMENT_PENDING,
+        }:
+            if not application.applicant.nida_number:
+                return Response(
+                    {
+                        'detail': (
+                            f'{application.applicant.get_full_name() or application.applicant.username} '
+                            'has no NIDA number on their profile. The applicant must add it '
+                            '(Dashboard → NIDA verification) before this licence can be approved.'
+                        )
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
         serializer = self.get_serializer(data=request.data, context={'application': application, 'request': request})
         serializer.is_valid(raise_exception=True)
 

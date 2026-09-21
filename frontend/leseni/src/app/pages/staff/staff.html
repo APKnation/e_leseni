@@ -67,6 +67,16 @@
             </p>
             <p class="text-sm text-brand-lime/70">
               {{ app.licence_type_name }} — {{ app.lga_name }} · applicant: {{ app.applicant_name }}
+              @if (app.applicant_has_nida !== undefined) {
+                @if (app.applicant_has_nida) {
+                  <span class="badge-lime !px-2 !py-0.5 !text-[10px]" title="NIDA on file">NIDA ✓</span>
+                } @else {
+                  <span
+                    class="badge-outline !px-2 !py-0.5 !border-orange-400/50 !text-orange-300 !text-[10px]"
+                    title="No NIDA — cannot be approved"
+                  >no NIDA ⚠</span>
+                }
+              }
             </p>
             @if (app.purpose_statement) {
               <p class="mt-2 max-w-2xl text-sm text-brand-lime/60">“{{ app.purpose_statement }}”</p>

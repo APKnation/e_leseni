@@ -1,10 +1,16 @@
-"""Tests for the business registration journey: BRELA -> TRA TIN -> LGA."""
+"""Tests for the business registration journey: BRELA -> TRA TIN -> LGA.
 
+Now includes the NIDA + street identification letter gates.
+"""
+import base64
+import io
+
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from rest_framework.test import APIClient
 
 from accounts.models import User
-from businesses.models import Business, TINApplication
+from businesses.models import Business, BusinessDocument, TINApplication
 from lga.models import LGA
 
 
@@ -56,12 +62,55 @@ class TINApplicationTests(TestCase):
         self.assertEqual(res.data[0]['business_name'], 'Jane Traders')
 
 
-class FullRegistrationJourneyTests(TestCase):
-    """Register -> BRELA -> TRA TIN -> business verified, like the frontend wizard."""
+class NidaTests(TestCase):
+    """NIDA capture, verification, and its gating behaviour."""
 
     def setUp(self):
         self.client = APIClient()
         self.user = User.objects.create_user(username='jane', password='pass-12345678')
+        self.client.force_authenticate(self.user)
+
+    def test_register_with_nida(self):
+        res = self.client.post('/api/auth/register/', {
+            'username': 'newgal', 'email': 'n@x.tz', 'first_name': 'New', 'last_name': 'Gal',
+            'phone_number': '0712000111', 'password': 'Demo@12345',
+            'nida_number': '1999' + '0' * 16,
+        })
+        self.assertEqual(res.status_code, 201, res.content)
+        self.assertTrue(User.objects.get(username='newgal').nida_number)
+
+    def test_register_rejects_short_nida(self):
+        res = self.client.post('/api/auth/register/', {
+            'username': 'newgal2', 'email': 'n2@x.tz', 'first_name': 'N', 'last_name': 'G',
+            'phone_number': '0712000111', 'password': 'Demo@12345', 'nida_number': '12345',
+        })
+        self.assertEqual(res.status_code, 400)
+        self.assertIn('20 digits', str(res.content))
+
+    def test_verify_nida_endpoint(self):
+        res = self.client.post('/api/auth/verify-nida/', {
+            'nida_number': '1999' + '0' * 16, 'first_name': 'Jane', 'last_name': 'Doe',
+        })
+        self.assertEqual(res.status_code, 200)
+        self.assertTrue(res.data['valid'])
+        res2 = self.client.post('/api/auth/verify-nida/', {'nida_number': '1234'})
+        self.assertFalse(res2.data['valid'])
+
+    def test_me_update_can_add_nida_later(self):
+        res = self.client.patch('/api/auth/me/update/', {'nida_number': '2' + '0' * 19}, format='json')
+        self.assertEqual(res.status_code, 200, res.content)
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.nida_number, '2' + '0' * 19)
+
+
+class FullRegistrationJourneyTests(TestCase):
+    """Register -> BRELA -> TRA TIN -> street letter -> business verified."""
+
+    def setUp(self):
+        self.client = APIClient()
+        self.user = User.objects.create_user(
+            username='jane', password='pass-12345678', nida_number='1' + '2' * 19,
+        )
         self.client.force_authenticate(self.user)
         self.lga = LGA.objects.first() or self._make_lga()
 
@@ -69,7 +118,10 @@ class FullRegistrationJourneyTests(TestCase):
     def _make_lga():
         return LGA.objects.create(region='Dar es Salaam', name='Ilala Municipal', code='IL')
 
-    def _journey(self):
+    def _letter(self):
+        return SimpleUploadedFile('street_letter.pdf', b'%PDF-1.4 street ID letter', content_type='application/pdf')
+
+    def _journey(self, with_letter=True):
         brela = self.client.post('/api/businesses/demo/brela-register/', {'business_name': 'Jane Cafe'}).data
         tin = self.client.post('/api/businesses/demo/apply-tin/', {
             'business_name': 'Jane Cafe', 'taxpayer_name': 'Jane Doe',
@@ -81,21 +133,46 @@ class FullRegistrationJourneyTests(TestCase):
             'sector': 'Food',
             'location': {'lga': self.lga.id, 'ward': 'Ward A', 'street': 'Main St', 'plot_number': '1'},
         }, format='json')
+        if with_letter and res.status_code == 201:
+            # Wizard order: create -> upload street letter -> verify.
+            self.client.post(
+                f"/api/businesses/{res.data['id']}/street-id-letter/", {'file': self._letter()}, format='multipart'
+            )
+            self.client.post(f"/api/businesses/{res.data['id']}/verify/", {})
+            res = self.client.get(f"/api/businesses/{res.data['id']}/")
         return brela, tin, res
+
+    def test_create_requires_nida(self):
+        User.objects.filter(pk=self.user.pk).update(nida_number='')
+        self.user.refresh_from_db()
+        res = self.client.post('/api/businesses/', {
+            'name': 'No Nida Cafe', 'tin_number': '', 'brela_registration_number': '',
+            'location': {'lga': self.lga.id, 'ward': 'W', 'street': 'S', 'plot_number': ''},
+        }, format='json')
+        self.assertEqual(res.status_code, 400)
+        self.assertIn('NIDA', str(res.content))
+
+    def test_create_requires_valid_numbers(self):
+        res = self.client.post('/api/businesses/', {
+            'name': 'Bad Numbers', 'tin_number': 'abc', 'brela_registration_number': 'x1',
+            'location': {'lga': self.lga.id, 'ward': 'W', 'street': 'S', 'plot_number': ''},
+        }, format='json')
+        self.assertEqual(res.status_code, 400)
 
     def test_journey_creates_verified_business(self):
         brela, tin, res = self._journey()
-        self.assertEqual(res.status_code, 201, res.content)
-        self.assertTrue(res.data['is_verified'])
-        self.assertTrue(Business.objects.filter(owner=self.user, name='Jane Cafe').exists())
+        self.assertIn(res.status_code, (200, 201), res.content)
+        self.assertTrue(res.data['is_verified'], res.content)
+        business = Business.objects.get(owner=self.user, name='Jane Cafe')
+        self.assertEqual(business.nida_number, self.user.nida_number)
+        self.assertTrue(business.documents.filter(kind=BusinessDocument.Kinds.STREET_ID_LETTER).exists())
 
-    def test_unverified_business_can_verify_later(self):
-        brela, tin, res = self._journey()
+    def test_verify_blocked_without_street_letter(self):
+        brela, tin, res = self._journey(with_letter=False)
         business_id = res.data['id']
-        Business.objects.filter(pk=business_id).update(is_verified=False)
         res2 = self.client.post(f'/api/businesses/{business_id}/verify/', {})
-        self.assertEqual(res2.status_code, 200)
-        self.assertTrue(res2.data['is_verified'])
+        self.assertEqual(res2.status_code, 400)
+        self.assertIn('street identification letter', str(res2.content))
 
     def test_duplicate_business_name_rejected(self):
         self._journey()

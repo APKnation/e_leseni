@@ -3,6 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { API_BASE_URL } from './api.config';
+import { User } from './auth.service';
 import {
   Application,
   Business,
@@ -105,6 +106,37 @@ export class ApiService {
       business_name: businessName,
       taxpayer_name: taxpayerName,
     });
+  }
+
+  /** DEMO NIDA: verify a national ID number against the owner's name. */
+  verifyNida(nidaNumber: string, firstName: string, lastName: string): Observable<{
+    valid: boolean;
+    nida_number: string;
+    full_name: string;
+    source: string;
+  }> {
+    return this.http.post<{
+      valid: boolean;
+      nida_number: string;
+      full_name: string;
+      source: string;
+    }>(`${this.baseUrl}/auth/verify-nida/`, {
+      nida_number: nidaNumber,
+      first_name: firstName,
+      last_name: lastName,
+    });
+  }
+
+  /** Save the NIDA number on the logged-in user's profile. */
+  updateProfile(data: { nida_number?: string; phone_number?: string }): Observable<User> {
+    return this.http.patch<User>(`${this.baseUrl}/auth/me/update/`, data);
+  }
+
+  /** Upload the street identification letter for a business (multipart). */
+  uploadStreetIdLetter(businessId: number, file: File): Observable<unknown> {
+    const form = new FormData();
+    form.append('file', file);
+    return this.http.post(`${this.baseUrl}/businesses/${businessId}/street-id-letter/`, form);
   }
 
   /** The caller's TRA TIN applications, newest first. */

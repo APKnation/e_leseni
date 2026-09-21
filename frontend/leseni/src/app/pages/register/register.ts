@@ -19,6 +19,7 @@ export class Register {
     username: '',
     email: '',
     phone_number: '',
+    nida_number: '',
     password: '',
   });
   protected readonly submitting = signal(false);

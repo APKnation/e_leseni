@@ -14,7 +14,9 @@ class ApplicationStatusFlowTests(TestCase):
         from django.contrib.auth import get_user_model
 
         User = get_user_model()
-        self.applicant = User.objects.create_user(username='applicant1', password='testpass123')
+        self.applicant = User.objects.create_user(
+            username='applicant1', password='testpass123', nida_number='7' * 20
+        )
         self.lga = LGA.objects.create(name='Ilala', region='Dar es Salaam', code='DS-ILALA')
         self.licence_type = LicenceType.objects.create(
             name='Food Vendor Licence', code='FOOD', fee=50000, lga=self.lga
@@ -71,7 +73,8 @@ class MultipleApplicationsAPITests(APITestCase):
 
         User = get_user_model()
         self.applicant = User.objects.create_user(
-            username='multi1', password='testpass123', phone_number='0755000111'
+            username='multi1', password='testpass123', phone_number='0755000111',
+            nida_number='1' * 20,
         )
         self.client = APIClient()
         self.client.force_authenticate(user=self.applicant)
@@ -156,7 +159,7 @@ class MultipleApplicationsAPITests(APITestCase):
         from django.contrib.auth import get_user_model
 
         User = get_user_model()
-        other = User.objects.create_user(username='other2', password='testpass123')
+        other = User.objects.create_user(username='other2', password='testpass123', nida_number='6' * 20)
 
         self._create_application(self.business, self.licence_a, self.location)
 
@@ -176,7 +179,7 @@ class BusinessRegistrationRulesTests(APITestCase):
         from django.contrib.auth import get_user_model
 
         User = get_user_model()
-        self.user = User.objects.create_user(username='dup1', password='testpass123')
+        self.user = User.objects.create_user(username='dup1', password='testpass123', nida_number='2' * 20)
         self.client = APIClient()
         self.client.force_authenticate(user=self.user)
 
@@ -189,7 +192,7 @@ class BusinessRegistrationRulesTests(APITestCase):
         from django.contrib.auth import get_user_model
 
         User = get_user_model()
-        other = User.objects.create_user(username='dup2', password='testpass123')
+        other = User.objects.create_user(username='dup2', password='testpass123', nida_number='3' * 20)
         Business.objects.create(owner=other, name='Kariakoo Traders')
 
         response = self.client.post('/api/businesses/', {'name': 'Kariakoo Traders'}, format='json')
@@ -204,7 +207,8 @@ class RoleWorkflowAPITests(APITestCase):
 
         User = get_user_model()
         self.applicant = User.objects.create_user(
-            username='roleapplicant', password='testpass123', phone_number='0755000111'
+            username='roleapplicant', password='testpass123', phone_number='0755000111',
+            nida_number='4' * 20,
         )
         self.lga_a = LGA.objects.create(name='Ilala', region='Dar es Salaam', code='DS-ILALA')
         self.lga_b = LGA.objects.create(name='Moshi Municipal', region='Kilimanjaro', code='KI-MOSHI')
@@ -406,7 +410,9 @@ class DocumentUploadTests(APITestCase):
 
         self.Requirement = Requirement
         User = get_user_model()
-        self.applicant = User.objects.create_user(username='docapplicant', password='testpass123')
+        self.applicant = User.objects.create_user(
+            username='docapplicant', password='testpass123', nida_number='5' * 20
+        )
         self.officer = User.objects.create_user(
             username='docofficer', password='testpass123', role='OFFICER', lga_id=None
         )

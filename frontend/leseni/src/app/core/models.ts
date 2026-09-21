@@ -89,7 +89,7 @@ export interface LicenceType {
 export interface BusinessDocument {
   id: number;
   business: number;
-  kind: 'TIN_CERTIFICATE' | 'BRELA_CERTIFICATE' | 'LEASE_AGREEMENT' | 'OTHER';
+  kind: 'TIN_CERTIFICATE' | 'BRELA_CERTIFICATE' | 'STREET_ID_LETTER' | 'LEASE_AGREEMENT' | 'OTHER';
   kind_display: string;
   file: string;
   uploaded_at: string;
@@ -111,10 +111,13 @@ export interface Business {
   name: string;
   owner: number;
   owner_name: string;
+  owner_nida: string;
+  nida_number: string;
   tin_number: string;
   brela_registration_number: string;
   sector: string;
   is_verified: boolean;
+  has_street_id_letter: boolean;
   locations: BusinessLocation[];
   documents: BusinessDocument[];
 }

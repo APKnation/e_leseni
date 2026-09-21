@@ -334,10 +334,23 @@ export class Apply {
     return 'Provide both TRA TIN and BRELA registration number to get your business verified automatically.';
   }
 
+  private static readonly MAX_FILE_MB = 10;
+
   protected onFileSelected(row: UploadRow, event: Event): void {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
+    input.value = ''; // allow re-picking the same file after a failure
     if (!file) return;
+
+    if (file.size > Apply.MAX_FILE_MB * 1024 * 1024) {
+      row.uploaded = false;
+      row.pendingFile = undefined;
+      this.errorMessage.set(
+        `${file.name} is too large (${(file.size / 1024 / 1024).toFixed(1)} MB). ` +
+          `Maximum is ${Apply.MAX_FILE_MB} MB — compress it or take a smaller photo.`,
+      );
+      return;
+    }
 
     const draft = this.draftApplication();
     if (!draft) {
@@ -346,6 +359,7 @@ export class Apply {
       row.uploaded = true; // staged
       row.persisted = false;
       row.pendingFile = file;
+      this.errorMessage.set('');
       return;
     }
 
@@ -353,14 +367,26 @@ export class Apply {
     this.api.uploadDocument(draft.id, file, row.requirement?.id).subscribe({
       next: () => {
         row.uploaded = true;
+        row.persisted = true; // already on the server; submit() must not re-upload it
         row.fileName = file.name;
         row.uploading = false;
+        this.errorMessage.set('');
       },
-      error: () => {
+      error: (err) => {
         row.uploading = false;
-        this.errorMessage.set(`Could not upload ${file.name}.`);
+        row.uploaded = false;
+        row.pendingFile = undefined;
+        this.errorMessage.set(`Could not upload ${file.name}: ${this.errorDetail(err)}`);
       },
     });
+  }
+
+  /** Extract a human-readable message from an API error response. */
+  private errorDetail(err: { error?: unknown } | null | undefined): string {
+    const detail = err?.error as { detail?: string } | undefined;
+    if (typeof detail?.detail === 'string' && detail.detail) return detail.detail;
+    const first = detail ? Object.values(detail).flat()[0] : null;
+    return typeof first === 'string' && first ? first : 'please try again.';
   }
 
   /** Create the draft application now so documents can be attached. */
@@ -391,24 +417,33 @@ export class Apply {
     this.errorMessage.set('');
 
     const submitDraft = (application: Application) => {
-      // Upload any staged files first, then submit the application.
+      // Upload any staged files first; a failed upload must STOP the submission.
       const staged = this.uploadRows().filter((row) => row.uploaded && !row.persisted);
       let pending = staged.length;
+      let failures = 0;
+
       const afterUploads = () => {
+        if (failures > 0) {
+          this.errorMessage.set(
+            `${failures} document upload${failures > 1 ? 's' : ''} failed — the application was NOT submitted. ` +
+              'Fix the files marked in step 4 and submit again.',
+          );
+          this.submitting.set(false);
+          return;
+        }
         this.api.transitionApplication(application.id, 'SUBMITTED').subscribe({
           next: (submitted) => {
             this.created.set(submitted);
             this.submitting.set(false);
           },
           error: (err) => {
-            const detail = err?.error?.detail ?? null;
-            this.errorMessage.set(
-              typeof detail === 'string' ? detail : 'Could not submit the application.',
-            );
+            const detail = this.errorDetail(err);
+            this.errorMessage.set(detail);
             this.submitting.set(false);
           },
         });
       };
+
       if (pending === 0) {
         afterUploads();
         return;
@@ -419,8 +454,12 @@ export class Apply {
             row.persisted = true;
             if (--pending === 0) afterUploads();
           },
-          error: () => {
+          error: (err) => {
+            failures++;
             row.uploaded = false;
+            row.persisted = false;
+            row.pendingFile = undefined;
+            row.fileName = '';
             if (--pending === 0) afterUploads();
           },
         });
@@ -444,8 +483,7 @@ export class Apply {
         .subscribe({
           next: (application) => submitDraft(application),
           error: (err) => {
-            const detail = err?.error ? Object.values(err.error).flat()[0] : null;
-            this.errorMessage.set(typeof detail === 'string' ? detail : 'Could not create the application.');
+            this.errorMessage.set('Could not create the application: ' + this.errorDetail(err));
             this.submitting.set(false);
           },
         });

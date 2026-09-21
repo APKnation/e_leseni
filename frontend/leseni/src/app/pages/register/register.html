@@ -70,6 +70,20 @@
     </label>
 
     <label class="flex flex-col gap-2 text-sm font-semibold">
+      NIDA number (optional now, required before approval)
+      <input
+        class="input-field font-mono"
+        type="text"
+        name="nida_number"
+        inputmode="numeric"
+        maxlength="20"
+        placeholder="20 digits — e.g. 1999 1234 5678 9012 3456"
+        [ngModel]="form().nida_number"
+        (ngModelChange)="update('nida_number', $event)"
+      />
+    </label>
+
+    <label class="flex flex-col gap-2 text-sm font-semibold">
       Password
       <input
         class="input-field"

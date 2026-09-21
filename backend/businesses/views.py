@@ -1,7 +1,7 @@
 import secrets
 
 from django.utils import timezone
-from rest_framework import status, viewsets
+from rest_framework import exceptions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -33,7 +33,13 @@ class BusinessViewSet(viewsets.ModelViewSet):
         return qs.filter(owner=user)
 
     def perform_create(self, serializer):
-        business = serializer.save(owner=self.request.user)
+        user = self.request.user
+        if not user.nida_number:
+            raise exceptions.ValidationError(
+                {'detail': 'Add your NIDA number to your profile before registering a business.'}
+            )
+        # Snapshot the owner's NIDA onto the business for the record.
+        business = serializer.save(owner=user, nida_number=user.nida_number)
         self._auto_verify(business)
 
     def perform_update(self, serializer):
@@ -41,10 +47,16 @@ class BusinessViewSet(viewsets.ModelViewSet):
         self._auto_verify(business)
 
     def _auto_verify(self, business):
-        """Verify TIN with TRA and registration with BRELA when both numbers
-        are present (mock adapters in dev; real HTTP in production).
-        Marks the business verified only if both pass."""
-        if business.is_verified or not business.tin_number or not business.brela_registration_number:
+        """Verify TIN with TRA and registration with BRELA when the owner has a
+        NIDA, the street ID letter is attached, and both numbers are present.
+        Marks the business verified only if everything passes."""
+        if (
+            business.is_verified
+            or not business.tin_number
+            or not business.brela_registration_number
+            or not business.owner.nida_number
+            or not business.documents.filter(kind=BusinessDocument.Kinds.STREET_ID_LETTER).exists()
+        ):
             return
         tin_result = TRAAdapter().verify_tin(business.tin_number, business.name)
         brela_result = BRELAdapter().verify_registration(
@@ -62,12 +74,23 @@ class BusinessViewSet(viewsets.ModelViewSet):
     def verify(self, request, pk=None):
         """Verify TIN with TRA and registration with BRELA via the adapters.
 
-        Mock rules (dev): TIN is 9-12 digits; BRELA numbers start with '1'.
-        Marks the business verified only if both pass.
+        Requires the owner's NIDA and a street identification letter — the same
+        documents a real council asks for. Mock rules (dev): TIN 9-12 digits,
+        BRELA numbers start with '1'.
         """
         business = self.get_object()
         if business.is_verified:
             return Response({'detail': 'Business is already verified.', 'is_verified': True})
+        if not business.owner.nida_number:
+            return Response(
+                {'detail': 'The business owner must have a NIDA number on their profile before verification.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if not business.documents.filter(kind=BusinessDocument.Kinds.STREET_ID_LETTER).exists():
+            return Response(
+                {'detail': 'Upload the street identification letter before verification.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         if not business.tin_number or not business.brela_registration_number:
             return Response(
                 {'detail': 'Set tin_number and brela_registration_number before verifying.'},
@@ -166,6 +189,31 @@ class BusinessViewSet(viewsets.ModelViewSet):
         qs = TINApplication.objects.filter(applicant=request.user)[:20]
         serializer = TINApplicationSerializer(qs, many=True)
         return Response(serializer.data)
+
+    @action(detail=True, methods=['post'], url_path='street-id-letter')
+    def street_id_letter(self, request, pk=None):
+        """Upload the street identification letter for a business.
+
+        POST multipart {file}. The letter (from the street/mtaa chairman)
+        confirms the business operates at the stated location and carries the
+        owner's NIDA number.
+        """
+        business = self.get_object()
+        file = request.FILES.get('file')
+        if file is None:
+            return Response({'detail': 'A file is required.'}, status=status.HTTP_400_BAD_REQUEST)
+        if file.size > 10 * 1024 * 1024:
+            return Response({'detail': 'File too large (max 10 MB).'}, status=status.HTTP_400_BAD_REQUEST)
+
+        document = BusinessDocument.objects.create(
+            business=business,
+            kind=BusinessDocument.Kinds.STREET_ID_LETTER,
+            file=file,
+        )
+        return Response(
+            BusinessDocumentSerializer(document, context={'request': request}).data,
+            status=status.HTTP_201_CREATED,
+        )
 
 
 class TINApplicationViewSet(viewsets.ReadOnlyModelViewSet):

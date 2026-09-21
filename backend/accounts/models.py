@@ -14,6 +14,12 @@ class User(AbstractUser):
 
     role = models.CharField(max_length=20, choices=Roles.choices, default=Roles.APPLICANT)
     phone_number = models.CharField(max_length=15, blank=True)
+    nida_number = models.CharField(
+        max_length=20,
+        blank=True,
+        db_index=True,
+        help_text='National Identification Number (NIDA), 20 digits, verified via integrations app.',
+    )
     lga = models.ForeignKey(
         'lga.LGA',
         null=True,
