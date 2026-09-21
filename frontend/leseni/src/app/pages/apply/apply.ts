@@ -4,6 +4,7 @@ import { Router, RouterLink } from '@angular/router';
 
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
+import { TanzaniaGeoService } from '../../core/tanzania-geo.service';
 import { Application, Business, BusinessLocation, LGA, LicenceCategory, LicenceType, RegionInfo } from '../../core/models';
 
 interface NewBusinessForm {
@@ -25,6 +26,7 @@ interface NewBusinessForm {
 export class Apply {
   private readonly api = inject(ApiService);
   private readonly auth = inject(AuthService);
+  private readonly geo = inject(TanzaniaGeoService);
   private readonly router = inject(Router);
 
   protected readonly submitting = signal(false);
@@ -54,6 +56,9 @@ export class Apply {
   });
 
   protected readonly purpose = signal('');
+
+  /** Wards of the selected council, from the tanzaniageodata dataset. */
+  protected readonly wards = signal<string[]>([]);
 
   protected readonly categories: { value: LicenceCategory; label: string; icon: string; hint: string }[] = [
     { value: 'BUSINESS', label: 'Business', icon: '🏪', hint: 'Shops, food vendors, services' },
@@ -89,6 +94,8 @@ export class Apply {
     this.categoryId.set(null);
     this.licenceTypeId.set(null);
     this.licenceTypes.set([]);
+    this.wards.set([]);
+    this.newBusiness.update((nb) => ({ ...nb, ward: '' }));
     if (lgaId) {
       this.api.licenceTypes({ lga: lgaId }).subscribe((page) => {
         const all = page.results;
@@ -98,7 +105,39 @@ export class Apply {
           this.categoryId.set([...available][0]);
         }
       });
+      // Wards come from the backend DB (seeded from tanzaniageodata);
+      // fall back to the bundled geo dataset if the API has none yet.
+      const lga = this.lgas().find((l) => l.id === lgaId);
+      this.api.wards(lgaId).subscribe({
+        next: (list) => {
+          if (list.length > 0) {
+            this.wards.set(list.map((w) => w.name));
+          } else if (lga) {
+            this.wards.set(this.wardsFromDataset(lga.name));
+          }
+        },
+        error: () => {
+          if (lga) this.wards.set(this.wardsFromDataset(lga.name));
+        },
+      });
     }
+  }
+
+  /** Fallback: match an LGA name to the bundled tanzaniageodata dataset. */
+  private wardsFromDataset(lgaName: string): string[] {
+    for (const region of this.geo.regions()) {
+      for (const district of this.geo.districts(region)) {
+        if (
+          district.fullName === lgaName ||
+          district.name === lgaName ||
+          district.fullName.startsWith(lgaName + ' ') ||
+          lgaName.startsWith(district.name + ' ')
+        ) {
+          return this.geo.wards(district.fullName);
+        }
+      }
+    }
+    return [];
   }
 
   // Step 3: category chosen -> filter licences

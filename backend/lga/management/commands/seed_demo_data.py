@@ -3,21 +3,25 @@
 Usage:
     python manage.py seed_demo_data            # create anything missing
     python manage.py seed_demo_data --reset    # delete demo data first, then reseed
+    python manage.py seed_demo_data --skip-wards  # skip ward seeding (faster)
 
-Creates: LGAs, licence types (+ requirements), users with roles, officer
-assignments, businesses with locations, and one submitted demo application.
+Creates: LGAs (from the tanzaniageodata package), wards per LGA, licence types
+(+ requirements), users with roles, officer assignments, businesses with
+locations, and demo applications at every workflow stage.
 Idempotent: safe to run repeatedly; existing rows are updated, not duplicated.
 """
+import json
 from decimal import Decimal
 
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
 from django.db import transaction
+from django.utils import timezone as tz
 
-from applications.models import Application
+from applications.models import Application, Inspection
 from businesses.models import Business, BusinessLocation
-from lga.models import LGA, LicenceType, OfficerAssignment, Requirement
-from lga.tanzania_lgas import TANZANIA_LGAS, lga_code
+from lga.management.commands.geo_data import region_lga_wards
+from lga.models import LGA, LicenceType, OfficerAssignment, Requirement, Ward
 
 User = get_user_model()
 
@@ -202,12 +206,16 @@ BUSINESSES = [
 
 
 class Command(BaseCommand):
-    help = 'Seed demo LGAs, licence types, users, businesses and a demo application.'
+    help = 'Seed demo LGAs (from tanzaniageodata), wards, licence types, users, businesses and applications.'
 
     def add_arguments(self, parser):
         parser.add_argument(
             '--reset', action='store_true',
             help='Delete previously seeded demo rows first (identifies them by fixed usernames/codes).',
+        )
+        parser.add_argument(
+            '--skip-wards', action='store_true',
+            help='Skip ward seeding (useful for quick reseeds).',
         )
 
     # -- helpers -----------------------------------------------------------
@@ -221,6 +229,8 @@ class Command(BaseCommand):
             self._reset()
 
         self._seed_lgas()
+        if not options['skip_wards']:
+            self._seed_wards()
         self._seed_standard_licences()
         self._seed_demo_licences()
         self._seed_users()
@@ -230,7 +240,8 @@ class Command(BaseCommand):
         self._seed_pipeline_applications()
 
         self._stdout(self.style.SUCCESS(
-            f'Done. LGAs: {LGA.objects.count()}, licence types: {LicenceType.objects.count()}. '
+            f'Done. LGAs: {LGA.objects.count()}, wards: {Ward.objects.count()}, '
+            f'licence types: {LicenceType.objects.count()}. '
             f'Demo accounts (password: {DEMO_PASSWORD}):'
         ))
         for u in USERS:
@@ -254,16 +265,71 @@ class Command(BaseCommand):
         self._stdout(f'Reset: deleted {deleted} rows.')
 
     def _seed_lgas(self):
-        created_count = 0
-        for region, names in TANZANIA_LGAS.items():
-            for name in names:
-                code = lga_code(region, name)
-                _, created = LGA.objects.update_or_create(
-                    code=code,
-                    defaults={'name': name, 'region': region},
-                )
-                created_count += 1 if created else 0
-        self._stdout(f'  + LGAs: {LGA.objects.count()} total across {len(TANZANIA_LGAS)} regions.')
+        """Create LGAs from the tanzaniageodata package (replaces the old
+        hardcoded TANZANIA_LGAS list)."""
+        geo = region_lga_wards()
+        existing_by_code = {lga.code: lga for lga in LGA.objects.all()}
+        created = 0
+        for region, lgas in geo.items():
+            for lga_name in lgas:
+                code = self._lga_code(region, lga_name)
+                if code in existing_by_code:
+                    continue
+                LGA.objects.create(code=code, name=lga_name, region=region)
+                existing_by_code[code] = None
+                created += 1
+        self._stdout(f'  + LGAs: {LGA.objects.count()} total across {len(geo)} regions ({created} new).')
+
+    def _seed_wards(self):
+        """Create Wards per LGA from the tanzaniageodata package."""
+        geo = region_lga_wards()
+        lgas_by_code = {lga.code: lga for lga in LGA.objects.all()}
+        existing = set(Ward.objects.values_list('lga_id', 'name'))
+        created = 0
+        batch = []
+        for region, lgas in geo.items():
+            for lga_name, wards in lgas.items():
+                code = self._lga_code(region, lga_name)
+                lga = lgas_by_code.get(code)
+                if lga is None:
+                    continue
+                for ward in wards:
+                    key = (lga.id, ward)
+                    if key in existing:
+                        continue
+                    existing.add(key)
+                    batch.append(Ward(lga=lga, name=ward))
+                    created += 1
+        Ward.objects.bulk_create(batch, batch_size=1000)
+        self._stdout(f'  + Wards: {created} created ({Ward.objects.count()} total).')
+
+    def _lga_code(self, region, name):
+        """Deterministic unique code for an LGA, e.g. DS-ILALA."""
+        region_codes = {
+            'Arusha': 'AR', 'Dar es Salaam': 'DS', 'Dodoma': 'DO', 'Geita': 'GE',
+            'Iringa': 'IR', 'Kagera': 'KA', 'Katavi': 'KT', 'Kigoma': 'KG',
+            'Kilimanjaro': 'KI', 'Lindi': 'LN', 'Manyara': 'MY', 'Mara': 'MR',
+            'Mbeya': 'MB', 'Morogoro': 'MO', 'Mtwara': 'MT', 'Mwanza': 'MW',
+            'Njombe': 'NJ', 'Pwani': 'PW', 'Rukwa': 'RK', 'Ruvuma': 'RV',
+            'Shinyanga': 'SH', 'Simiyu': 'SI', 'Singida': 'SG', 'Songwe': 'SO',
+            'Tabora': 'TB', 'Tanga': 'TA',
+            'Zanzibar - Mjini Magharibi': 'ZM', 'Zanzibar - Unguja North': 'ZN',
+            'Zanzibar - Unguja Central/South': 'ZC', 'Zanzibar - Pemba North': 'ZP',
+            'Zanzibar - Pemba South': 'ZS',
+        }
+        region_code = region_codes.get(region, region[:2].upper())
+        slug = (
+            name.upper()
+            .replace("'", '')
+            .replace('/', ' ')
+            .replace('-', ' ')
+            .replace('(', '')
+            .replace(')', '')
+            .replace('.', '')
+            .replace(',', '')
+        )
+        slug = '_'.join(slug.split())[:20]
+        return f'{region_code}-{slug}'
 
     def _seed_standard_licences(self):
         """Create the standard licences for every LGA (area-based selection)."""
@@ -283,9 +349,9 @@ class Command(BaseCommand):
     def _seed_demo_licences(self):
         """Richer demo licence types for the key LGAs (codes FOOD/RETAIL/HW/KIOSK kept)."""
         for spec in LICENCE_TYPES:
-            lga = LGA.objects.get(code=spec['lga_code'])
+            lga = LGA.objects.filter(code=spec['lga_code']).first()
             # Skip if a standard licence with the same name already covers this LGA.
-            if LicenceType.objects.filter(lga=lga, name=spec['name']).exclude(code=spec['code']).exists():
+            if lga and LicenceType.objects.filter(lga=lga, name=spec['name']).exclude(code=spec['code']).exists():
                 self._stdout(f'  = {spec["name"]} in {lga.name} already covered by a standard licence.')
                 continue
             lt, created = self._upsert_licence(lga, spec['code'], spec)
@@ -444,8 +510,6 @@ class Command(BaseCommand):
             app = make('Inspection scheduled demo application.')
             app.transition_to(Application.Status.UNDER_REVIEW, by=officer)
             app.transition_to(Application.Status.INSPECTION_SCHEDULED, by=officer)
-            from applications.models import Inspection
-            from django.utils import timezone as tz
             Inspection.objects.get_or_create(
                 application=app,
                 defaults={'inspector': inspector or officer, 'scheduled_for': tz.now() + tz.timedelta(days=1)},

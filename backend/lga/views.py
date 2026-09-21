@@ -4,13 +4,26 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAdminUser
 from rest_framework.response import Response
 
-from .models import LGA, LicenceType, OfficerAssignment, Requirement
+from .models import LGA, LicenceType, OfficerAssignment, Requirement, Ward
 from .serializers import (
     LGASerializer,
     LicenceTypeSerializer,
     OfficerAssignmentSerializer,
     RequirementSerializer,
 )
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def wards(request, lga_id):
+    """Public list of wards for an LGA: /api/lgas/<id>/wards/"""
+    lga = LGA.objects.filter(pk=lga_id).first()
+    if lga is None:
+        return Response({'detail': 'LGA not found.'}, status=404)
+    return Response([
+        {'id': w.id, 'name': w.name}
+        for w in lga.wards.order_by('name')
+    ])
 
 
 @api_view(['GET'])

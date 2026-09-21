@@ -54,6 +54,10 @@ export class ApiService {
     return this.list<LicenceType>('licence-types', { filters, pageSize: 250 });
   }
 
+  wards(lgaId: number): Observable<{ id: number; name: string }[]> {
+    return this.http.get<{ id: number; name: string }[]>(`${this.baseUrl}/lgas/${lgaId}/wards/`);
+  }
+
   // -- Businesses ----------------------------------------------------------
 
   businesses(): Observable<Paginated<Business>> {

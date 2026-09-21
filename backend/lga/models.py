@@ -67,6 +67,22 @@ class Requirement(models.Model):
         return f'{self.licence_type.code}: {self.name}'
 
 
+class Ward(models.Model):
+    """A ward within an LGA (from the tanzaniageodata dataset)."""
+
+    lga = models.ForeignKey(LGA, on_delete=models.CASCADE, related_name='wards')
+    name = models.CharField(max_length=100)
+
+    class Meta:
+        ordering = ['lga__name', 'name']
+        constraints = [
+            models.UniqueConstraint(fields=['lga', 'name'], name='unique_ward_per_lga'),
+        ]
+
+    def __str__(self):
+        return f'{self.name} ({self.lga.name})'
+
+
 class OfficerAssignment(models.Model):
     """Assign LGA staff to handle applications of a licence type."""
 

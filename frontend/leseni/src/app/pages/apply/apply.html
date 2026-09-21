@@ -219,9 +219,21 @@
           <div class="grid gap-4 sm:grid-cols-2">
             <label class="flex flex-col gap-2 text-sm font-semibold">
               Ward
-              <input class="input-field" type="text" name="nb_ward" required
-                     [ngModel]="newBusiness().ward"
-                     (ngModelChange)="newBusiness.update(v => ({ ...v, ward: $event }))" />
+              @if (wards().length > 0) {
+                <select class="input-field" name="nb_ward" required
+                        [ngModel]="newBusiness().ward"
+                        (ngModelChange)="newBusiness.update(v => ({ ...v, ward: $event }))">
+                  <option [ngValue]="null" disabled>— choose a ward —</option>
+                  @for (ward of wards(); track ward) {
+                    <option [value]="ward">{{ ward }}</option>
+                  }
+                </select>
+              } @else {
+                <input class="input-field" type="text" name="nb_ward" required
+                       placeholder="e.g. Kariakoo"
+                       [ngModel]="newBusiness().ward"
+                       (ngModelChange)="newBusiness.update(v => ({ ...v, ward: $event }))" />
+              }
             </label>
             <label class="flex flex-col gap-2 text-sm font-semibold">
               Street
