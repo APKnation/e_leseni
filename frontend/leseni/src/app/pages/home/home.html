@@ -13,23 +13,45 @@
       <div class="flex flex-wrap gap-4">
         @if (auth.isLoggedIn()) {
           <a routerLink="/dashboard" class="btn-primary">Go to dashboard →</a>
+          @if (auth.isStaff()) {
+            <a [routerLink]="auth.homeRoute()" class="btn-secondary">My workspace</a>
+          }
         } @else {
           <a routerLink="/register" class="btn-primary">Apply now</a>
           <a routerLink="/login" class="btn-secondary">Log in</a>
         }
       </div>
+
+      <!-- Coverage stats from the tanzaniageodata dataset -->
+      <dl class="mt-4 grid max-w-md grid-cols-3 gap-4">
+        <div class="rounded-xl border border-brand-lime/20 bg-brand-purple-soft/40 px-4 py-3 text-center">
+          <dt class="text-xs font-semibold uppercase tracking-wide text-brand-lime/60">Regions</dt>
+          <dd class="text-2xl font-black">{{ regionCount }}</dd>
+        </div>
+        <div class="rounded-xl border border-brand-lime/20 bg-brand-purple-soft/40 px-4 py-3 text-center">
+          <dt class="text-xs font-semibold uppercase tracking-wide text-brand-lime/60">Councils</dt>
+          <dd class="text-2xl font-black">{{ councilCount }}</dd>
+        </div>
+        <div class="rounded-xl border border-brand-lime/20 bg-brand-purple-soft/40 px-4 py-3 text-center">
+          <dt class="text-xs font-semibold uppercase tracking-wide text-brand-lime/60">Wards</dt>
+          <dd class="text-2xl font-black">2900+</dd>
+        </div>
+      </dl>
     </div>
 
     <!-- Status-flow card: lime background, purple text (inverse pair) -->
-    <div class="card flex flex-col justify-center gap-4 bg-brand-lime text-brand-purple">
+    <div class="card flex flex-col justify-center gap-5 bg-brand-lime text-brand-purple">
       <h2 class="text-xl font-black">How it works</h2>
-      <ol class="space-y-3">
-        @for (step of steps; track step) {
-          <li class="flex items-center gap-3 font-semibold">
-            <span class="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-brand-purple text-sm text-brand-lime">
-              {{ $index + 1 }}
+      <ol class="space-y-4">
+        @for (step of steps; track step.title) {
+          <li class="flex items-start gap-3">
+            <span class="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-brand-purple text-base text-brand-lime">
+              {{ step.icon }}
             </span>
-            {{ step }}
+            <div>
+              <p class="font-black">{{ step.title }}</p>
+              <p class="text-sm text-brand-purple/80">{{ step.body }}</p>
+            </div>
           </li>
         }
       </ol>
@@ -39,15 +61,90 @@
 
 <!-- Feature strip: lime background, purple text (inverse pair) -->
 <section class="bg-brand-lime text-brand-purple">
-  <div class="mx-auto grid w-full max-w-6xl gap-8 px-4 py-16 sm:px-6 md:grid-cols-3">
-    @for (feature of features; track feature.title) {
-      <div class="flex flex-col gap-3">
-        <span class="grid h-12 w-12 place-items-center rounded-xl bg-brand-purple text-xl text-brand-lime">
-          {{ feature.icon }}
-        </span>
-        <h3 class="text-lg font-black">{{ feature.title }}</h3>
-        <p class="text-sm leading-relaxed text-brand-purple/80">{{ feature.body }}</p>
+  <div class="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6">
+    <h2 class="text-center text-3xl font-black">Everything licensing, in one place</h2>
+    <p class="mx-auto mt-3 max-w-xl text-center text-brand-purple/80">
+      Built for local government — from the first application to the day the licence expires.
+    </p>
+    <div class="mt-10 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+      @for (feature of features; track feature.title) {
+        <div class="flex flex-col gap-3">
+          <span class="grid h-12 w-12 place-items-center rounded-xl bg-brand-purple text-xl text-brand-lime">
+            {{ feature.icon }}
+          </span>
+          <h3 class="text-lg font-black">{{ feature.title }}</h3>
+          <p class="text-sm leading-relaxed text-brand-purple/80">{{ feature.body }}</p>
+        </div>
+      }
+    </div>
+  </div>
+</section>
+
+<!-- Who it's for -->
+<section class="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6">
+  <h2 class="text-center text-3xl font-black">Built for every step of the council</h2>
+  <p class="mx-auto mt-3 max-w-xl text-center text-brand-lime/70">
+    Each role gets its own secure workspace — nobody sees or does more than they should.
+  </p>
+  <div class="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+    @for (role of roleCards; track role.title) {
+      <div class="card flex flex-col gap-3">
+        <span class="text-3xl">{{ role.icon }}</span>
+        <h3 class="text-lg font-black">{{ role.title }}</h3>
+        <p class="text-sm leading-relaxed text-brand-lime/70">{{ role.body }}</p>
+        <a [routerLink]="role.link" class="mt-auto text-sm font-bold text-brand-lime underline hover:text-brand-lime-soft">
+          {{ role.cta }} →
+        </a>
       </div>
     }
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="mx-auto w-full max-w-3xl px-4 py-16 sm:px-6">
+  <h2 class="text-center text-3xl font-black">Frequently asked questions</h2>
+  <div class="mt-10 flex flex-col gap-3">
+    @for (faq of faqs; track faq.q; let i = $index) {
+      <div class="card !p-0">
+        <button
+          type="button"
+          class="flex w-full items-center justify-between gap-4 px-6 py-4 text-left"
+          (click)="toggleFaq(i)"
+        >
+          <span class="font-bold">{{ faq.q }}</span>
+          <span class="text-xl transition" [class.rotate-45]="openFaq() === i">+</span>
+        </button>
+        @if (openFaq() === i) {
+          <p class="border-t border-brand-lime/15 px-6 py-4 text-sm leading-relaxed text-brand-lime/75">
+            {{ faq.a }}
+          </p>
+        }
+      </div>
+    }
+  </div>
+</section>
+
+<!-- Final CTA -->
+<section class="bg-brand-lime text-brand-purple">
+  <div class="mx-auto flex w-full max-w-6xl flex-col items-center gap-6 px-4 py-16 text-center sm:px-6">
+    <h2 class="text-3xl font-black sm:text-4xl">Ready to get licensed?</h2>
+    <p class="max-w-xl text-brand-purple/80">
+      Join thousands of businesses across Tanzania applying for council licences online —
+      with SMS updates at every step.
+    </p>
+    <div class="flex flex-wrap justify-center gap-4">
+      @if (auth.isLoggedIn()) {
+        <a routerLink="/dashboard" class="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-purple px-6 py-3 font-semibold text-brand-lime transition hover:bg-brand-purple-soft">
+          Go to dashboard →
+        </a>
+      } @else {
+        <a routerLink="/register" class="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-purple px-6 py-3 font-semibold text-brand-lime transition hover:bg-brand-purple-soft">
+          Create your free account
+        </a>
+        <a routerLink="/apply" class="inline-flex items-center justify-center gap-2 rounded-xl border-2 border-brand-purple px-6 py-3 font-semibold text-brand-purple transition hover:bg-brand-purple hover:text-brand-lime">
+          Browse licences
+        </a>
+      }
+    </div>
   </div>
 </section>
