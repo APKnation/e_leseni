@@ -12,15 +12,19 @@ from .serializers import (
 )
 
 
-def staff_lga_filter(user):
+def staff_lga_filter(user, *, through_application=False):
     """Q filter restricting objects to the user's LGA.
 
-    ADMINs and superusers see everything; other staff only see applications
+    ADMINs and superusers see everything; other staff only see objects
     belonging to licence types in their own LGA.
+
+    Application models have a direct `licence_type` field; related models
+    (Inspection, ApplicationDocument) reach it via `application__`.
     """
     if user.is_superuser or user.role == 'ADMIN':
         return Q()
-    return Q(licence_type__lga=user.lga)
+    prefix = 'application__' if through_application else ''
+    return Q(**{f'{prefix}licence_type__lga': user.lga})
 
 
 def serialize_application(application, request):
@@ -129,7 +133,7 @@ class ApplicationDocumentViewSet(viewsets.ModelViewSet):
         qs = ApplicationDocument.objects.select_related('application', 'requirement')
         user = self.request.user
         if user.is_authenticated and user.is_lga_staff:
-            return qs.filter(staff_lga_filter(user))
+            return qs.filter(staff_lga_filter(user, through_application=True))
         return qs.filter(application__applicant=user)
 
 
@@ -141,7 +145,7 @@ class InspectionViewSet(viewsets.ModelViewSet):
         qs = Inspection.objects.select_related('application', 'inspector')
         user = self.request.user
         if user.is_authenticated and user.is_lga_staff:
-            return qs.filter(staff_lga_filter(user))
+            return qs.filter(staff_lga_filter(user, through_application=True))
         return qs.filter(application__applicant=user)
 
     def perform_create(self, serializer):
