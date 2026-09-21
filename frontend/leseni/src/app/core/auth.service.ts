@@ -4,18 +4,37 @@ import { Observable, tap } from 'rxjs';
 
 import { API_BASE_URL } from './api.config';
 
+export type UserRole = 'APPLICANT' | 'OFFICER' | 'INSPECTOR' | 'APPROVER' | 'ADMIN';
+
 export interface User {
   id: number;
   username: string;
   first_name: string;
   last_name: string;
   email: string;
-  role: 'APPLICANT' | 'OFFICER' | 'INSPECTOR' | 'APPROVER' | 'ADMIN';
+  role: UserRole;
   phone_number: string;
   lga: number | null;
   lga_name: string | null;
   is_lga_staff: boolean;
 }
+
+/** Home route for each role — staff land on their own workspace. */
+export const ROLE_HOME: Record<UserRole, string> = {
+  APPLICANT: '/dashboard',
+  OFFICER: '/staff/review',
+  INSPECTOR: '/staff/inspections',
+  APPROVER: '/staff/approvals',
+  ADMIN: '/staff/admin',
+};
+
+export const ROLE_LABELS: Record<UserRole, string> = {
+  APPLICANT: 'Applicant',
+  OFFICER: 'Licensing Officer',
+  INSPECTOR: 'Inspector',
+  APPROVER: 'Approver',
+  ADMIN: 'System Admin',
+};
 
 export interface AuthResponse {
   access: string;
@@ -38,6 +57,19 @@ export class AuthService {
   readonly currentUser = this.currentUserSignal.asReadonly();
   readonly isLoggedIn = computed(() => this.currentUserSignal() !== null);
   readonly isStaff = computed(() => this.currentUserSignal()?.is_lga_staff ?? false);
+  /** Reactive role of the current user (null when logged out). */
+  readonly role = computed<UserRole | null>(() => this.currentUserSignal()?.role ?? null);
+
+  /** Route this user should land on after login. */
+  homeRoute(): string {
+    const role = this.role();
+    return role ? ROLE_HOME[role] : '/dashboard';
+  }
+
+  hasRole(...roles: UserRole[]): boolean {
+    const role = this.role();
+    return role !== null && roles.includes(role);
+  }
 
   register(data: {
     username: string;

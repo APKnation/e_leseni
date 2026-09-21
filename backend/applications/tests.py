@@ -194,3 +194,153 @@ class BusinessRegistrationRulesTests(APITestCase):
 
         response = self.client.post('/api/businesses/', {'name': 'Kariakoo Traders'}, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+
+class RoleWorkflowAPITests(APITestCase):
+    """Each staff role may only perform its own transitions on its own LGA."""
+
+    def setUp(self):
+        from django.contrib.auth import get_user_model
+
+        User = get_user_model()
+        self.applicant = User.objects.create_user(
+            username='roleapplicant', password='testpass123', phone_number='0755000111'
+        )
+        self.lga_a = LGA.objects.create(name='Ilala', region='Dar es Salaam', code='DS-ILALA')
+        self.lga_b = LGA.objects.create(name='Moshi Municipal', region='Kilimanjaro', code='KI-MOSHI')
+        self.licence_a = LicenceType.objects.create(
+            name='Food Vendor Licence', code='FOOD-A', fee=50000, lga=self.lga_a
+        )
+        self.licence_b = LicenceType.objects.create(
+            name='Kiosk Licence', code='KIOSK-B', fee=30000, lga=self.lga_b
+        )
+        self.business = Business.objects.create(
+            owner=self.applicant, name='Role Test Foods',
+            tin_number='123456789', brela_registration_number='102345678',
+        )
+        self.location_a = BusinessLocation.objects.create(
+            business=self.business, lga=self.lga_a, ward='Upanga',
+            street='Ocean Road', is_primary=True,
+        )
+        self.location_b = BusinessLocation.objects.create(
+            business=self.business, lga=self.lga_b, ward='Pasua', street='Old Moshi Road',
+        )
+
+        self.officer = User.objects.create_user(
+            username='roleofficer', password='testpass123', role='OFFICER', lga=self.lga_a
+        )
+        self.inspector = User.objects.create_user(
+            username='roleinspector', password='testpass123', role='INSPECTOR', lga=self.lga_a
+        )
+        self.approver = User.objects.create_user(
+            username='roleapprover', password='testpass123', role='APPROVER', lga=self.lga_a
+        )
+        self.admin = User.objects.create_user(
+            username='roleadmin', password='testpass123', role='ADMIN', lga=self.lga_a
+        )
+        self.other_officer = User.objects.create_user(
+            username='roleofficer_b', password='testpass123', role='OFFICER', lga=self.lga_b
+        )
+
+    def _application(self, licence_type, location):
+        return Application.objects.create(
+            applicant=self.applicant,
+            business=self.business,
+            licence_type=licence_type,
+            location=location,
+            status=Application.Status.SUBMITTED,
+            submitted_at='2026-01-01T00:00:00Z',
+        )
+
+    def _transition(self, user, application, to_status):
+        self.client.force_authenticate(user=user)
+        return self.client.post(
+            f'/api/applications/{application.id}/transition/',
+            {'to_status': to_status}, format='json',
+        )
+
+    def test_officer_can_start_review(self):
+        app = self._application(self.licence_a, self.location_a)
+        response = self._transition(self.officer, app, 'UNDER_REVIEW')
+        self.assertEqual(response.status_code, 200, response.data)
+        app.refresh_from_db()
+        self.assertEqual(app.status, 'UNDER_REVIEW')
+        self.assertEqual(app.assigned_officer, self.officer)
+
+    def test_officer_cannot_approve(self):
+        app = self._application(self.licence_a, self.location_a)
+        app.transition_to('UNDER_REVIEW', by=self.officer)
+        app.transition_to('INSPECTION_SCHEDULED', by=self.officer)
+        app.transition_to('INSPECTED', by=self.inspector)
+        response = self._transition(self.officer, app, 'APPROVED')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_inspector_cannot_start_review(self):
+        app = self._application(self.licence_a, self.location_a)
+        response = self._transition(self.inspector, app, 'UNDER_REVIEW')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_inspector_can_mark_inspected(self):
+        app = self._application(self.licence_a, self.location_a)
+        app.transition_to('UNDER_REVIEW', by=self.officer)
+        app.transition_to('INSPECTION_SCHEDULED', by=self.officer)
+        response = self._transition(self.inspector, app, 'INSPECTED')
+        self.assertEqual(response.status_code, 200, response.data)
+
+    def test_approver_cannot_start_review_but_can_approve(self):
+        app = self._application(self.licence_a, self.location_a)
+        response = self._transition(self.approver, app, 'UNDER_REVIEW')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        app.transition_to('UNDER_REVIEW', by=self.officer)
+        app.transition_to('INSPECTION_SCHEDULED', by=self.officer)
+        app.transition_to('INSPECTED', by=self.inspector)
+        response = self._transition(self.approver, app, 'APPROVED')
+        self.assertEqual(response.status_code, 200, response.data)
+
+    def test_admin_can_do_anything(self):
+        app = self._application(self.licence_a, self.location_a)
+        response = self._transition(self.admin, app, 'UNDER_REVIEW')
+        self.assertEqual(response.status_code, 200)
+
+    def test_officer_cannot_transition_other_lga_application(self):
+        app = self._application(self.licence_b, self.location_b)
+        response = self._transition(self.officer, app, 'UNDER_REVIEW')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_admin_sees_other_lga_applications(self):
+        app = self._application(self.licence_b, self.location_b)
+        response = self._transition(self.admin, app, 'UNDER_REVIEW')
+        self.assertEqual(response.status_code, 200)
+
+    def test_staff_queryset_scoped_to_own_lga(self):
+        self._application(self.licence_a, self.location_a)
+        self._application(self.licence_b, self.location_b)
+
+        self.client.force_authenticate(user=self.officer)
+        response = self.client.get('/api/applications/')
+        self.assertEqual(response.data['count'], 1)
+
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.get('/api/applications/')
+        self.assertEqual(response.data['count'], 2)
+
+    def test_allowed_next_statuses_reflect_role(self):
+        """The serializer only advertises transitions the current role may take."""
+        app = self._application(self.licence_a, self.location_a)
+
+        self.client.force_authenticate(user=self.officer)
+        response = self.client.get('/api/applications/')
+        row = next(r for r in response.data['results'] if r['id'] == app.id)
+        self.assertIn('UNDER_REVIEW', row['allowed_next_statuses'])
+        self.assertNotIn('APPROVED', row['allowed_next_statuses'])
+
+        self.client.force_authenticate(user=self.applicant)
+        response = self.client.get('/api/applications/')
+        row = next(r for r in response.data['results'] if r['id'] == app.id)
+        self.assertEqual(row['allowed_next_statuses'], ['SUBMITTED'])
+
+    def test_applicant_cannot_review_own_application(self):
+        app = self._application(self.licence_a, self.location_a)
+        response = self._transition(self.applicant, app, 'UNDER_REVIEW')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
