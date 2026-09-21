@@ -20,6 +20,13 @@ interface RoleWorkspace {
 }
 
 const WORKSPACES: Record<UserRole, RoleWorkspace> = {
+  // Applicants never reach this page (guarded), so reuse the admin view.
+  APPLICANT: {
+    title: 'Staff area',
+    subtitle: 'Applications across the licensing flow.',
+    badge: 'STAFF',
+    queueFilters: [{ label: 'All', statuses: null }],
+  },
   OFFICER: {
     title: 'Review queue',
     subtitle: 'Applications awaiting review in your LGA.',
@@ -63,9 +70,6 @@ const WORKSPACES: Record<UserRole, RoleWorkspace> = {
     ],
   },
 };
-
-// Applicants never reach this page (guarded), but keep the type total.
-WORKSPACES.APPLICANT = WORKSPACES.ADMIN;
 
 @Component({
   imports: [FormsModule, RouterLink],
