@@ -129,6 +129,15 @@ export interface ApplicationDocument {
   verified: boolean;
 }
 
+/** One entry of the application's audit trail (status timeline). */
+export interface StatusHistoryEntry {
+  from_status: ApplicationStatus;
+  to_status: ApplicationStatus;
+  changed_by_name: string;
+  note: string;
+  changed_at: string;
+}
+
 export interface Application {
   id: number;
   reference_number: string;
@@ -147,6 +156,7 @@ export interface Application {
   rejection_reason: string;
   allowed_next_statuses: ApplicationStatus[];
   documents: ApplicationDocument[];
+  history: StatusHistoryEntry[];
   created_at: string;
   submitted_at: string | null;
   decided_at: string | null;

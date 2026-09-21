@@ -51,22 +51,95 @@
     } @else {
       <div class="mt-4 grid gap-4">
         @for (app of applications(); track app.id) {
-          <div class="card flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p class="font-mono text-sm text-brand-lime/70">{{ app.reference_number }}</p>
-              <p class="text-lg font-bold">{{ app.business_name }}</p>
-              <p class="text-sm text-brand-lime/70">
-                {{ app.licence_type_name }} — {{ app.lga_name }}
-              </p>
+          <div class="card flex flex-col gap-3">
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p class="font-mono text-sm text-brand-lime/70">{{ app.reference_number }}</p>
+                <p class="text-lg font-bold">{{ app.business_name }}</p>
+                <p class="text-sm text-brand-lime/70">
+                  {{ app.licence_type_name }} — {{ app.lga_name }}
+                </p>
+              </div>
+              <div class="flex flex-col items-start gap-2 sm:items-end">
+                <span class="rounded-full px-3 py-1 text-xs font-bold" [class]="STATUS_STYLES[app.status]">
+                  {{ STATUS_LABELS[app.status] }}
+                </span>
+                <button
+                  type="button"
+                  class="text-xs font-bold text-brand-lime/70 underline transition hover:text-brand-lime"
+                  (click)="toggleTimeline(app.id)"
+                >
+                  {{ expandedTimeline() === app.id ? 'Hide timeline ▲' : 'Show timeline ▼' }}
+                </button>
+              </div>
             </div>
-            <div class="flex flex-col items-start gap-2 sm:items-end">
-              <span class="rounded-full px-3 py-1 text-xs font-bold" [class]="STATUS_STYLES[app.status]">
-                {{ STATUS_LABELS[app.status] }}
-              </span>
-              @if (app.status === 'RETURNED_FOR_CORRECTION' && app.rejection_reason) {
-                <p class="max-w-xs text-xs text-orange-300">{{ app.rejection_reason }}</p>
-              }
-            </div>
+
+            @if (app.status === 'RETURNED_FOR_CORRECTION' && app.rejection_reason) {
+              <p class="max-w-xl text-xs text-orange-300">{{ app.rejection_reason }}</p>
+            }
+
+            <!-- Status timeline -->
+            @if (expandedTimeline() === app.id) {
+              <div class="mt-1 rounded-xl border border-brand-lime/15 bg-brand-purple-deep/60 p-4">
+                <p class="mb-3 text-xs font-black uppercase tracking-wide text-brand-lime/50">
+                  Application timeline
+                </p>
+                <ol class="relative flex flex-col gap-0">
+                  @for (step of timelineFor(app); track step.status + step.state; let last = $last) {
+                    <li class="flex gap-3" [class.pb-4]="!last">
+                      <!-- Rail + dot -->
+                      <div class="flex flex-col items-center">
+                        <span
+                          class="grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs"
+                          [class]="
+                            step.state === 'done'
+                              ? 'bg-emerald-500/20 text-emerald-300'
+                              : step.state === 'current'
+                                ? 'bg-brand-lime text-brand-purple ring-2 ring-brand-lime/40'
+                                : step.state === 'event'
+                                  ? 'bg-orange-500/20 text-orange-300'
+                                  : 'bg-brand-purple-soft/60 text-brand-lime/40'
+                          "
+                        >
+                          @if (step.state === 'done') {
+                            ✓
+                          } @else {
+                            {{ step.icon }}
+                          }
+                        </span>
+                        @if (!last) {
+                          <span
+                            class="w-px flex-1"
+                            [class]="step.state === 'done' ? 'bg-emerald-400/40' : 'bg-brand-lime/15'"
+                          ></span>
+                        }
+                      </div>
+                      <!-- Content -->
+                      <div class="min-w-0 pb-1">
+                        <p
+                          class="text-sm font-bold"
+                          [class]="
+                            step.state === 'upcoming' ? 'text-brand-lime/40' : 'text-brand-lime'
+                          "
+                        >
+                          {{ step.label }}
+                        </p>
+                        @if (step.when) {
+                          <p class="text-xs text-brand-lime/60">
+                            {{ step.when }}@if (step.actor) { · {{ step.actor }} }
+                          </p>
+                        } @else if (step.state === 'upcoming') {
+                          <p class="text-xs text-brand-lime/30">Pending</p>
+                        }
+                        @if (step.note) {
+                          <p class="mt-0.5 max-w-md text-xs italic text-brand-lime/50">“{{ step.note }}”</p>
+                        }
+                      </div>
+                    </li>
+                  }
+                </ol>
+              </div>
+            }
           </div>
         }
       </div>

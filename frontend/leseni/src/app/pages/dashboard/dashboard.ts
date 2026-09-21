@@ -5,12 +5,26 @@ import { ApiService } from '../../core/api.service';
 import { AuthService, ROLE_LABELS } from '../../core/auth.service';
 import {
   Application,
+  ApplicationStatus,
   Business,
   Invoice,
   Licence,
   STATUS_LABELS,
   STATUS_STYLES,
+  StatusHistoryEntry,
 } from '../../core/models';
+
+/** One row of the visible timeline: a main-line step or a system event. */
+interface TimelineStep {
+  status: ApplicationStatus;
+  label: string;
+  icon: string;
+  /** 'done' | 'current' | 'upcoming' for main-line steps; 'event' for extras. */
+  state: 'done' | 'current' | 'upcoming' | 'event';
+  when: string | null;
+  actor: string;
+  note: string;
+}
 
 @Component({
   imports: [RouterLink],
@@ -33,6 +47,95 @@ export class Dashboard {
   protected readonly businesses = signal<Business[]>([]);
 
   protected readonly payingInvoiceId = signal<number | null>(null);
+
+  /** Per-application visibility of the expanded status timeline. */
+  protected readonly expandedTimeline = signal<number | null>(null);
+
+  protected toggleTimeline(appId: number): void {
+    this.expandedTimeline.update((current) => (current === appId ? null : appId));
+  }
+
+  /** The main-line journey every application walks through. */
+  private static readonly MAIN_LINE: { status: ApplicationStatus; label: string; icon: string }[] = [
+    { status: 'DRAFT', label: 'Draft', icon: '📝' },
+    { status: 'SUBMITTED', label: 'Submitted', icon: '📤' },
+    { status: 'UNDER_REVIEW', label: 'Under review', icon: '👀' },
+    { status: 'INSPECTED', label: 'Inspected', icon: '🔍' },
+    { status: 'APPROVED', label: 'Approved', icon: '✅' },
+    { status: 'PAID', label: 'Paid', icon: '💳' },
+    { status: 'ISSUED', label: 'Issued', icon: '🎫' },
+  ];
+
+  /**
+   * Build the visible timeline for an application: the main-line steps with
+   * done/current/upcoming states, plus branch events (returned, rejected,
+   * invoiced, scheduled) interleaved as extra rows with their timestamps.
+   */
+  protected timelineFor(app: Application): TimelineStep[] {
+    const history = app.history ?? [];
+    const whenOf = (status: ApplicationStatus): StatusHistoryEntry | undefined =>
+      history.find((h) => h.to_status === status);
+
+    const fmt = (iso: string | null): string =>
+      iso ? new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : '';
+
+    // Current position on the main line; terminal side-branches get special care.
+    const currentIdx = Dashboard.MAIN_LINE.findIndex((s) => s.status === app.status);
+    const reached = (status: ApplicationStatus): boolean =>
+      history.some((h) => h.to_status === status) ||
+      currentIdx >= Dashboard.MAIN_LINE.findIndex((s) => s.status === status);
+
+    const steps: TimelineStep[] = Dashboard.MAIN_LINE.map((step, index) => {
+      const entry = whenOf(step.status);
+      const state: TimelineStep['state'] =
+        app.status === step.status
+          ? 'current'
+          : reached(step.status) && index < (currentIdx === -1 ? Dashboard.MAIN_LINE.length : currentIdx)
+            ? 'done'
+            : 'upcoming';
+      return {
+        ...step,
+        state,
+        when: entry ? fmt(entry.changed_at) : null,
+        actor: entry?.changed_by_name ?? '',
+        note: entry?.note ?? '',
+      };
+    });
+
+    // Interleave non-main-line events (returned, rejected, invoiced…) as event rows.
+    const mainStatuses = new Set(Dashboard.MAIN_LINE.map((s) => s.status));
+    const extraEvents: TimelineStep[] = history
+      .filter((h) => mainStatuses.has(h.to_status) === false)
+      .map((h) => ({
+        status: h.to_status,
+        label: STATUS_LABELS[h.to_status] ?? h.to_status,
+        icon: h.to_status === 'REJECTED' ? '⛔' : h.to_status === 'RETURNED_FOR_CORRECTION' ? '↩️' : '🔔',
+        state: 'event' as const,
+        when: fmt(h.changed_at),
+        actor: h.changed_by_name,
+        note: h.note,
+      }));
+
+    // Merge: keep chronological order by timestamp where events have one.
+    const merged = [...steps];
+    for (const event of extraEvents) {
+      const afterIndex = merged.findIndex(
+        (s) => s.when && event.when && new Date(s.when) > new Date(event.when),
+      );
+      if (afterIndex === -1) {
+        merged.push(event);
+      } else {
+        merged.splice(afterIndex, 0, event);
+      }
+    }
+    return merged;
+  }
+
+  protected timelineNoteFor(app: Application): string {
+    if (app.status === 'RETURNED_FOR_CORRECTION' && app.rejection_reason) return app.rejection_reason;
+    const last = (app.history ?? []).at(-1);
+    return last?.note ?? '';
+  }
 
   constructor() {
     this.loadAll();

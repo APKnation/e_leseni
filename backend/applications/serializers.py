@@ -18,13 +18,18 @@ class ApplicationDocumentSerializer(serializers.ModelSerializer):
 class StatusHistorySerializer(serializers.ModelSerializer):
     """Audit-trail entries powering the applicant's status timeline."""
 
-    changed_by_name = serializers.CharField(
-        source='changed_by.get_full_name', read_only=True, default=''
-    )
+    changed_by_name = serializers.SerializerMethodField()
 
     class Meta:
         model = StatusHistory
         fields = ['from_status', 'to_status', 'changed_by_name', 'note', 'changed_at']
+
+    def get_changed_by_name(self, obj):
+        """Full name when known, falling back to the username."""
+        user = obj.changed_by
+        if user is None:
+            return 'System'
+        return user.get_full_name() or user.get_username()
 
 
 class ApplicationSerializer(serializers.ModelSerializer):

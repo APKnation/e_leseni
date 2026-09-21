@@ -518,3 +518,22 @@ class DocumentUploadTests(APITestCase):
             format='multipart',
         )
         self.assertEqual(response.status_code, 201, response.data)
+
+    def test_status_history_exposed_for_timeline(self):
+        """The application payload embeds the audit trail for the applicant timeline."""
+        self.client.force_authenticate(user=self.applicant)
+        self._upload(requirement=self.tin_req)
+        self.client.post(
+            f'/api/applications/{self.application.id}/transition/',
+            {'to_status': 'SUBMITTED', 'note': 'All documents attached'}, format='json',
+        )
+
+        response = self.client.get('/api/applications/')
+        row = next(r for r in response.data['results'] if r['id'] == self.application.id)
+        self.assertEqual(len(row['history']), 1)
+        entry = row['history'][0]
+        self.assertEqual(entry['from_status'], 'DRAFT')
+        self.assertEqual(entry['to_status'], 'SUBMITTED')
+        self.assertIn('docapplicant', entry['changed_by_name'])
+        self.assertEqual(entry['note'], 'All documents attached')
+        self.assertIn('changed_at', entry)
