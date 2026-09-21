@@ -227,6 +227,7 @@ class Command(BaseCommand):
         self._seed_assignments()
         self._seed_businesses()
         self._seed_demo_application()
+        self._seed_pipeline_applications()
 
         self._stdout(self.style.SUCCESS(
             f'Done. LGAs: {LGA.objects.count()}, licence types: {LicenceType.objects.count()}. '
@@ -397,13 +398,24 @@ class Command(BaseCommand):
         application.transition_to(Application.Status.SUBMITTED, by=applicant)
         self._stdout(f'  + Demo application {application.reference_number} submitted.')
 
-        self._seed_pipeline_applications(applicant, business, licence_type, location)
-
-    def _seed_pipeline_applications(self, applicant, business, licence_type, location):
-        """Extra applications parked at inspection/approval stages so every
-        role page (officer / inspector / approver) has work to show."""
+    def _seed_pipeline_applications(self):
+        """Extra applications parked at review/inspection/approval stages so
+        every role page (officer / inspector / approver) has work to show."""
+        applicant = User.objects.filter(username='applicant1').first()
         officer = User.objects.filter(username='officer1').first()
         inspector = User.objects.filter(username='inspector1').first()
+        if applicant is None:
+            return
+
+        business = Business.objects.filter(owner=applicant, name='Mama Neema Foods').first()
+        ilala = LGA.objects.filter(code='DS-ILALA').first()
+        licence_type = (
+            LicenceType.objects.filter(lga=ilala, name='Food Vendor Licence').first() if ilala else None
+        )
+        location = BusinessLocation.objects.filter(business=business).first() if business else None
+        if None in (business, licence_type, location):
+            self._stdout('  = Skipping pipeline applications (missing business/licence/location).')
+            return
 
         def make(purpose):
             app = Application.objects.create(

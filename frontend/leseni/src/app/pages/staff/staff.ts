@@ -89,7 +89,7 @@ export class Staff implements OnInit {
   protected readonly schedulingId = signal<number | null>(null);
   protected readonly scheduledFor = signal('');
 
-  protected readonly role = this.auth.role ?? ('ADMIN' as UserRole);
+  protected readonly role: UserRole = this.auth.role() ?? 'ADMIN';
   protected readonly workspace = WORKSPACES[this.role] ?? WORKSPACES.ADMIN;
   protected readonly roleLabel = ROLE_LABELS[this.role] ?? this.role;
   protected readonly isAdmin = this.role === 'ADMIN';
