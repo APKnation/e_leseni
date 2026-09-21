@@ -159,6 +159,13 @@ USERS = [
         'lga': 'DS-ILALA',
     },
     {
+        'username': 'approver1',
+        'first_name': 'Zawadi', 'last_name': 'Mkwawa',
+        'email': 'approver1@leseni.local', 'phone_number': '0700000004',
+        'role': User.Roles.APPROVER, 'is_staff': True, 'is_superuser': False,
+        'lga': 'DS-ILALA',
+    },
+    {
         'username': 'applicant1',
         'first_name': 'Neema', 'last_name': 'Robert',
         'email': 'applicant1@leseni.local', 'phone_number': '0712000111',
@@ -326,9 +333,11 @@ class Command(BaseCommand):
 
     def _seed_assignments(self):
         pairs = [
-            ('officer1', 'Food Vendor Licence', True, False, True),
-            ('officer1', 'Retail Shop Licence', True, False, True),
+            ('officer1', 'Food Vendor Licence', True, False, False),
+            ('officer1', 'Retail Shop Licence', True, False, False),
             ('inspector1', 'Food Vendor Licence', False, True, False),
+            ('approver1', 'Food Vendor Licence', False, False, True),
+            ('approver1', 'Retail Shop Licence', False, False, True),
         ]
         ilala = LGA.objects.get(code='DS-ILALA')
         for username, licence_name, review, inspect, approve in pairs:
@@ -387,6 +396,59 @@ class Command(BaseCommand):
         )
         application.transition_to(Application.Status.SUBMITTED, by=applicant)
         self._stdout(f'  + Demo application {application.reference_number} submitted.')
+
+        self._seed_pipeline_applications(applicant, business, licence_type, location)
+
+    def _seed_pipeline_applications(self, applicant, business, licence_type, location):
+        """Extra applications parked at inspection/approval stages so every
+        role page (officer / inspector / approver) has work to show."""
+        officer = User.objects.filter(username='officer1').first()
+        inspector = User.objects.filter(username='inspector1').first()
+
+        def make(purpose):
+            app = Application.objects.create(
+                applicant=applicant, business=business,
+                licence_type=licence_type, location=location,
+                purpose_statement=purpose,
+            )
+            app.transition_to(Application.Status.SUBMITTED, by=applicant)
+            return app
+
+        # Under review (assigned to officer1).
+        if not Application.objects.filter(
+            applicant=applicant, licence_type=licence_type, status=Application.Status.UNDER_REVIEW
+        ).exists():
+            app = make('Under review demo application.')
+            app.transition_to(Application.Status.UNDER_REVIEW, by=officer)
+            if officer is not None:
+                app.assigned_officer = officer
+                app.save(update_fields=['assigned_officer', 'updated_at'])
+            self._stdout(f'  + Demo application {app.reference_number} under review.')
+
+        # Inspection scheduled (visible to inspector1).
+        if not Application.objects.filter(
+            applicant=applicant, licence_type=licence_type, status=Application.Status.INSPECTION_SCHEDULED
+        ).exists():
+            app = make('Inspection scheduled demo application.')
+            app.transition_to(Application.Status.UNDER_REVIEW, by=officer)
+            app.transition_to(Application.Status.INSPECTION_SCHEDULED, by=officer)
+            from applications.models import Inspection
+            from django.utils import timezone as tz
+            Inspection.objects.get_or_create(
+                application=app,
+                defaults={'inspector': inspector or officer, 'scheduled_for': tz.now() + tz.timedelta(days=1)},
+            )
+            self._stdout(f'  + Demo application {app.reference_number} inspection scheduled.')
+
+        # Inspected, awaiting approval (visible to approver1).
+        if not Application.objects.filter(
+            applicant=applicant, licence_type=licence_type, status=Application.Status.INSPECTED
+        ).exists():
+            app = make('Awaiting approval demo application.')
+            app.transition_to(Application.Status.UNDER_REVIEW, by=officer)
+            app.transition_to(Application.Status.INSPECTION_SCHEDULED, by=officer)
+            app.transition_to(Application.Status.INSPECTED, by=inspector)
+            self._stdout(f'  + Demo application {app.reference_number} inspected, awaiting approval.')
 
     def _log(self, obj, created):
         verb = '+' if created else '='

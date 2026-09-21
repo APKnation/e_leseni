@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+from .permissions import allowed_statuses_for
 from .models import Application, ApplicationDocument, Inspection
 
 
@@ -35,7 +36,13 @@ class ApplicationSerializer(serializers.ModelSerializer):
         ]
 
     def get_allowed_next_statuses(self, obj):
-        return [s.value for s in obj.allowed_next_statuses]
+        """Transitions valid for the state machine AND permitted for the
+        requesting user's role (drives the per-role action buttons)."""
+        request = self.context.get('request')
+        user = getattr(request, 'user', None)
+        if user is not None and self.context.get('actions_by_role'):
+            return sorted(s.value for s in allowed_statuses_for(user, obj))
+        return sorted(s.value for s in obj.allowed_next_statuses)
 
 
 class ApplicationTransitionSerializer(serializers.Serializer):
