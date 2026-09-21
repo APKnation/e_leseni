@@ -45,9 +45,7 @@
           >
             <option [ngValue]="null" disabled>— choose a region —</option>
             @for (region of regions(); track region.region) {
-              <option [value]="region.region">
-                {{ region.region }} ({{ region.lga_count }} councils)
-              </option>
+              <option [value]="region.region">{{ region.region }}</option>
             }
           </select>
         </label>
@@ -164,6 +162,26 @@
               }
             </select>
           </label>
+
+          @if (businessId() && locations().length > 0) {
+            <label class="flex flex-col gap-2 text-sm font-semibold">
+              Business location (premises)
+              <select
+                class="input-field"
+                name="location"
+                [ngModel]="locationId()"
+                (ngModelChange)="locationId.set($event)"
+                required
+              >
+                <option [ngValue]="null" disabled>— choose a location —</option>
+                @for (location of locations(); track location.id) {
+                  <option [ngValue]="location.id">
+                    {{ location.ward }}, {{ location.street }}{{ location.is_primary ? ' (main)' : '' }}
+                  </option>
+                }
+              </select>
+            </label>
+        }
           <button type="button" class="btn-secondary self-start !py-2" (click)="toggleNewBusiness()">
             + Register a new business
           </button>

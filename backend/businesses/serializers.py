@@ -35,3 +35,16 @@ class BusinessSerializer(serializers.ModelSerializer):
             'sector', 'is_verified', 'created_at', 'updated_at', 'locations', 'documents',
         ]
         read_only_fields = ['owner', 'is_verified', 'created_at', 'updated_at']
+
+    def validate_name(self, value):
+        # Composite DB constraint (owner, name) isn't auto-validated by DRF;
+        # surface it as a 400 instead of an IntegrityError.
+        owner = self.context['request'].user
+        queryset = Business.objects.filter(owner=owner, name=value)
+        if self.instance:
+            queryset = queryset.exclude(pk=self.instance.pk)
+        if queryset.exists():
+            raise serializers.ValidationError(
+                'You already registered a business with this name.'
+            )
+        return value

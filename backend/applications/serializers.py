@@ -30,7 +30,7 @@ class ApplicationSerializer(serializers.ModelSerializer):
             'allowed_next_statuses', 'documents',
         ]
         read_only_fields = [
-            'reference_number', 'status', 'rejection_reason', 'assigned_officer',
+            'applicant', 'reference_number', 'status', 'rejection_reason', 'assigned_officer',
             'submitted_at', 'decided_at', 'created_at', 'updated_at',
         ]
 

@@ -109,6 +109,39 @@
       </div>
     }
 
+    <!-- My businesses / activities -->
+    <div class="mt-12 flex flex-wrap items-center justify-between gap-3">
+      <h2 class="text-xl font-black">My businesses & activities</h2>
+      <a routerLink="/apply" class="btn-secondary !py-2">+ Apply for another activity</a>
+    </div>
+    @if (businesses().length === 0) {
+      <p class="mt-4 text-brand-lime/70">No businesses registered yet — start one from the apply form.</p>
+    } @else {
+      <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        @for (business of businesses(); track business.id) {
+          <div class="card flex flex-col gap-2">
+            <div class="flex items-start justify-between gap-2">
+              <p class="text-lg font-bold">{{ business.name }}</p>
+              @if (business.is_verified) {
+                <span class="badge-lime !px-2 !py-0.5">verified ✓</span>
+              } @else {
+                <span class="badge-outline !px-2 !py-0.5">unverified</span>
+              }
+            </div>
+            <p class="text-sm text-brand-lime/70">
+              {{ business.sector || 'General' }}
+              @if (business.locations.length > 0) {
+                · {{ business.locations[0].ward }}, {{ business.locations[0].lga_name }}
+              }
+            </p>
+            <p class="text-xs text-brand-lime/50">
+              TIN: {{ business.tin_number || '—' }} · BRELA: {{ business.brela_registration_number || '—' }}
+            </p>
+          </div>
+        }
+      </div>
+    }
+
     <!-- Licences -->
     <h2 class="mt-12 text-xl font-black">Licences</h2>
     @if (licences().length === 0) {

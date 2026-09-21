@@ -4,7 +4,7 @@ import { Router, RouterLink } from '@angular/router';
 
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
-import { Application, Business, LGA, LicenceCategory, LicenceType, RegionInfo } from '../../core/models';
+import { Application, Business, BusinessLocation, LGA, LicenceCategory, LicenceType, RegionInfo } from '../../core/models';
 
 interface NewBusinessForm {
   name: string;
@@ -45,6 +45,7 @@ export class Apply {
   // Business selection
   protected readonly businesses = signal<Business[]>([]);
   protected readonly businessId = signal<number | null>(null);
+  protected readonly locations = signal<BusinessLocation[]>([]);
   protected readonly locationId = signal<number | null>(null);
   protected readonly creatingNewBusiness = signal(false);
   protected readonly newBusiness = signal<NewBusinessForm>({
@@ -131,7 +132,12 @@ export class Apply {
 
   protected selectBusiness(id: number | null): void {
     this.businessId.set(id);
-    this.locationId.set(null);
+    const business = this.businesses().find((b) => b.id === id);
+    const locs = business?.locations ?? [];
+    this.locations.set(locs);
+    // Auto-select the primary (or first) location; clear if none exist.
+    const primary = locs.find((l) => l.is_primary) ?? locs[0] ?? null;
+    this.locationId.set(primary?.id ?? null);
   }
 
   protected toggleNewBusiness(): void {
@@ -213,6 +219,11 @@ export class Apply {
   protected reset(): void {
     this.created.set(null);
     this.errorMessage.set('');
+    // Reload businesses: a just-registered business should appear for the next application.
+    this.api.businesses().subscribe((page) => {
+      this.businesses.set(page.results);
+      this.creatingNewBusiness.set(page.results.length === 0);
+    });
   }
 
   protected goHome(): void {

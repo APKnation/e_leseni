@@ -1,23 +1,21 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { finalize } from 'rxjs';
 
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
 import {
   Application,
+  Business,
   Invoice,
   Licence,
   STATUS_LABELS,
   STATUS_STYLES,
 } from '../../core/models';
 
-
 @Component({
   imports: [RouterLink],
   selector: 'app-dashboard',
   templateUrl: './dashboard.html',
-  styles: ``,
 })
 export class Dashboard {
   private readonly api = inject(ApiService);
@@ -32,6 +30,7 @@ export class Dashboard {
   protected readonly applications = signal<Application[]>([]);
   protected readonly licences = signal<Licence[]>([]);
   protected readonly invoices = signal<Invoice[]>([]);
+  protected readonly businesses = signal<Business[]>([]);
 
   protected readonly payingInvoiceId = signal<number | null>(null);
 
@@ -43,6 +42,11 @@ export class Dashboard {
     this.loading.set(true);
     this.errorMessage.set('');
 
+    let pending = 3;
+    const done = () => {
+      if (--pending === 0) this.loading.set(false);
+    };
+
     this.api.applications().subscribe({
       next: (page) => {
         this.applications.set(page.results);
@@ -52,6 +56,22 @@ export class Dashboard {
         this.errorMessage.set('Could not load your data. Is the backend running?');
         this.loading.set(false);
       },
+    });
+
+    this.api.businesses().subscribe({
+      next: (page) => {
+        this.businesses.set(page.results);
+        done();
+      },
+      error: () => done(),
+    });
+
+    this.api.licences().subscribe({
+      next: (page) => {
+        this.licences.set(page.results);
+        done();
+      },
+      error: () => done(),
     });
   }
 
@@ -64,14 +84,6 @@ export class Dashboard {
     this.api.invoices().subscribe({
       next: (page) => {
         this.invoices.set(page.results);
-        done();
-      },
-      error: () => done(),
-    });
-
-    this.api.licences().subscribe({
-      next: (page) => {
-        this.licences.set(page.results);
         done();
       },
       error: () => done(),
@@ -111,7 +123,6 @@ export class Dashboard {
       .subscribe({
         next: () => this.loadAll(),
         error: () => this.payingInvoiceId.set(null),
-        complete: () => finalize(() => this.payingInvoiceId.set(null)),
       });
   }
 
