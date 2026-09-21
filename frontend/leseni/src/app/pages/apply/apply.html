@@ -20,7 +20,8 @@
   } @else {
     <h1 class="text-3xl font-black">Apply for a licence</h1>
     <p class="mt-2 text-brand-lime/70">
-      Hi {{ userName }} — choose your area, pick a licence category, then select the licence.
+      Hi {{ userName }} — pick your area and licence, confirm your business details,
+      attach the required documents, then submit.
     </p>
 
     @if (errorMessage()) {
@@ -70,7 +71,7 @@
         </label>
       </div>
 
-      <!-- Step 2: Category -->
+      <!-- Step 2: Category & licence -->
       <div class="card flex flex-col gap-4">
         <h2 class="text-lg font-black">2. What kind of licence?</h2>
         @if (!lgaId()) {
@@ -97,52 +98,51 @@
               </button>
             }
           </div>
-        }
-      </div>
 
-      <!-- Step 3: Licence -->
-      <div class="card flex flex-col gap-4">
-        <h2 class="text-lg font-black">3. Select the licence</h2>
-        @if (!categoryId()) {
-          <p class="text-sm text-brand-lime/60">Choose a category first.</p>
-        } @else if (licencesForCategory.length === 0) {
-          <p class="text-sm text-brand-lime/60">No licences in this category for the selected council.</p>
-        } @else {
-          <div class="flex flex-col gap-2">
-            @for (licence of licencesForCategory; track licence.id) {
-              <label
-                class="flex cursor-pointer items-center justify-between gap-4 rounded-xl border p-4 transition"
-                [class]="
-                  licenceTypeId() === licence.id
-                    ? 'border-brand-lime bg-brand-lime/10'
-                    : 'border-brand-lime/20 hover:border-brand-lime/50'
-                "
-              >
-                <div>
-                  <p class="font-bold">{{ licence.name }}</p>
-                  <p class="text-sm text-brand-lime/70">{{ licence.description }}</p>
-                </div>
-                <div class="text-right">
-                  <p class="font-black">{{ licence.fee }} TZS</p>
-                  <p class="text-xs text-brand-lime/60">{{ licence.validity_months }} months</p>
-                </div>
-                <input
-                  class="sr-only"
-                  type="radio"
-                  name="licence_type"
-                  [value]="licence.id"
-                  [checked]="licenceTypeId() === licence.id"
-                  (change)="licenceTypeId.set(licence.id)"
-                />
-              </label>
+          @if (categoryId()) {
+            @if (licencesForCategory.length === 0) {
+              <p class="text-sm text-brand-lime/60">No licences in this category for the selected council.</p>
+            } @else {
+              <div class="flex flex-col gap-2">
+                @for (licence of licencesForCategory; track licence.id) {
+                  <label
+                    class="flex cursor-pointer items-center justify-between gap-4 rounded-xl border p-4 transition"
+                    [class]="
+                      licenceTypeId() === licence.id
+                        ? 'border-brand-lime bg-brand-lime/10'
+                        : 'border-brand-lime/20 hover:border-brand-lime/50'
+                    "
+                  >
+                    <div>
+                      <p class="font-bold">{{ licence.name }}</p>
+                      <p class="text-sm text-brand-lime/70">{{ licence.description }}</p>
+                      @if (licence.requires_inspection) {
+                        <p class="mt-1 text-xs text-blue-300">🔍 Premises inspection required</p>
+                      }
+                    </div>
+                    <div class="text-right">
+                      <p class="font-black">{{ licence.fee }} TZS</p>
+                      <p class="text-xs text-brand-lime/60">{{ licence.validity_months }} months</p>
+                    </div>
+                    <input
+                      class="sr-only"
+                      type="radio"
+                      name="licence_type"
+                      [value]="licence.id"
+                      [checked]="licenceTypeId() === licence.id"
+                      (change)="selectLicence(licence.id)"
+                    />
+                  </label>
+                }
+              </div>
             }
-          </div>
+          }
         }
       </div>
 
-      <!-- Step 4: Business & purpose -->
+      <!-- Step 3: Business & verification -->
       <div class="card flex flex-col gap-4">
-        <h2 class="text-lg font-black">4. Business & details</h2>
+        <h2 class="text-lg font-black">3. Business details</h2>
 
         @if (!creatingNewBusiness()) {
           <label class="flex flex-col gap-2 text-sm font-semibold">
@@ -157,7 +157,7 @@
               <option [ngValue]="null" disabled>— choose a business —</option>
               @for (business of businesses(); track business.id) {
                 <option [ngValue]="business.id">
-                  {{ business.name }}{{ business.is_verified ? ' ✓' : ' (unverified)' }}
+                  {{ business.name }}{{ business.is_verified ? ' ✓ verified' : ' (unverified)' }}
                 </option>
               }
             </select>
@@ -186,6 +186,12 @@
             + Register a new business
           </button>
         } @else {
+          <p class="rounded-lg bg-brand-lime/10 px-4 py-3 text-xs text-brand-lime/80">
+            <strong>New business?</strong> Register it here first — your TIN is checked with
+            <strong>TRA</strong> and your registration number with <strong>BRELA</strong>.
+            Once both pass, the business is marked <span class="badge-lime !px-2 !py-0.5">verified ✓</span>
+            and officers will see it as trusted during review.
+          </p>
           <div class="grid gap-4 sm:grid-cols-2">
             <label class="flex flex-col gap-2 text-sm font-semibold">
               Business name
@@ -202,16 +208,19 @@
             <label class="flex flex-col gap-2 text-sm font-semibold">
               TRA TIN
               <input class="input-field" type="text" name="nb_tin" inputmode="numeric"
+                     placeholder="9–12 digits"
                      [ngModel]="newBusiness().tin_number"
                      (ngModelChange)="newBusiness.update(v => ({ ...v, tin_number: $event }))" />
             </label>
             <label class="flex flex-col gap-2 text-sm font-semibold">
               BRELA registration no.
               <input class="input-field" type="text" name="nb_brela"
+                     placeholder="e.g. 102345678"
                      [ngModel]="newBusiness().brela_registration_number"
                      (ngModelChange)="newBusiness.update(v => ({ ...v, brela_registration_number: $event }))" />
             </label>
           </div>
+          <p class="text-xs text-brand-lime/60">{{ businessVerificationHint }}</p>
           <p class="text-xs text-brand-lime/60">
             Council: <span class="font-bold text-brand-lime">{{ selectedLga?.name }}</span>
             (from your area selection) — add ward/street for the premises.
@@ -248,7 +257,63 @@
             </button>
           }
         }
+      </div>
 
+      <!-- Step 4: Documents checklist -->
+      <div class="card flex flex-col gap-4">
+        <h2 class="text-lg font-black">4. Required documents</h2>
+        @if (!licenceTypeId()) {
+          <p class="text-sm text-brand-lime/60">Choose a licence first to see its document requirements.</p>
+        } @else {
+          <p class="text-sm text-brand-lime/70">
+            Attach clear scans or photos (PDF/JPG/PNG, max 10 MB). Mandatory items must be
+            uploaded before you can submit.
+          </p>
+          <div class="flex flex-col gap-3">
+            @for (row of uploadRows(); track row.label) {
+              <div
+                class="flex flex-col gap-2 rounded-xl border p-4 sm:flex-row sm:items-center sm:justify-between"
+                [class]="row.uploaded ? 'border-emerald-400/50 bg-emerald-500/10' : 'border-brand-lime/20'"
+              >
+                <div class="min-w-0">
+                  <p class="font-bold">
+                    {{ row.label }}
+                    @if (row.mandatory) {
+                      <span class="ml-1 text-xs font-black text-red-300">*required</span>
+                    } @else {
+                      <span class="ml-1 text-xs text-brand-lime/50">(optional)</span>
+                    }
+                  </p>
+                  @if (row.uploaded) {
+                    <p class="text-xs text-emerald-300">✓ {{ row.fileName || 'uploaded' }}</p>
+                  } @else if (row.uploading) {
+                    <p class="text-xs text-blue-300">Uploading…</p>
+                  }
+                </div>
+                <label class="btn-secondary cursor-pointer !py-2 !px-4 text-xs">
+                  {{ row.uploaded ? 'Replace file' : 'Choose file' }}
+                  <input
+                    class="sr-only"
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    [disabled]="row.uploading"
+                    (change)="onFileSelected(row, $event)"
+                  />
+                </label>
+              </div>
+            }
+          </div>
+          @if (uploadRows().length > 0) {
+            <p class="text-xs text-brand-lime/60">
+              {{ uploadedCount }} of {{ uploadRows().length }} documents attached.
+            </p>
+          }
+        }
+      </div>
+
+      <!-- Step 5: Purpose & submit -->
+      <div class="card flex flex-col gap-4">
+        <h2 class="text-lg font-black">5. Purpose & submit</h2>
         <label class="flex flex-col gap-2 text-sm font-semibold">
           Purpose (optional)
           <textarea
@@ -260,6 +325,12 @@
             placeholder="Anything the council should know…"
           ></textarea>
         </label>
+        @if (draftApplication(); as draft) {
+          <p class="rounded-lg bg-blue-500/15 px-4 py-3 text-xs text-blue-200">
+            Draft saved as <span class="font-mono">{{ draft.reference_number }}</span> —
+            uploading remaining documents, then submitting.
+          </p>
+        }
       </div>
 
       <button type="submit" class="btn-primary w-full sm:w-auto" [disabled]="!canSubmit || submitting()">
