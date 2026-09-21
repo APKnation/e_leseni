@@ -57,7 +57,14 @@
                 {{ STATUS_LABELS[app.status] }}
               </span>
             </div>
-            <p class="mt-1 text-lg font-bold">{{ app.business_name }}</p>
+            <p class="mt-1 flex flex-wrap items-center gap-2 text-lg font-bold">
+              {{ app.business_name }}
+              @if (app.business_is_verified) {
+                <span class="badge-lime !px-2 !py-0.5">verified ✓</span>
+              } @else {
+                <span class="badge-outline !px-2 !py-0.5 !border-orange-400/50 !text-orange-300">unverified</span>
+              }
+            </p>
             <p class="text-sm text-brand-lime/70">
               {{ app.licence_type_name }} — {{ app.lga_name }} · applicant: {{ app.applicant_name }}
             </p>
@@ -71,6 +78,22 @@
             }
             @if (app.status === 'REJECTED' && app.rejection_reason) {
               <p class="mt-2 text-sm text-red-300">Reason: {{ app.rejection_reason }}</p>
+            }
+            <!-- Attached documents -->
+            @if (app.documents.length > 0) {
+              <div class="mt-3 flex flex-wrap gap-2">
+                @for (doc of app.documents; track doc.id) {
+                  <a
+                    [href]="doc.file"
+                    target="_blank"
+                    class="inline-flex items-center gap-1 rounded-lg border border-brand-lime/25 px-2 py-1 text-xs text-brand-lime/80 transition hover:border-brand-lime/60 hover:text-brand-lime"
+                  >
+                    📎 {{ doc.requirement_name || 'Document' }}
+                  </a>
+                }
+              </div>
+            } @else if (app.status !== 'DRAFT') {
+              <p class="mt-3 text-xs text-orange-300/80">⚠ No documents attached</p>
             }
           </div>
 

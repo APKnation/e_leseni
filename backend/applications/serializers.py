@@ -18,6 +18,7 @@ class ApplicationDocumentSerializer(serializers.ModelSerializer):
 class ApplicationSerializer(serializers.ModelSerializer):
     applicant_name = serializers.CharField(source='applicant.get_full_name', read_only=True)
     business_name = serializers.CharField(source='business.name', read_only=True)
+    business_is_verified = serializers.BooleanField(source='business.is_verified', read_only=True)
     licence_type_name = serializers.CharField(source='licence_type.name', read_only=True)
     lga_name = serializers.CharField(source='licence_type.lga.name', read_only=True)
     allowed_next_statuses = serializers.SerializerMethodField()
@@ -27,7 +28,7 @@ class ApplicationSerializer(serializers.ModelSerializer):
         model = Application
         fields = [
             'id', 'reference_number', 'applicant', 'applicant_name',
-            'business', 'business_name', 'licence_type', 'licence_type_name', 'lga_name',
+            'business', 'business_name', 'business_is_verified', 'licence_type', 'licence_type_name', 'lga_name',
             'location', 'status', 'priority', 'purpose_statement', 'rejection_reason',
             'assigned_officer', 'submitted_at', 'decided_at', 'created_at', 'updated_at',
             'allowed_next_statuses', 'documents',

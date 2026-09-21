@@ -86,6 +86,15 @@ export interface LicenceType {
   requirements: Requirement[];
 }
 
+export interface BusinessDocument {
+  id: number;
+  business: number;
+  kind: 'TIN_CERTIFICATE' | 'BRELA_CERTIFICATE' | 'LEASE_AGREEMENT' | 'OTHER';
+  kind_display: string;
+  file: string;
+  uploaded_at: string;
+}
+
 export interface BusinessLocation {
   id: number;
   business: number;
@@ -107,7 +116,17 @@ export interface Business {
   sector: string;
   is_verified: boolean;
   locations: BusinessLocation[];
-  documents: unknown[];
+  documents: BusinessDocument[];
+}
+
+export interface ApplicationDocument {
+  id: number;
+  application: number;
+  requirement: number | null;
+  requirement_name: string | null;
+  file: string;
+  uploaded_at: string;
+  verified: boolean;
 }
 
 export interface Application {
@@ -117,6 +136,7 @@ export interface Application {
   applicant_name: string;
   business: number;
   business_name: string;
+  business_is_verified: boolean;
   licence_type: number;
   licence_type_name: string;
   lga_name: string;
@@ -126,7 +146,7 @@ export interface Application {
   purpose_statement: string;
   rejection_reason: string;
   allowed_next_statuses: ApplicationStatus[];
-  documents: unknown[];
+  documents: ApplicationDocument[];
   created_at: string;
   submitted_at: string | null;
   decided_at: string | null;

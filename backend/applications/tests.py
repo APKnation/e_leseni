@@ -395,3 +395,126 @@ class RoleWorkflowAPITests(APITestCase):
         )
         self.assertEqual(response.status_code, 201, response.data)
         self.assertEqual(response.data['inspector'], self.officer.id)
+
+
+class DocumentUploadTests(APITestCase):
+    """Requirement-driven document uploads gate submission."""
+
+    def setUp(self):
+        from django.contrib.auth import get_user_model
+        from lga.models import Requirement
+
+        self.Requirement = Requirement
+        User = get_user_model()
+        self.applicant = User.objects.create_user(username='docapplicant', password='testpass123')
+        self.officer = User.objects.create_user(
+            username='docofficer', password='testpass123', role='OFFICER', lga_id=None
+        )
+        self.lga = LGA.objects.create(name='Ilala', region='Dar es Salaam', code='DS-ILALA')
+        self.officer.lga = self.lga
+        self.officer.save(update_fields=['lga'])
+        self.licence_type = LicenceType.objects.create(
+            name='Food Vendor Licence', code='FOOD-DOC', fee=50000, lga=self.lga
+        )
+        self.tin_req = Requirement.objects.create(
+            licence_type=self.licence_type, name='TIN Certificate',
+            kind=Requirement.Kind.DOCUMENT, is_mandatory=True,
+        )
+        self.lease_req = Requirement.objects.create(
+            licence_type=self.licence_type, name='Lease Agreement',
+            kind=Requirement.Kind.DOCUMENT, is_mandatory=False,
+        )
+        self.business = Business.objects.create(owner=self.applicant, name='Doc Test Foods')
+        self.location = BusinessLocation.objects.create(
+            business=self.business, lga=self.lga, ward='Upanga', street='Ocean Road'
+        )
+        self.application = Application.objects.create(
+            applicant=self.applicant,
+            business=self.business,
+            licence_type=self.licence_type,
+            location=self.location,
+        )
+        self.client = APIClient()
+
+    def _upload(self, requirement=None, filename='tin.pdf'):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        self.client.force_authenticate(user=self.applicant)
+        data = {'file': SimpleUploadedFile(filename, b'%PDF-1.4 fake', content_type='application/pdf')}
+        if requirement is not None:
+            data['requirement'] = requirement.id
+        return self.client.post(
+            f'/api/applications/{self.application.id}/upload_document/', data, format='multipart'
+        )
+
+    def test_upload_document_to_draft(self):
+        response = self._upload(requirement=self.tin_req)
+        self.assertEqual(response.status_code, 201, response.data)
+        self.assertEqual(response.data['requirement_name'], 'TIN Certificate')
+        self.assertTrue(self.application.documents.filter(requirement=self.tin_req).exists())
+
+    def test_upload_rejects_requirement_from_other_licence(self):
+        other_licence = LicenceType.objects.create(
+            name='Kiosk Licence', code='KIOSK-DOC', fee=30000, lga=self.lga
+        )
+        other_req = self.Requirement.objects.create(
+            licence_type=other_licence, name='Other Cert', kind=self.Requirement.Kind.DOCUMENT
+        )
+        response = self._upload(requirement=other_req)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_submit_blocked_until_mandatory_documents_uploaded(self):
+        self.client.force_authenticate(user=self.applicant)
+        response = self.client.post(
+            f'/api/applications/{self.application.id}/transition/',
+            {'to_status': 'SUBMITTED'}, format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('TIN Certificate', response.data['detail'])
+
+        # Optional-only upload does not unblock; mandatory upload does.
+        self._upload(requirement=self.lease_req, filename='lease.pdf')
+        response = self.client.post(
+            f'/api/applications/{self.application.id}/transition/',
+            {'to_status': 'SUBMITTED'}, format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+        self._upload(requirement=self.tin_req)
+        response = self.client.post(
+            f'/api/applications/{self.application.id}/transition/',
+            {'to_status': 'SUBMITTED'}, format='json',
+        )
+        self.assertEqual(response.status_code, 200)
+        self.application.refresh_from_db()
+        self.assertEqual(self.application.status, Application.Status.SUBMITTED)
+
+    def test_upload_blocked_after_submission_for_applicants(self):
+        self._upload(requirement=self.tin_req)
+        self.client.force_authenticate(user=self.applicant)
+        self.client.post(
+            f'/api/applications/{self.application.id}/transition/',
+            {'to_status': 'SUBMITTED'}, format='json',
+        )
+        response = self._upload(requirement=self.lease_req, filename='late.pdf')
+        self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
+
+    def test_staff_can_upload_any_time(self):
+        self._upload(requirement=self.tin_req)
+        self.client.force_authenticate(user=self.applicant)
+        self.client.post(
+            f'/api/applications/{self.application.id}/transition/',
+            {'to_status': 'SUBMITTED'}, format='json',
+        )
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        self.client.force_authenticate(user=self.officer)
+        response = self.client.post(
+            f'/api/applications/{self.application.id}/upload_document/',
+            {
+                'file': SimpleUploadedFile('findings.jpg', b'fake', content_type='image/jpeg'),
+                'requirement': self.lease_req.id,
+            },
+            format='multipart',
+        )
+        self.assertEqual(response.status_code, 201, response.data)
