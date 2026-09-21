@@ -146,6 +146,7 @@ export interface Application {
   reference_number: string;
   applicant: number;
   applicant_name: string;
+  applicant_has_nida: boolean;
   business: number;
   business_name: string;
   business_is_verified: boolean;
