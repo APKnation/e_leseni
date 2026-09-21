@@ -62,9 +62,10 @@ const WORKSPACES: Record<UserRole, RoleWorkspace> = {
       { label: 'All', statuses: null },
     ],
   },
-  // Applicants never reach this page (guarded), but keep the type total.
-  APPLICANT: WORKSPACES.ADMIN,
 };
+
+// Applicants never reach this page (guarded), but keep the type total.
+WORKSPACES.APPLICANT = WORKSPACES.ADMIN;
 
 @Component({
   imports: [FormsModule, RouterLink],
