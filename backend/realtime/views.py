@@ -15,6 +15,7 @@ import queue as queuelib
 from django.db import close_old_connections
 from django.http import StreamingHttpResponse
 from django.utils import timezone
+from rest_framework.renderers import BaseRenderer
 from rest_framework_simplejwt.state import token_backend
 from rest_framework.views import APIView
 
@@ -29,11 +30,22 @@ HEARTBEAT_SECONDS = 15
 SNAPSHOT_LIMIT = 50
 
 
+class EventStreamRenderer(BaseRenderer):
+    """Accept text/event-stream so DRF content negotiation passes for SSE."""
+
+    media_type = 'text/event-stream'
+    format = 'text'
+
+    def render(self, data, accepted_media_type=None, renderer_context=None):
+        return data
+
+
 class EventStreamView(APIView):
     """SSE stream of status changes relevant to the authenticated user."""
 
     authentication_classes = []  # custom token auth below (EventSource limitation)
     permission_classes = []
+    renderer_classes = [EventStreamRenderer]  # accept text/event-stream
 
     def get(self, request):
         user = self._user_from_token(request)

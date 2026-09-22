@@ -79,3 +79,13 @@ class EventStreamAuthTests(TestCase):
         # The stream starts with a hello event.
         first_chunk = next(response.streaming_content)
         self.assertIn('event: hello', first_chunk.decode())
+
+    def test_browser_accept_header_is_accepted(self):
+        """Regression: EventSource sends Accept: text/event-stream; DRF
+        content negotiation must not answer 406 Not Acceptable."""
+        token = token_backend.encode({'user_id': self.user.id})
+        response = self.client.get(
+            f'/api/events/?token={token}', HTTP_ACCEPT='text/event-stream'
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Type'], 'text/event-stream')
