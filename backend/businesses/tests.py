@@ -32,30 +32,67 @@ class BrelaRegistrationTests(TestCase):
 
 
 class TINApplicationTests(TestCase):
+    """TRA TIN applications: NIDA number + PDF copy of the ID are mandatory."""
+
     def setUp(self):
         self.client = APIClient()
         self.user = User.objects.create_user(username='jane', password='pass-12345678')
         self.client.force_authenticate(self.user)
 
+    @staticmethod
+    def _nida_copy():
+        return SimpleUploadedFile('nida_copy.pdf', b'%PDF-1.4 NIDA copy', content_type='application/pdf')
+
     def test_apply_tin_returns_nine_digit_number(self):
         res = self.client.post('/api/businesses/demo/apply-tin/', {
             'business_name': 'Jane Traders', 'taxpayer_name': 'Jane Doe',
-        })
-        self.assertEqual(res.status_code, 201)
+            'nida_number': '1' + '9' * 19, 'nida_copy': self._nida_copy(),
+        }, format='multipart')
+        self.assertEqual(res.status_code, 201, res.content)
         self.assertEqual(res.data['status'], 'APPROVED')
         self.assertEqual(len(res.data['tin_number']), 9)
         self.assertTrue(res.data['tin_number'].isdigit())
+        self.assertEqual(res.data['nida_number'], '1' + '9' * 19)
+        # The NIDA copy is stored with the application, like at TRA.
+        self.assertEqual(len(res.data['documents']), 1)
+        self.assertEqual(res.data['documents'][0]['kind'], 'NIDA_COPY')
 
     def test_apply_tin_requires_fields(self):
         res = self.client.post('/api/businesses/demo/apply-tin/', {'business_name': 'X'})
         self.assertEqual(res.status_code, 400)
+
+    def test_apply_tin_requires_nida_number(self):
+        res = self.client.post('/api/businesses/demo/apply-tin/', {
+            'business_name': 'Jane Traders', 'taxpayer_name': 'Jane Doe',
+            'nida_copy': self._nida_copy(),
+        }, format='multipart')
+        self.assertEqual(res.status_code, 400)
+        self.assertIn('nida_number', str(res.content))
+
+    def test_apply_tin_requires_nida_copy_pdf(self):
+        res = self.client.post('/api/businesses/demo/apply-tin/', {
+            'business_name': 'Jane Traders', 'taxpayer_name': 'Jane Doe',
+            'nida_number': '1' + '9' * 19,
+        }, format='multipart')
+        self.assertEqual(res.status_code, 400)
+        self.assertIn('nida_copy', str(res.content))
+
+        # A non-PDF is rejected too.
+        res2 = self.client.post('/api/businesses/demo/apply-tin/', {
+            'business_name': 'Jane Traders', 'taxpayer_name': 'Jane Doe',
+            'nida_number': '1' + '9' * 19,
+            'nida_copy': SimpleUploadedFile('id.jpg', b'fake-image', content_type='image/jpeg'),
+        }, format='multipart')
+        self.assertEqual(res2.status_code, 400)
+        self.assertIn('PDF', str(res2.content))
 
     def test_tin_applications_list_is_scoped_to_owner(self):
         other = User.objects.create_user(username='tom', password='pass-12345678')
         TINApplication.objects.create(applicant=other, business_name='Toms', taxpayer_name='Tom')
         self.client.post('/api/businesses/demo/apply-tin/', {
             'business_name': 'Jane Traders', 'taxpayer_name': 'Jane Doe',
-        })
+            'nida_number': '1' + '9' * 19, 'nida_copy': self._nida_copy(),
+        }, format='multipart')
         res = self.client.get('/api/businesses/tin-applications/')
         self.assertEqual(res.status_code, 200)
         self.assertEqual(len(res.data), 1)
@@ -125,7 +162,8 @@ class FullRegistrationJourneyTests(TestCase):
         brela = self.client.post('/api/businesses/demo/brela-register/', {'business_name': 'Jane Cafe'}).data
         tin = self.client.post('/api/businesses/demo/apply-tin/', {
             'business_name': 'Jane Cafe', 'taxpayer_name': 'Jane Doe',
-        }).data
+            'nida_number': self.user.nida_number, 'nida_copy': self._letter(),
+        }, format='multipart').data
         res = self.client.post('/api/businesses/', {
             'name': 'Jane Cafe',
             'tin_number': tin['tin_number'],

@@ -1,8 +1,11 @@
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db.models import Q
 from rest_framework import generics, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
+
+from core_docs.validation import validate_pdf_document
 
 from lga.models import Requirement
 
@@ -95,8 +98,10 @@ class ApplicationViewSet(viewsets.ModelViewSet):
         file = request.FILES.get('file')
         if file is None:
             return Response({'detail': 'A file is required.'}, status=status.HTTP_400_BAD_REQUEST)
-        if file.size > 10 * 1024 * 1024:
-            return Response({'detail': 'File too large (max 10 MB).'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            validate_pdf_document(file)
+        except DjangoValidationError as exc:
+            return Response({'detail': '; '.join(exc.messages)}, status=status.HTTP_400_BAD_REQUEST)
 
         requirement_id = request.data.get('requirement')
         requirement = None
@@ -170,6 +175,23 @@ class ApplicationTransitionView(generics.GenericAPIView):
             if missing:
                 return Response(
                     {'detail': f'Missing required documents: {", ".join(missing)}. Upload them before submitting.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            # Real councils only licence businesses that are registered
+            # (BRELA) and tax-registered (TRA) — i.e. verified on this
+            # platform. The business must carry real numbers, a NIDA and the
+            # street identification letter.
+            if not application.business.is_verified:
+                return Response(
+                    {
+                        'detail': (
+                            f'"{application.business.name}" is not verified yet. A licence needs a '
+                            'TRA TIN, a BRELA registration number, your NIDA number and the street '
+                            'identification letter on file. Complete the business registration wizard '
+                            '(Businesses → Verify with TRA & BRELA) first.'
+                        )
+                    },
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 

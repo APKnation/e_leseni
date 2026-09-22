@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     'notifications',
     'ussd',
     'integrations',
+    'realtime',
 ]
 
 MIDDLEWARE = [
@@ -127,6 +128,10 @@ CORS_ALLOWED_ORIGINS = [
     'http://localhost:4200',
     'http://127.0.0.1:4200',
 ]
+
+# SSE responses must not be buffered/shortened by middleware in production
+SECURE_PROXY_SSL_HEADER = None
+DATA_UPLOAD_MAX_MEMORY_SIZE = 12 * 1024 * 1024  # 10 MB PDFs + multipart overhead
 
 
 # Database

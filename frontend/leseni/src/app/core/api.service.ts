@@ -100,12 +100,31 @@ export class ApiService {
     }>(`${this.baseUrl}/businesses/demo/brela-register/`, { business_name: businessName });
   }
 
-  /** DEMO TRA: apply for a TIN and receive it once processed. */
-  applyForTin(businessName: string, taxpayerName: string): Observable<TINApplication> {
-    return this.http.post<TINApplication>(`${this.baseUrl}/businesses/demo/apply-tin/`, {
-      business_name: businessName,
-      taxpayer_name: taxpayerName,
-    });
+  /** DEMO TRA: apply for a TIN with the mandatory NIDA copy (PDF), receive it once processed. */
+  applyForTin(
+    businessName: string,
+    taxpayerName: string,
+    nidaNumber: string,
+    nidaCopy: File,
+  ): Observable<TINApplication> {
+    const form = new FormData();
+    form.append('business_name', businessName);
+    form.append('taxpayer_name', taxpayerName);
+    form.append('nida_number', nidaNumber);
+    form.append('nida_copy', nidaCopy);
+    return this.http.post<TINApplication>(`${this.baseUrl}/businesses/demo/apply-tin/`, form);
+  }
+
+  /** Attach any supporting document (TIN certificate, lease, …) to a business. PDF only. */
+  uploadBusinessDocument(
+    businessId: number,
+    file: File,
+    kind: string = 'OTHER',
+  ): Observable<unknown> {
+    const form = new FormData();
+    form.append('file', file);
+    form.append('kind', kind);
+    return this.http.post(`${this.baseUrl}/businesses/${businessId}/upload_document/`, form);
   }
 
   /** DEMO NIDA: verify a national ID number against the owner's name. */

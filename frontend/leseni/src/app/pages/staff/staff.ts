@@ -1,9 +1,11 @@
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { Component, DestroyRef, computed, inject, OnInit, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 
 import { ApiService } from '../../core/api.service';
 import { AuthService, ROLE_LABELS, UserRole } from '../../core/auth.service';
+import { RealtimeService } from '../../core/realtime.service';
 import { Application, ApplicationStatus, Inspection, STATUS_LABELS, STATUS_STYLES } from '../../core/models';
 
 interface QueueFilter {
@@ -79,6 +81,8 @@ const WORKSPACES: Record<UserRole, RoleWorkspace> = {
 export class Staff implements OnInit {
   private readonly api = inject(ApiService);
   private readonly auth = inject(AuthService);
+  private readonly realtime = inject(RealtimeService);
+  private readonly destroyRef = inject(DestroyRef);
 
   protected readonly STATUS_LABELS = STATUS_LABELS;
   protected readonly STATUS_STYLES = STATUS_STYLES;
@@ -117,6 +121,12 @@ export class Staff implements OnInit {
 
   ngOnInit(): void {
     this.load();
+
+    // Live queue: refresh when any application/inspection event arrives
+    // (e.g. an applicant submits while the officer has the page open).
+    this.realtime.events$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.load());
   }
 
   protected load(): void {

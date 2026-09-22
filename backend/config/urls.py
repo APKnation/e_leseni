@@ -14,6 +14,7 @@ urlpatterns = [
     path('api/', include('payments.urls')),
     path('api/', include('licences.urls')),
     path('api/', include('notifications.urls')),
+    path('api/', include('realtime.urls')),
     path('ussd/', include('ussd.urls')),
     path('', include('integrations.urls')),
 ]

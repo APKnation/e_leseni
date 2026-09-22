@@ -430,7 +430,13 @@ class DocumentUploadTests(APITestCase):
             licence_type=self.licence_type, name='Lease Agreement',
             kind=Requirement.Kind.DOCUMENT, is_mandatory=False,
         )
-        self.business = Business.objects.create(owner=self.applicant, name='Doc Test Foods')
+        # A verified business: TRA TIN + BRELA number + NIDA, as real councils
+        # demand before they issue any licence.
+        self.business = Business.objects.create(
+            owner=self.applicant, name='Doc Test Foods',
+            tin_number='123456789', brela_registration_number='102345678',
+            is_verified=True,
+        )
         self.location = BusinessLocation.objects.create(
             business=self.business, lga=self.lga, ward='Upanga', street='Ocean Road'
         )
@@ -505,6 +511,22 @@ class DocumentUploadTests(APITestCase):
         response = self._upload(requirement=self.lease_req, filename='late.pdf')
         self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
 
+    def test_upload_rejects_non_pdf(self):
+        """Only PDF scans are accepted, as at a real council counter."""
+        self.client.force_authenticate(user=self.applicant)
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        response = self.client.post(
+            f'/api/applications/{self.application.id}/upload_document/',
+            {
+                'file': SimpleUploadedFile('scan.jpg', b'fake-image', content_type='image/jpeg'),
+                'requirement': self.tin_req.id,
+            },
+            format='multipart',
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('PDF', response.data['detail'])
+
     def test_staff_can_upload_any_time(self):
         self._upload(requirement=self.tin_req)
         self.client.force_authenticate(user=self.applicant)
@@ -518,7 +540,7 @@ class DocumentUploadTests(APITestCase):
         response = self.client.post(
             f'/api/applications/{self.application.id}/upload_document/',
             {
-                'file': SimpleUploadedFile('findings.jpg', b'fake', content_type='image/jpeg'),
+                'file': SimpleUploadedFile('findings.pdf', b'%PDF-1.4 findings', content_type='application/pdf'),
                 'requirement': self.lease_req.id,
             },
             format='multipart',

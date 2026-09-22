@@ -342,12 +342,23 @@ export class Apply {
     input.value = ''; // allow re-picking the same file after a failure
     if (!file) return;
 
+    // Councils accept PDF scans only — same rule the backend enforces.
+    const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+    if (!isPdf) {
+      row.uploaded = false;
+      row.pendingFile = undefined;
+      this.errorMessage.set(
+        `${file.name} is not a PDF. Only PDF documents are accepted — scan or export it as a PDF first.`,
+      );
+      return;
+    }
+
     if (file.size > Apply.MAX_FILE_MB * 1024 * 1024) {
       row.uploaded = false;
       row.pendingFile = undefined;
       this.errorMessage.set(
         `${file.name} is too large (${(file.size / 1024 / 1024).toFixed(1)} MB). ` +
-          `Maximum is ${Apply.MAX_FILE_MB} MB — compress it or take a smaller photo.`,
+          `Maximum is ${Apply.MAX_FILE_MB} MB — compress the PDF and try again.`,
       );
       return;
     }

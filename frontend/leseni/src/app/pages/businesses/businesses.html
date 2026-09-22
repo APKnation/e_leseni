@@ -60,6 +60,15 @@
             <p class="text-xs text-brand-lime/50">
               TIN: {{ business.tin_number || '—' }} · BRELA: {{ business.brela_registration_number || '—' }}
             </p>
+            @if (business.documents.length > 0) {
+              <div class="flex flex-wrap gap-1">
+                @for (doc of business.documents; track doc.id) {
+                  <span class="rounded bg-brand-purple-soft/60 px-1.5 py-0.5 text-[10px] text-brand-lime/70">
+                    📄 {{ doc.kind_display }}
+                  </span>
+                }
+              </div>
+            }
             @if (business.locations.length > 0) {
               <p class="text-xs text-brand-lime/50">
                 📍 {{ business.locations[0].ward }}, {{ business.locations[0].street }} — {{ business.locations[0].lga_name }}
@@ -71,10 +80,31 @@
                   Verify with TRA & BRELA
                 </button>
               }
+              <button type="button" class="btn-secondary !py-1.5 !px-3 text-xs" (click)="toggleDocUpload(business.id)">
+                {{ uploadForBusinessId() === business.id ? 'Close' : '+ Upload document' }}
+              </button>
               <a routerLink="/apply" class="btn-secondary !py-1.5 !px-3 text-xs">
                 Apply for licence →
               </a>
             </div>
+            @if (uploadForBusinessId() === business.id) {
+              <div class="rounded-xl border border-brand-lime/20 p-3">
+                <label class="flex flex-col gap-2 text-xs font-semibold">
+                  Document type
+                  <select class="input-field" [ngModel]="uploadKind()" (ngModelChange)="uploadKind.set($event)">
+                    @for (kind of docKinds; track kind.value) {
+                      <option [value]="kind.value">{{ kind.label }}</option>
+                    }
+                  </select>
+                </label>
+                <label class="btn-secondary mt-2 inline-block cursor-pointer !py-2 !px-3 text-xs">
+                  {{ uploadingDoc() ? 'Uploading…' : 'Choose PDF file' }}
+                  <input class="sr-only" type="file" accept="application/pdf,.pdf" [disabled]="uploadingDoc()"
+                         (change)="onBusinessDocSelected(business.id, $event)" />
+                </label>
+                <p class="mt-2 text-[10px] text-brand-lime/50">PDF only, max 10 MB.</p>
+              </div>
+            }
           </div>
         }
       </div>
@@ -228,8 +258,28 @@
           <p class="text-sm text-brand-lime/80">
             <strong>TRA</strong> — Tanzania Revenue Authority.
             Applying for a Taxpayer Identification Number (TIN) for <strong>{{ name() }}</strong>.
+            TRA issues TINs against a national ID — the ID number and a PDF copy of the ID card
+            are required, exactly as on the real ITAX form.
           </p>
-          <button type="button" class="btn-primary mt-4" [disabled]="working()" (click)="applyForTin()">
+          <div class="mt-4 grid gap-4 sm:grid-cols-2">
+            <label class="flex flex-col gap-2 text-sm font-semibold">
+              NIDA number (20 digits) *
+              <input class="input-field font-mono" type="text" name="wz_nida_tin" inputmode="numeric"
+                     maxlength="20" required
+                     placeholder="e.g. 1999 1234 5678 9012 3456"
+                     [ngModel]="nidaNumber()" (ngModelChange)="nidaNumber.set($event)" />
+            </label>
+            <label class="flex flex-col gap-2 text-sm font-semibold">
+              Copy of your national ID (NIDA) * — PDF only
+              <label class="btn-secondary cursor-pointer !py-2.5 !px-4 text-xs">
+                {{ nidaCopyName() ? '✓ ' + nidaCopyName() : 'Choose PDF file' }}
+                <input class="sr-only" type="file" accept="application/pdf,.pdf"
+                       (change)="onNidaCopySelected($event)" />
+              </label>
+            </label>
+          </div>
+          <button type="button" class="btn-primary mt-4"
+                  [disabled]="working() || !nidaCopyFile() || !nidaValid" (click)="applyForTin()">
             @if (working()) { Applying at TRA… } @else { Apply for TIN → }
           </button>
         </div>
@@ -248,36 +298,27 @@
         }
       }
 
-      <!-- STEP 4: NIDA + street identification letter -->
+      <!-- STEP 4: street identification letter -->
       @else if (step() === 4) {
         <div class="rounded-xl border border-brand-lime/20 bg-brand-purple-deep/60 p-5">
           <p class="text-sm text-brand-lime/80">
-            <strong>NIDA</strong> — National Identification Authority.
-            Your national ID is required before any council licence can be approved.
+            <strong>Street identification letter</strong> — from your mtaa/street chairman.
+            The council requires it before any licence can be approved; it confirms where the
+            business operates and carries your NIDA number.
           </p>
-          <div class="mt-4 grid gap-4 sm:grid-cols-2">
-            <label class="flex flex-col gap-2 text-sm font-semibold">
-              NIDA number (20 digits) *
-              <input class="input-field font-mono" type="text" name="wz_nida" inputmode="numeric"
-                     maxlength="20" required
-                     placeholder="e.g. 1999 1234 5678 9012 3456"
-                     [ngModel]="nidaNumber()" (ngModelChange)="nidaNumber.set($event)" />
+          <label class="mt-4 flex flex-col gap-2 text-sm font-semibold">
+            Street identification letter * — PDF only
+            <label class="btn-secondary cursor-pointer !py-2.5 !px-4 text-xs">
+              {{ streetLetterName() ? '✓ ' + streetLetterName() : 'Choose PDF file' }}
+              <input class="sr-only" type="file" accept="application/pdf,.pdf"
+                     (change)="onLetterSelected($event)" />
             </label>
-            <label class="flex flex-col gap-2 text-sm font-semibold">
-              Street identification letter * (mtaa/street chairman)
-              <label class="btn-secondary cursor-pointer !py-2.5 !px-4 text-xs">
-                {{ streetLetterName() ? '✓ ' + streetLetterName() : 'Choose file (PDF/JPG/PNG)' }}
-                <input class="sr-only" type="file" accept=".pdf,.jpg,.jpeg,.png"
-                       (change)="onLetterSelected($event)" />
-              </label>
-            </label>
-          </div>
+          </label>
           <p class="mt-3 text-xs text-brand-lime/60">
-            The letter confirms your business operates at the stated location and carries your
-            NIDA number. It is uploaded with your business when you save.
+            All documents must be PDF scans, as a real council counter requires.
           </p>
-          <button type="button" class="btn-primary mt-4" [disabled]="!nidaValid || working()" (click)="verifyNida()">
-            @if (working()) { Verifying… } @else { Verify NIDA → }
+          <button type="button" class="btn-primary mt-4" [disabled]="!streetLetterFile()" (click)="continueToLocation()">
+            Continue to location →
           </button>
         </div>
         @if (nidaReceipt(); as receipt) {

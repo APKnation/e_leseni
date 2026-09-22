@@ -3,6 +3,8 @@ from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
+from core_docs.validation import validate_pdf_document
+
 # Sent by Application.transition_to() after every successful status change.
 # receivers should mutate other apps (invoices, licences, SMS) — never the app itself.
 application_status_changed = django.dispatch.Signal()  # provides: application, old_status, new_status, changed_by
@@ -155,7 +157,9 @@ class ApplicationDocument(models.Model):
     requirement = models.ForeignKey(
         'lga.Requirement', null=True, blank=True, on_delete=models.SET_NULL, related_name='application_documents'
     )
-    file = models.FileField(upload_to='application_documents/%Y/%m/')
+    file = models.FileField(
+        upload_to='application_documents/%Y/%m/', validators=[validate_pdf_document]
+    )
     uploaded_at = models.DateTimeField(auto_now_add=True)
     verified = models.BooleanField(default=False)
 

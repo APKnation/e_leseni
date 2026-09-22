@@ -1,8 +1,10 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, DestroyRef, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 
 import { ApiService } from '../../core/api.service';
 import { AuthService, ROLE_LABELS } from '../../core/auth.service';
+import { RealtimeService } from '../../core/realtime.service';
 import {
   Application,
   ApplicationStatus,
@@ -33,6 +35,7 @@ interface TimelineStep {
 })
 export class Dashboard {
   private readonly api = inject(ApiService);
+  private readonly realtime = inject(RealtimeService);
   protected readonly auth = inject(AuthService);
 
   protected readonly STATUS_LABELS = STATUS_LABELS;
@@ -139,7 +142,15 @@ export class Dashboard {
 
   constructor() {
     this.loadAll();
+
+    // Live progress: refetch whenever a status/inspection event arrives.
+    // Snapshot events (on connect) also reconcile anything missed while away.
+    this.realtime.events$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.loadAll());
   }
+
+  private readonly destroyRef = inject(DestroyRef);
 
   protected loadAll(): void {
     this.loading.set(true);

@@ -225,13 +225,25 @@ export interface NewBusinessPayload {
   };
 }
 
-/** A TIN application submitted to TRA (demo workflow). */
+/** A document attached to a TRA TIN application. */
+export interface TINApplicationDocument {
+  id: number;
+  tin_application: number;
+  kind: 'NIDA_COPY' | 'PASSPORT_PHOTO' | 'OTHER';
+  kind_display: string;
+  file: string;
+  uploaded_at: string;
+}
+
+/** A TIN application submitted to TRA (demo workflow, with NIDA + ID copy). */
 export interface TINApplication {
   id: number;
   business_name: string;
   taxpayer_name: string;
+  nida_number: string;
   tin_number: string;
   status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  documents: TINApplicationDocument[];
   created_at: string;
   processed_at: string | null;
 }

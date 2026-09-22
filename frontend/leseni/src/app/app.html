@@ -73,6 +73,23 @@
         }
       </nav>
 
+      <!-- Live connection indicator -->
+      @if (auth.isLoggedIn()) {
+        <span
+          class="hidden items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide sm:flex"
+          [class]="realtime.live()
+            ? 'border-emerald-400/40 bg-emerald-500/10 text-emerald-300'
+            : 'border-brand-lime/20 bg-brand-purple-soft/40 text-brand-lime/40'"
+          [title]="realtime.live() ? 'Live updates connected' : 'Reconnecting…'"
+        >
+          <span
+            class="h-1.5 w-1.5 rounded-full"
+            [class]="realtime.live() ? 'animate-pulse bg-emerald-400' : 'bg-brand-lime/30'"
+          ></span>
+          {{ realtime.live() ? 'Live' : 'Offline' }}
+        </span>
+      }
+
       <!-- Mobile hamburger -->
       <button
         type="button"
@@ -163,6 +180,29 @@
   <main class="flex-1">
     <router-outlet />
   </main>
+
+  <!-- Live status toast (bottom-right) -->
+  @if (toast(); as t) {
+    <button
+      type="button"
+      (click)="goToApplication()"
+      class="fixed bottom-5 right-5 z-50 max-w-sm cursor-pointer rounded-xl border border-brand-lime/30 bg-brand-purple-deep/95 p-4 text-left shadow-2xl backdrop-blur transition hover:border-brand-lime/60"
+    >
+      <div class="flex items-start gap-3">
+        <span class="text-xl">🔔</span>
+        <div class="min-w-0">
+          <p class="text-xs font-black uppercase tracking-wide text-brand-lime/60">
+            Live update · {{ t.changed_by }}
+          </p>
+          <p class="mt-0.5 truncate text-sm font-bold text-brand-lime">{{ t.reference_number }}</p>
+          <p class="text-sm text-brand-lime/80">
+            {{ t.business_name }} — now <strong class="text-brand-lime">{{ t.to_status_label }}</strong>
+          </p>
+        </div>
+        <span class="ml-2 text-xs text-brand-lime/40" (click)="dismissToast(); $event.stopPropagation()">✕</span>
+      </div>
+    </button>
+  }
 
   <footer class="border-t border-brand-lime/20 bg-brand-purple-deep/95">
     <div

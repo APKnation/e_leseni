@@ -309,8 +309,9 @@
           <p class="text-sm text-brand-lime/60">Choose a licence first to see its document requirements.</p>
         } @else {
           <p class="text-sm text-brand-lime/70">
-            Attach clear scans or photos (PDF/JPG/PNG, max 10 MB). Mandatory items must be
-            uploaded before you can submit.
+            Attach clear PDF scans (max 10 MB each) — JPG/PNG photos are not accepted, the
+            council only takes PDF documents. Mandatory items must be uploaded before you can
+            submit, and your business must be verified with TRA & BRELA.
           </p>
           <div class="flex flex-col gap-3">
             @for (row of uploadRows(); track row.label) {
@@ -334,11 +335,11 @@
                   }
                 </div>
                 <label class="btn-secondary cursor-pointer !py-2 !px-4 text-xs">
-                  {{ row.uploaded ? 'Replace file' : 'Choose file' }}
+                  {{ row.uploaded ? 'Replace file' : 'Choose PDF file' }}
                   <input
                     class="sr-only"
                     type="file"
-                    accept=".pdf,.jpg,.jpeg,.png"
+                    accept="application/pdf,.pdf"
                     [disabled]="row.uploading"
                     (change)="onFileSelected(row, $event)"
                   />

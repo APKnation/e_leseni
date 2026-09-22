@@ -55,9 +55,13 @@ export class Businesses {
   protected readonly street = signal('');
   protected readonly plotNumber = signal('');
 
-  // Street identification letter (from the mtaa/street chairman)
+  // Street identification letter (from the mtaa/street chairman) — PDF only.
   protected readonly streetLetterFile = signal<File | null>(null);
   protected readonly streetLetterName = signal('');
+
+  // NIDA copy for the TRA TIN application — PDF only.
+  protected readonly nidaCopyFile = signal<File | null>(null);
+  protected readonly nidaCopyName = signal('');
 
   // Results from the demo government systems
   protected readonly brelaNumber = signal('');
@@ -70,12 +74,26 @@ export class Businesses {
   protected readonly verificationMessage = signal('');
   protected readonly createdBusiness = signal<Business | null>(null);
 
+  // Per-business supporting documents (TIN certificate, BRELA certificate, …)
+  protected readonly uploadForBusinessId = signal<number | null>(null);
+  protected readonly uploadKind = signal<string>('TIN_CERTIFICATE');
+  protected readonly uploadingDoc = signal(false);
+
+  protected readonly docKinds = [
+    { value: 'TIN_CERTIFICATE', label: 'TIN certificate (TRA)' },
+    { value: 'BRELA_CERTIFICATE', label: 'BRELA registration certificate' },
+    { value: 'STREET_ID_LETTER', label: 'Street identification letter' },
+    { value: 'LEASE_AGREEMENT', label: 'Lease agreement' },
+    { value: 'OTHER', label: 'Other document' },
+  ];
+
   protected readonly canFinish = computed(() => {
     const lga = this.lgaId();
     return !!(
       this.brelaNumber() &&
       this.tinNumber() &&
       this.nidaReceipt() &&
+      this.streetLetterFile() &&
       lga &&
       this.ward() &&
       this.street()
@@ -141,6 +159,8 @@ export class Businesses {
     this.nidaReceipt.set(null);
     this.streetLetterFile.set(null);
     this.streetLetterName.set('');
+    this.nidaCopyFile.set(null);
+    this.nidaCopyName.set('');
     this.verificationMessage.set('');
     this.createdBusiness.set(null);
     this.errorMessage.set('');
@@ -151,17 +171,15 @@ export class Businesses {
   }
 
   protected get stepLabels(): string[] {
-    return ['Business details', 'BRELA registration', 'TRA TIN', 'NIDA & street letter', 'Location & finish'];
+    return ['Business details', 'BRELA registration', 'TRA TIN + NIDA', 'Street letter', 'Location & finish'];
   }
 
   protected readonly journeySteps = [
     { title: 'Register with BRELA', hint: 'We submit your business to BRELA and get your registration number.' },
-    { title: 'Get a TIN from TRA', hint: 'We apply for your Taxpayer Identification Number at TRA.' },
-    { title: 'Verify your NIDA', hint: 'Your national ID is checked and your street letter uploaded.' },
+    { title: 'Get a TIN from TRA', hint: 'We apply for your TIN with your NIDA number and a PDF copy of your ID.' },
+    { title: 'Street ID letter', hint: 'The mtaa/street chairman letter confirms where you operate.' },
     { title: 'Apply for a licence', hint: 'Take your verified business to the council and apply online.' },
-  ];
-
-  // ---- Step 4: NIDA + street identification letter ------------------------
+  ];  // ---- Step 4: street identification letter -------------------------------
 
   protected get nidaValid(): boolean {
     const nida = this.nidaNumber().trim();
@@ -172,61 +190,49 @@ export class Businesses {
     return this.auth.currentUser()?.has_nida ?? false;
   }
 
-  protected verifyNida(): void {
-    if (!this.nidaValid || this.working()) return;
-    this.working.set(true);
+  protected continueToLocation(): void {
+    if (!this.streetLetterFile()) {
+      this.errorMessage.set('The street identification letter (PDF) is required before continuing.');
+      return;
+    }
     this.errorMessage.set('');
-    const user = this.auth.currentUser();
-    const nida = this.nidaNumber().trim();
-
-    const afterVerify = (nidaResult: { valid: boolean; full_name: string; source: string }) => {
-      if (!nidaResult.valid) {
-        this.errorMessage.set('NIDA could not be verified — check the 20-digit number and try again.');
-        this.working.set(false);
-        return;
-      }
-      this.nidaReceipt.set({
-        title: 'NIDA — Identity confirmed',
-        lines: [
-          { label: 'NIDA no.', value: nida },
-          { label: 'Name', value: nidaResult.full_name || this.taxpayerName() },
-          { label: 'Verified with', value: nidaResult.source },
-        ],
-      });
-      // Persist the NIDA on the profile so approvals can rely on it.
-      this.api.updateProfile({ nida_number: nida }).subscribe({
-        next: () => {
-          this.working.set(false);
-          this.goToStep(5);
-        },
-        error: () => {
-          this.errorMessage.set('NIDA verified but saving it failed — please try again.');
-          this.working.set(false);
-        },
-      });
-    };
-
-    this.api.verifyNida(nida, user?.first_name ?? '', user?.last_name ?? '').subscribe({
-      next: afterVerify,
-      error: () => {
-        this.errorMessage.set('NIDA verification failed. Please try again.');
-        this.working.set(false);
-      },
-    });
+    this.goToStep(5);
   }
 
   protected onLetterSelected(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.[0] ?? null;
-    input.value = '';
+    const file = this.readPdfFile(event);
     if (!file) return;
-    if (file.size > 10 * 1024 * 1024) {
-      this.errorMessage.set(`${file.name} is too large (max 10 MB).`);
-      return;
-    }
     this.streetLetterFile.set(file);
     this.streetLetterName.set(file.name);
     this.errorMessage.set('');
+  }
+
+  protected onNidaCopySelected(event: Event): void {
+    const file = this.readPdfFile(event);
+    if (!file) return;
+    this.nidaCopyFile.set(file);
+    this.nidaCopyName.set(file.name);
+    this.errorMessage.set('');
+  }
+
+  /** Validate a picked file is a PDF within the size limit; show an error otherwise. */
+  private readPdfFile(event: Event): File | null {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0] ?? null;
+    input.value = ''; // allow re-picking the same file after a failure
+    if (!file) return null;
+    const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+    if (!isPdf) {
+      this.errorMessage.set(`${file.name} is not a PDF — only PDF documents are accepted.`);
+      return null;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      this.errorMessage.set(
+        `${file.name} is too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Max is 10 MB.`,
+      );
+      return null;
+    }
+    return file;
   }
 
   // ---- Step 5: location + save -------------------------------------------
@@ -266,29 +272,60 @@ export class Businesses {
   // ---- Step 3: TRA TIN ----------------------------------------------------
 
   protected applyForTin(): void {
-    if (!this.detailsValid || this.working()) return;
+    if (!this.detailsValid || !this.nidaValid || this.working()) return;
+    if (!this.nidaCopyFile()) {
+      this.errorMessage.set('Attach a PDF copy of your national ID — TRA requires it with every TIN application.');
+      return;
+    }
     this.working.set(true);
     this.errorMessage.set('');
-    this.api.applyForTin(this.name().trim(), this.taxpayerName().trim()).subscribe({
-      next: (app) => {
-        this.tinNumber.set(app.tin_number);
-        this.tinReceipt.set({
-          title: 'TRA — TIN approved',
-          lines: [
-            { label: 'TIN', value: app.tin_number },
-            { label: 'Taxpayer', value: app.taxpayer_name },
-            { label: 'Business', value: app.business_name },
-            { label: 'Status', value: app.status },
-          ],
-        });
-        this.working.set(false);
-        this.goToStep(4);
-      },
-      error: () => {
-        this.errorMessage.set('TIN application failed. Please try again.');
-        this.working.set(false);
-      },
-    });
+    const nida = this.nidaNumber().trim();
+    this.api
+      .applyForTin(
+        this.name().trim(),
+        this.taxpayerName().trim(),
+        nida,
+        this.nidaCopyFile()!,
+      )
+      .subscribe({
+        next: (app) => {
+          this.tinNumber.set(app.tin_number);
+          this.tinReceipt.set({
+            title: 'TRA — TIN approved',
+            lines: [
+              { label: 'TIN', value: app.tin_number },
+              { label: 'Taxpayer', value: app.taxpayer_name },
+              { label: 'Business', value: app.business_name },
+              { label: 'NIDA no.', value: nida },
+              { label: 'ID copy', value: 'Attached ✓' },
+              { label: 'Status', value: app.status },
+            ],
+          });
+          // Persist the NIDA on the profile — approvals and BRELA checks rely on it.
+          this.api.updateProfile({ nida_number: nida }).subscribe({
+            next: () => {
+              this.nidaReceipt.set({
+                title: 'NIDA — Identity recorded',
+                lines: [
+                  { label: 'NIDA no.', value: nida },
+                  { label: 'ID copy', value: 'Attached ✓' },
+                  { label: 'Verified with', value: 'TRA (with TIN application)' },
+                ],
+              });
+              this.working.set(false);
+              this.goToStep(4);
+            },
+            error: () => {
+              this.errorMessage.set('TIN approved but saving the NIDA failed — please retry.');
+              this.working.set(false);
+            },
+          });
+        },
+        error: () => {
+          this.errorMessage.set('TIN application failed. Please try again.');
+          this.working.set(false);
+        },
+      });
   }
 
 
@@ -393,6 +430,42 @@ export class Businesses {
     this.api.verifyBusiness(business.id).subscribe({
       next: () => this.loadAll(),
       error: () => this.errorMessage.set('Verification failed. Please try again.'),
+    });
+  }
+
+  // ---- Supporting documents on existing businesses ------------------------
+
+  protected toggleDocUpload(businessId: number): void {
+    this.uploadForBusinessId.update((id) => (id === businessId ? null : businessId));
+    this.errorMessage.set('');
+  }
+
+  protected onBusinessDocSelected(businessId: number, event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0] ?? null;
+    input.value = ''; // allow re-picking the same file after a failure
+    if (!file) return;
+    const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+    if (!isPdf) {
+      this.errorMessage.set(`${file.name} is not a PDF — only PDF documents are accepted.`);
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      this.errorMessage.set(`${file.name} is too large (max 10 MB).`);
+      return;
+    }
+    this.uploadingDoc.set(true);
+    this.errorMessage.set('');
+    this.api.uploadBusinessDocument(businessId, file, this.uploadKind()).subscribe({
+      next: () => {
+        this.uploadingDoc.set(false);
+        this.uploadForBusinessId.set(null);
+        this.loadAll();
+      },
+      error: () => {
+        this.uploadingDoc.set(false);
+        this.errorMessage.set('Upload failed — make sure the file is a PDF under 10 MB and try again.');
+      },
     });
   }
 }

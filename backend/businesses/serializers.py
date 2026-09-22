@@ -1,6 +1,9 @@
+from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
 
-from .models import Business, BusinessDocument, BusinessLocation, TINApplication
+from core_docs.validation import validate_pdf_document
+
+from .models import Business, BusinessDocument, BusinessLocation, TINApplication, TINApplicationDocument
 
 
 class BusinessDocumentSerializer(serializers.ModelSerializer):
@@ -10,6 +13,29 @@ class BusinessDocumentSerializer(serializers.ModelSerializer):
         model = BusinessDocument
         fields = ['id', 'business', 'kind', 'kind_display', 'file', 'uploaded_at']
         read_only_fields = ['uploaded_at']
+
+    def validate_file(self, value):
+        try:
+            validate_pdf_document(value)
+        except DjangoValidationError as exc:
+            raise serializers.ValidationError(exc.messages) from exc
+        return value
+
+
+class TINApplicationDocumentSerializer(serializers.ModelSerializer):
+    kind_display = serializers.CharField(source='get_kind_display', read_only=True)
+
+    class Meta:
+        model = TINApplicationDocument
+        fields = ['id', 'tin_application', 'kind', 'kind_display', 'file', 'uploaded_at']
+        read_only_fields = ['uploaded_at']
+
+    def validate_file(self, value):
+        try:
+            validate_pdf_document(value)
+        except DjangoValidationError as exc:
+            raise serializers.ValidationError(exc.messages) from exc
+        return value
 
 
 class BusinessLocationSerializer(serializers.ModelSerializer):
@@ -24,11 +50,13 @@ class BusinessLocationSerializer(serializers.ModelSerializer):
 
 
 class TINApplicationSerializer(serializers.ModelSerializer):
+    documents = TINApplicationDocumentSerializer(many=True, read_only=True)
+
     class Meta:
         model = TINApplication
         fields = [
-            'id', 'business_name', 'taxpayer_name', 'tin_number', 'status',
-            'created_at', 'processed_at',
+            'id', 'business_name', 'taxpayer_name', 'nida_number', 'tin_number',
+            'status', 'documents', 'created_at', 'processed_at',
         ]
         read_only_fields = fields
 

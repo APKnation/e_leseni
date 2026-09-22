@@ -1,5 +1,8 @@
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models
+
+from core_docs.validation import validate_pdf_document
 
 
 class Business(models.Model):
@@ -30,6 +33,38 @@ class Business(models.Model):
     def __str__(self):
         return self.name
 
+    def ensure_verified(self):
+        """Verify TIN with TRA and registration with BRELA via the adapters.
+
+        Prerequisites (real-council rules): a TRA TIN, a BRELA registration
+        number, the owner's NIDA, and the street identification letter on
+        file. Marks the business verified only if everything passes; returns
+        whether the business ends up verified.
+        """
+        from integrations.adapters import BRELAdapter, TRAAdapter
+
+        if self.is_verified:
+            return True
+        if (
+            not self.tin_number
+            or not self.brela_registration_number
+            or not self.owner.nida_number
+            or not self.documents.filter(kind=BusinessDocument.Kinds.STREET_ID_LETTER).exists()
+        ):
+            return False
+        tin_result = TRAAdapter().verify_tin(self.tin_number, self.name)
+        brela_result = BRELAdapter().verify_registration(
+            self.brela_registration_number, self.name
+        )
+        verified = (
+            tin_result.success and tin_result.data.get('valid') is True
+            and brela_result.success and brela_result.data.get('registered') is True
+        )
+        if verified:
+            self.is_verified = True
+            self.save(update_fields=['is_verified', 'updated_at'])
+        return verified
+
 
 class TINApplication(models.Model):
     """A TIN application submitted to TRA (demo workflow; mirrors TRA ITAX)."""
@@ -44,6 +79,12 @@ class TINApplication(models.Model):
     )
     business_name = models.CharField(max_length=200)
     taxpayer_name = models.CharField(max_length=200)
+    # Real TRA asks for the applicant's TIN-carrying national ID number on the form.
+    nida_number = models.CharField(
+        max_length=20,
+        blank=True,
+        help_text='National ID number of the taxpayer, as printed on the NIDA card.',
+    )
     tin_number = models.CharField(max_length=20, blank=True)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -54,6 +95,33 @@ class TINApplication(models.Model):
 
     def __str__(self):
         return f'TIN application for {self.business_name} ({self.status})'
+
+
+class TINApplicationDocument(models.Model):
+    """Supporting documents for a TIN application (NIDA copy, etc.).
+
+    Real TRA requires a copy of the national ID with every TIN application.
+    """
+
+    class Kinds(models.TextChoices):
+        NIDA_COPY = 'NIDA_COPY', 'Copy of National ID (NIDA)'
+        PASSPORT_PHOTO = 'PASSPORT_PHOTO', 'Passport-size photo'
+        OTHER = 'OTHER', 'Other'
+
+    tin_application = models.ForeignKey(
+        TINApplication, on_delete=models.CASCADE, related_name='documents'
+    )
+    kind = models.CharField(max_length=30, choices=Kinds.choices, default=Kinds.OTHER)
+    file = models.FileField(
+        upload_to='tin_applications/%Y/%m/', validators=[validate_pdf_document]
+    )
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['uploaded_at']
+
+    def __str__(self):
+        return f'{self.get_kind_display()} - TIN app {self.tin_application_id}'
 
 
 class BusinessLocation(models.Model):
@@ -87,8 +155,17 @@ class BusinessDocument(models.Model):
 
     business = models.ForeignKey(Business, on_delete=models.CASCADE, related_name='documents')
     kind = models.CharField(max_length=30, choices=Kinds.choices, default=Kinds.OTHER)
-    file = models.FileField(upload_to='business_documents/%Y/%m/')
+    file = models.FileField(
+        upload_to='business_documents/%Y/%m/', validators=[validate_pdf_document]
+    )
     uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    def clean(self):
+        if self.file:
+            try:
+                validate_pdf_document(self.file)
+            except ValidationError as exc:
+                raise ValidationError({'file': exc.messages}) from exc
 
     class Meta:
         ordering = ['-uploaded_at']
