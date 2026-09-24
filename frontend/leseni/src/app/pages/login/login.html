@@ -48,7 +48,10 @@
         </label>
 
         <label class="flex flex-col gap-1.5">
-          <span class="text-sm font-semibold text-foreground">Password</span>
+          <div class="flex items-center justify-between">
+            <span class="text-sm font-semibold text-foreground">Password</span>
+            <a routerLink="/forgot-password" class="text-xs font-semibold text-primary hover:underline">Forgot password?</a>
+          </div>
           <input
             class="input-field"
             type="password"

@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 
@@ -22,8 +22,13 @@ export class Register {
     nida_number: '',
     password: '',
   });
+  protected readonly confirmPassword = signal('');
   protected readonly submitting = signal(false);
   protected readonly errorMessage = signal('');
+
+  protected readonly passwordMismatch = computed(
+    () => this.confirmPassword() !== '' && this.form().password !== this.confirmPassword(),
+  );
 
   protected update(field: keyof ReturnType<typeof this.form>, value: string): void {
     this.form.update((f) => ({ ...f, [field]: value }));
@@ -31,6 +36,12 @@ export class Register {
 
   protected submit(): void {
     if (this.submitting()) return;
+
+    if (this.form().password !== this.confirmPassword()) {
+      this.errorMessage.set('Passwords do not match. Please check and try again.');
+      return;
+    }
+
     this.submitting.set(true);
     this.errorMessage.set('');
 

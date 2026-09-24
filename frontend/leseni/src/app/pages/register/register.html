@@ -112,6 +112,26 @@
           />
         </label>
 
+        <label class="flex flex-col gap-1.5">
+          <span class="text-sm font-semibold text-foreground">Confirm password</span>
+          <input
+            class="input-field"
+            [class.border-red-400]="passwordMismatch()"
+            [class.focus:ring-red-300]="passwordMismatch()"
+            type="password"
+            name="confirm_password"
+            autocomplete="new-password"
+            placeholder="Confirm password"
+            minlength="8"
+            required
+            [ngModel]="confirmPassword()"
+            (ngModelChange)="confirmPassword.set($event)"
+          />
+          @if (passwordMismatch()) {
+            <span class="text-xs font-semibold text-red-600">Passwords do not match.</span>
+          }
+        </label>
+
         @if (errorMessage()) {
           <p class="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm font-semibold text-red-700">
             {{ errorMessage() }}
