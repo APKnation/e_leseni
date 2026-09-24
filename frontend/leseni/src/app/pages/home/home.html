@@ -2,11 +2,11 @@
 <section class="relative overflow-hidden">
   <div class="mx-auto grid w-full max-w-6xl gap-10 px-4 py-16 sm:px-6 lg:grid-cols-2 lg:py-24">
     <div class="flex flex-col justify-center gap-6">
-      <span class="badge-lime w-fit">LGA Business Licensing</span>
+      <span class="badge-green w-fit">LGA Business Licensing</span>
       <h1 class="text-4xl font-black leading-tight tracking-tight sm:text-5xl lg:text-6xl">
-        Apply for your business licence in <span class="text-brand-lime">minutes</span>, not weeks.
+        Apply for your business licence in <span class="text-brand-cream">minutes</span>, not weeks.
       </h1>
-      <p class="max-w-md text-lg text-brand-lime/80">
+      <p class="max-w-md text-lg text-brand-cream/80">
         e-Leseni brings the whole licensing journey online — application, inspection,
         payment via control number, and instant QR-verifiable licences.
       </p>
@@ -24,33 +24,33 @@
 
       <!-- Coverage stats from the tanzaniageodata dataset -->
       <dl class="mt-4 grid max-w-md grid-cols-3 gap-4">
-        <div class="rounded-xl border border-brand-lime/20 bg-brand-purple-soft/40 px-4 py-3 text-center">
-          <dt class="text-xs font-semibold uppercase tracking-wide text-brand-lime/60">Regions</dt>
+        <div class="rounded-xl border border-brand-cream/20 bg-brand-green-soft/40 px-4 py-3 text-center">
+          <dt class="text-xs font-semibold uppercase tracking-wide text-brand-cream/60">Regions</dt>
           <dd class="text-2xl font-black">{{ regionCount }}</dd>
         </div>
-        <div class="rounded-xl border border-brand-lime/20 bg-brand-purple-soft/40 px-4 py-3 text-center">
-          <dt class="text-xs font-semibold uppercase tracking-wide text-brand-lime/60">Councils</dt>
+        <div class="rounded-xl border border-brand-cream/20 bg-brand-green-soft/40 px-4 py-3 text-center">
+          <dt class="text-xs font-semibold uppercase tracking-wide text-brand-cream/60">Councils</dt>
           <dd class="text-2xl font-black">{{ councilCount }}</dd>
         </div>
-        <div class="rounded-xl border border-brand-lime/20 bg-brand-purple-soft/40 px-4 py-3 text-center">
-          <dt class="text-xs font-semibold uppercase tracking-wide text-brand-lime/60">Wards</dt>
+        <div class="rounded-xl border border-brand-cream/20 bg-brand-green-soft/40 px-4 py-3 text-center">
+          <dt class="text-xs font-semibold uppercase tracking-wide text-brand-cream/60">Wards</dt>
           <dd class="text-2xl font-black">2900+</dd>
         </div>
       </dl>
     </div>
 
     <!-- Status-flow card: lime background, purple text (inverse pair) -->
-    <div class="card flex flex-col justify-center gap-5 bg-brand-lime text-brand-purple">
+    <div class="card flex flex-col justify-center gap-5 bg-brand-cream text-brand-green">
       <h2 class="text-xl font-black">How it works</h2>
       <ol class="space-y-4">
         @for (step of steps; track step.title) {
           <li class="flex items-start gap-3">
-            <span class="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-brand-purple text-base text-brand-lime">
+            <span class="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-brand-green text-base text-brand-cream">
               {{ step.icon }}
             </span>
             <div>
               <p class="font-black">{{ step.title }}</p>
-              <p class="text-sm text-brand-purple/80">{{ step.body }}</p>
+              <p class="text-sm text-brand-green/80">{{ step.body }}</p>
             </div>
           </li>
         }
@@ -60,20 +60,20 @@
 </section>
 
 <!-- Feature strip: lime background, purple text (inverse pair) -->
-<section class="bg-brand-lime text-brand-purple">
+<section class="bg-brand-cream text-brand-green">
   <div class="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6">
     <h2 class="text-center text-3xl font-black">Everything licensing, in one place</h2>
-    <p class="mx-auto mt-3 max-w-xl text-center text-brand-purple/80">
+    <p class="mx-auto mt-3 max-w-xl text-center text-brand-green/80">
       Built for local government — from the first application to the day the licence expires.
     </p>
     <div class="mt-10 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
       @for (feature of features; track feature.title) {
         <div class="flex flex-col gap-3">
-          <span class="grid h-12 w-12 place-items-center rounded-xl bg-brand-purple text-xl text-brand-lime">
+          <span class="grid h-12 w-12 place-items-center rounded-xl bg-brand-green text-xl text-brand-cream">
             {{ feature.icon }}
           </span>
           <h3 class="text-lg font-black">{{ feature.title }}</h3>
-          <p class="text-sm leading-relaxed text-brand-purple/80">{{ feature.body }}</p>
+          <p class="text-sm leading-relaxed text-brand-green/80">{{ feature.body }}</p>
         </div>
       }
     </div>
@@ -83,7 +83,7 @@
 <!-- Who it's for -->
 <section class="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6">
   <h2 class="text-center text-3xl font-black">Built for every step of the council</h2>
-  <p class="mx-auto mt-3 max-w-xl text-center text-brand-lime/70">
+  <p class="mx-auto mt-3 max-w-xl text-center text-brand-cream/70">
     Each role gets its own secure workspace — nobody sees or does more than they should.
   </p>
   <div class="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
@@ -91,8 +91,8 @@
       <div class="card flex flex-col gap-3">
         <span class="text-3xl">{{ role.icon }}</span>
         <h3 class="text-lg font-black">{{ role.title }}</h3>
-        <p class="text-sm leading-relaxed text-brand-lime/70">{{ role.body }}</p>
-        <a [routerLink]="role.link" class="mt-auto text-sm font-bold text-brand-lime underline hover:text-brand-lime-soft">
+        <p class="text-sm leading-relaxed text-brand-cream/70">{{ role.body }}</p>
+        <a [routerLink]="role.link" class="mt-auto text-sm font-bold text-brand-cream underline hover:text-brand-cream-soft">
           {{ role.cta }} →
         </a>
       </div>
@@ -115,7 +115,7 @@
           <span class="text-xl transition" [class.rotate-45]="openFaq() === i">+</span>
         </button>
         @if (openFaq() === i) {
-          <p class="border-t border-brand-lime/15 px-6 py-4 text-sm leading-relaxed text-brand-lime/75">
+          <p class="border-t border-brand-cream/15 px-6 py-4 text-sm leading-relaxed text-brand-cream/75">
             {{ faq.a }}
           </p>
         }
@@ -125,23 +125,23 @@
 </section>
 
 <!-- Final CTA -->
-<section class="bg-brand-lime text-brand-purple">
+<section class="bg-brand-cream text-brand-green">
   <div class="mx-auto flex w-full max-w-6xl flex-col items-center gap-6 px-4 py-16 text-center sm:px-6">
     <h2 class="text-3xl font-black sm:text-4xl">Ready to get licensed?</h2>
-    <p class="max-w-xl text-brand-purple/80">
+    <p class="max-w-xl text-brand-green/80">
       Join thousands of businesses across Tanzania applying for council licences online —
       with SMS updates at every step.
     </p>
     <div class="flex flex-wrap justify-center gap-4">
       @if (auth.isLoggedIn()) {
-        <a routerLink="/dashboard" class="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-purple px-6 py-3 font-semibold text-brand-lime transition hover:bg-brand-purple-soft">
+        <a routerLink="/dashboard" class="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-green px-6 py-3 font-semibold text-brand-cream transition hover:bg-brand-green-soft">
           Go to dashboard →
         </a>
       } @else {
-        <a routerLink="/register" class="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-purple px-6 py-3 font-semibold text-brand-lime transition hover:bg-brand-purple-soft">
+        <a routerLink="/register" class="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-green px-6 py-3 font-semibold text-brand-cream transition hover:bg-brand-green-soft">
           Create your free account
         </a>
-        <a routerLink="/apply" class="inline-flex items-center justify-center gap-2 rounded-xl border-2 border-brand-purple px-6 py-3 font-semibold text-brand-purple transition hover:bg-brand-purple hover:text-brand-lime">
+        <a routerLink="/apply" class="inline-flex items-center justify-center gap-2 rounded-xl border-2 border-brand-green px-6 py-3 font-semibold text-brand-green transition hover:bg-brand-green hover:text-brand-cream">
           Browse licences
         </a>
       }

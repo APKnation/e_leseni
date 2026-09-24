@@ -4,10 +4,10 @@
       <h1 class="text-3xl font-black">
         Karibu{{ user()?.first_name ? ', ' + user()?.first_name : '' }} 👋
       </h1>
-      <p class="mt-1 text-brand-lime/70">Your licence applications, payments and licences.</p>
+      <p class="mt-1 text-brand-cream/70">Your licence applications, payments and licences.</p>
     </div>
     <div class="flex items-center gap-3">
-      <span class="badge-lime">{{ user()?.role ? roleLabel[user()!.role] : '' }}</span>
+      <span class="badge-green">{{ user()?.role ? roleLabel[user()!.role] : '' }}</span>
       @if (!isStaff()) {
         <a routerLink="/apply" class="btn-primary !py-2">+ New application</a>
       } @else {
@@ -23,17 +23,17 @@
   }
 
   @if (loading()) {
-    <p class="mt-10 animate-pulse text-brand-lime/60">Loading your data…</p>
+    <p class="mt-10 animate-pulse text-brand-cream/60">Loading your data…</p>
   } @else {
     <!-- Stats -->
     <div class="mt-10 grid gap-6 md:grid-cols-3">
       @for (stat of stats; track stat.label) {
         <div
           class="card flex flex-col gap-3"
-          [class.bg-brand-lime]="stat.highlight"
-          [class.text-brand-purple]="stat.highlight"
+          [class.bg-brand-cream]="stat.highlight"
+          [class.text-brand-green]="stat.highlight"
         >
-          <h2 class="text-sm font-black uppercase tracking-wide" [class.text-brand-purple/70]="stat.highlight">
+          <h2 class="text-sm font-black uppercase tracking-wide" [class.text-brand-green/70]="stat.highlight">
             {{ stat.label }}
           </h2>
           <span class="text-4xl font-black">{{ stat.value }}</span>
@@ -46,19 +46,19 @@
       <div class="card mt-10 flex flex-col gap-4">
         <div>
           <h2 class="text-lg font-black">Your licensing journey</h2>
-          <p class="text-sm text-brand-lime/60">
+          <p class="text-sm text-brand-cream/60">
             Before a council licence, every business needs BRELA registration and a TRA TIN — we handle both online.
           </p>
         </div>
         <ol class="flex flex-col gap-2">
           @for (s of onboardingSteps; track s.label) {
-            <li class="flex items-center justify-between gap-3 rounded-lg px-3 py-2" [class]="s.done ? 'bg-emerald-500/10' : 'bg-brand-purple-soft/40'">
+            <li class="flex items-center justify-between gap-3 rounded-lg px-3 py-2" [class]="s.done ? 'bg-emerald-500/10' : 'bg-brand-green-soft/40'">
               <span class="flex items-center gap-3 text-sm font-semibold">
                 <span
                   class="grid h-6 w-6 shrink-0 place-items-center rounded-full text-xs"
-                  [class]="s.done ? 'bg-emerald-500/25 text-emerald-300' : 'bg-brand-lime/10 text-brand-lime/50'"
+                  [class]="s.done ? 'bg-emerald-500/25 text-emerald-300' : 'bg-brand-cream/10 text-brand-cream/50'"
                 >{{ s.done ? '✓' : '○' }}</span>
-                <span [class.text-brand-lime/40]="s.done">{{ s.label }}</span>
+                <span [class.text-brand-cream/40]="s.done">{{ s.label }}</span>
               </span>
               @if (!s.done && s.link) {
                 <a [routerLink]="s.link" class="btn-secondary !py-1.5 !px-3 text-xs">{{ s.cta }}</a>
@@ -72,7 +72,7 @@
     <!-- Applications -->
     <h2 class="mt-12 text-xl font-black">Applications</h2>
     @if (applications().length === 0) {
-      <p class="mt-4 text-brand-lime/70">
+      <p class="mt-4 text-brand-cream/70">
         No applications yet.
         <a routerLink="/apply" class="font-bold underline">Apply for your first licence →</a>
       </p>
@@ -82,9 +82,9 @@
           <div class="card flex flex-col gap-3">
             <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p class="font-mono text-sm text-brand-lime/70">{{ app.reference_number }}</p>
+                <p class="font-mono text-sm text-brand-cream/70">{{ app.reference_number }}</p>
                 <p class="text-lg font-bold">{{ app.business_name }}</p>
-                <p class="text-sm text-brand-lime/70">
+                <p class="text-sm text-brand-cream/70">
                   {{ app.licence_type_name }} — {{ app.lga_name }}
                 </p>
               </div>
@@ -94,7 +94,7 @@
                 </span>
                 <button
                   type="button"
-                  class="text-xs font-bold text-brand-lime/70 underline transition hover:text-brand-lime"
+                  class="text-xs font-bold text-brand-cream/70 underline transition hover:text-brand-cream"
                   (click)="toggleTimeline(app.id)"
                 >
                   {{ expandedTimeline() === app.id ? 'Hide timeline ▲' : 'Show timeline ▼' }}
@@ -108,8 +108,8 @@
 
             <!-- Status timeline -->
             @if (expandedTimeline() === app.id) {
-              <div class="mt-1 rounded-xl border border-brand-lime/15 bg-brand-purple-deep/60 p-4">
-                <p class="mb-3 text-xs font-black uppercase tracking-wide text-brand-lime/50">
+              <div class="mt-1 rounded-xl border border-brand-cream/15 bg-brand-green-deep/60 p-4">
+                <p class="mb-3 text-xs font-black uppercase tracking-wide text-brand-cream/50">
                   Application timeline
                 </p>
                 <ol class="relative flex flex-col gap-0">
@@ -123,10 +123,10 @@
                             step.state === 'done'
                               ? 'bg-emerald-500/20 text-emerald-300'
                               : step.state === 'current'
-                                ? 'bg-brand-lime text-brand-purple ring-2 ring-brand-lime/40'
+                                ? 'bg-brand-cream text-brand-green ring-2 ring-brand-cream/40'
                                 : step.state === 'event'
                                   ? 'bg-orange-500/20 text-orange-300'
-                                  : 'bg-brand-purple-soft/60 text-brand-lime/40'
+                                  : 'bg-brand-green-soft/60 text-brand-cream/40'
                           "
                         >
                           @if (step.state === 'done') {
@@ -138,7 +138,7 @@
                         @if (!last) {
                           <span
                             class="w-px flex-1"
-                            [class]="step.state === 'done' ? 'bg-emerald-400/40' : 'bg-brand-lime/15'"
+                            [class]="step.state === 'done' ? 'bg-emerald-400/40' : 'bg-brand-cream/15'"
                           ></span>
                         }
                       </div>
@@ -147,20 +147,20 @@
                         <p
                           class="text-sm font-bold"
                           [class]="
-                            step.state === 'upcoming' ? 'text-brand-lime/40' : 'text-brand-lime'
+                            step.state === 'upcoming' ? 'text-brand-cream/40' : 'text-brand-cream'
                           "
                         >
                           {{ step.label }}
                         </p>
                         @if (step.when) {
-                          <p class="text-xs text-brand-lime/60">
+                          <p class="text-xs text-brand-cream/60">
                             {{ step.when }}@if (step.actor) { · {{ step.actor }} }
                           </p>
                         } @else if (step.state === 'upcoming') {
-                          <p class="text-xs text-brand-lime/30">Pending</p>
+                          <p class="text-xs text-brand-cream/30">Pending</p>
                         }
                         @if (step.note) {
-                          <p class="mt-0.5 max-w-md text-xs italic text-brand-lime/50">“{{ step.note }}”</p>
+                          <p class="mt-0.5 max-w-md text-xs italic text-brand-cream/50">“{{ step.note }}”</p>
                         }
                       </div>
                     </li>
@@ -176,19 +176,19 @@
     <!-- Invoices -->
     <h2 class="mt-12 text-xl font-black">Invoices</h2>
     @if (invoices().length === 0) {
-      <p class="mt-4 text-brand-lime/70">No invoices yet.</p>
+      <p class="mt-4 text-brand-cream/70">No invoices yet.</p>
     } @else {
       <div class="mt-4 grid gap-4">
         @for (invoice of invoices(); track invoice.id) {
           <div class="card flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p class="font-mono text-sm text-brand-lime/70">
+              <p class="font-mono text-sm text-brand-cream/70">
                 {{ invoice.control_number || 'control number pending' }}
               </p>
               <p class="text-lg font-bold">
                 {{ invoice.amount }} {{ invoice.currency }}
               </p>
-              <p class="text-sm text-brand-lime/70">
+              <p class="text-sm text-brand-cream/70">
                 {{ invoice.application_reference }} — {{ invoice.licence_type_name }}
               </p>
             </div>
@@ -225,7 +225,7 @@
       </div>
     </div>
     @if (businesses().length === 0) {
-      <p class="mt-4 text-brand-lime/70">
+      <p class="mt-4 text-brand-cream/70">
         No businesses registered yet.
         @if (!isStaff()) {
           <a routerLink="/businesses" class="font-bold underline">Register one with BRELA + TRA →</a>
@@ -238,18 +238,18 @@
             <div class="flex items-start justify-between gap-2">
               <p class="text-lg font-bold">{{ business.name }}</p>
               @if (business.is_verified) {
-                <span class="badge-lime !px-2 !py-0.5">verified ✓</span>
+                <span class="badge-green !px-2 !py-0.5">verified ✓</span>
               } @else {
                 <span class="badge-outline !px-2 !py-0.5">unverified</span>
               }
             </div>
-            <p class="text-sm text-brand-lime/70">
+            <p class="text-sm text-brand-cream/70">
               {{ business.sector || 'General' }}
               @if (business.locations.length > 0) {
                 · {{ business.locations[0].ward }}, {{ business.locations[0].lga_name }}
               }
             </p>
-            <p class="text-xs text-brand-lime/50">
+            <p class="text-xs text-brand-cream/50">
               TIN: {{ business.tin_number || '—' }} · BRELA: {{ business.brela_registration_number || '—' }}
             </p>
           </div>
@@ -260,29 +260,29 @@
     <!-- Licences -->
     <h2 class="mt-12 text-xl font-black">Licences</h2>
     @if (licences().length === 0) {
-      <p class="mt-4 text-brand-lime/70">No licences issued yet.</p>
+      <p class="mt-4 text-brand-cream/70">No licences issued yet.</p>
     } @else {
       <div class="mt-4 grid gap-4 md:grid-cols-2">
         @for (licence of licences(); track licence.id) {
           <!-- Issued licence card: lime bg / purple text -->
-          <div class="card bg-brand-lime text-brand-purple">
+          <div class="card bg-brand-cream text-brand-green">
             <div class="flex items-start justify-between gap-4">
               <div>
                 <p class="font-mono text-sm font-bold">{{ licence.licence_number }}</p>
                 <p class="text-lg font-black">{{ licence.business_name }}</p>
-                <p class="text-sm text-brand-purple/80">{{ licence.licence_type_name }} — {{ licence.lga_name }}</p>
+                <p class="text-sm text-brand-green/80">{{ licence.licence_type_name }} — {{ licence.lga_name }}</p>
               </div>
               <span
-                class="rounded-full bg-brand-purple px-3 py-1 text-xs font-bold text-brand-lime"
+                class="rounded-full bg-brand-green px-3 py-1 text-xs font-bold text-brand-cream"
               >
                 {{ licence.status }}
               </span>
             </div>
-            <p class="mt-4 text-sm text-brand-purple/80">
+            <p class="mt-4 text-sm text-brand-green/80">
               Valid {{ licence.valid_from }} → {{ licence.valid_until }}
               ({{ licence.days_until_expiry }} days left)
             </p>
-            <p class="mt-2 font-mono text-xs text-brand-purple/60">
+            <p class="mt-2 font-mono text-xs text-brand-green/60">
               QR: {{ licence.qr_payload }}
             </p>
           </div>

@@ -2,12 +2,12 @@
   <div class="flex flex-wrap items-center justify-between gap-4">
     <div>
       <h1 class="text-3xl font-black">{{ workspace.title }}</h1>
-      <p class="mt-1 text-brand-lime/70">{{ workspace.subtitle }}</p>
+      <p class="mt-1 text-brand-cream/70">{{ workspace.subtitle }}</p>
     </div>
     <div class="flex items-center gap-3">
-      <span class="badge-lime">{{ workspace.badge }}</span>
+      <span class="badge-green">{{ workspace.badge }}</span>
       @if (isAdmin) {
-        <a routerLink="/staff/review" class="text-sm font-semibold text-brand-lime/70 underline hover:text-brand-lime">
+        <a routerLink="/staff/review" class="text-sm font-semibold text-brand-cream/70 underline hover:text-brand-cream">
           Switch workspace
         </a>
       }
@@ -26,7 +26,7 @@
   }
 
   @if (loading()) {
-    <p class="mt-10 animate-pulse text-brand-lime/60">Loading queue…</p>
+    <p class="mt-10 animate-pulse text-brand-cream/60">Loading queue…</p>
   } @else {
     <!-- Filter tabs -->
     <div class="mt-8 flex flex-wrap gap-2">
@@ -36,8 +36,8 @@
           class="rounded-full px-4 py-2 text-sm font-bold transition"
           [class]="
             activeFilter().label === filter.label
-              ? 'bg-brand-lime text-brand-purple'
-              : 'border border-brand-lime/40 text-brand-lime hover:bg-brand-lime/10'
+              ? 'bg-brand-cream text-brand-green'
+              : 'border border-brand-cream/40 text-brand-cream hover:bg-brand-cream/10'
           "
           (click)="activeFilter.set(filter)"
         >
@@ -52,7 +52,7 @@
         <div class="card flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div class="min-w-0">
             <div class="flex flex-wrap items-center gap-3">
-              <p class="font-mono text-sm text-brand-lime/70">{{ app.reference_number }}</p>
+              <p class="font-mono text-sm text-brand-cream/70">{{ app.reference_number }}</p>
               <span class="rounded-full px-3 py-1 text-xs font-bold" [class]="STATUS_STYLES[app.status]">
                 {{ STATUS_LABELS[app.status] }}
               </span>
@@ -60,16 +60,16 @@
             <p class="mt-1 flex flex-wrap items-center gap-2 text-lg font-bold">
               {{ app.business_name }}
               @if (app.business_is_verified) {
-                <span class="badge-lime !px-2 !py-0.5">verified ✓</span>
+                <span class="badge-green !px-2 !py-0.5">verified ✓</span>
               } @else {
                 <span class="badge-outline !px-2 !py-0.5 !border-orange-400/50 !text-orange-300">unverified</span>
               }
             </p>
-            <p class="text-sm text-brand-lime/70">
+            <p class="text-sm text-brand-cream/70">
               {{ app.licence_type_name }} — {{ app.lga_name }} · applicant: {{ app.applicant_name }}
               @if (app.applicant_has_nida !== undefined) {
                 @if (app.applicant_has_nida) {
-                  <span class="badge-lime !px-2 !py-0.5 !text-[10px]" title="NIDA on file">NIDA ✓</span>
+                  <span class="badge-green !px-2 !py-0.5 !text-[10px]" title="NIDA on file">NIDA ✓</span>
                 } @else {
                   <span
                     class="badge-outline !px-2 !py-0.5 !border-orange-400/50 !text-orange-300 !text-[10px]"
@@ -79,7 +79,7 @@
               }
             </p>
             @if (app.purpose_statement) {
-              <p class="mt-2 max-w-2xl text-sm text-brand-lime/60">“{{ app.purpose_statement }}”</p>
+              <p class="mt-2 max-w-2xl text-sm text-brand-cream/60">“{{ app.purpose_statement }}”</p>
             }
             @if (app.status === 'INSPECTION_SCHEDULED' && scheduledDate(app)) {
               <p class="mt-2 text-sm text-blue-300">
@@ -96,7 +96,7 @@
                   <a
                     [href]="doc.file"
                     target="_blank"
-                    class="inline-flex items-center gap-1 rounded-lg border border-brand-lime/25 px-2 py-1 text-xs text-brand-lime/80 transition hover:border-brand-lime/60 hover:text-brand-lime"
+                    class="inline-flex items-center gap-1 rounded-lg border border-brand-cream/25 px-2 py-1 text-xs text-brand-cream/80 transition hover:border-brand-cream/60 hover:text-brand-cream"
                   >
                     📎 {{ doc.requirement_name || 'Document' }}
                   </a>
@@ -122,10 +122,10 @@
 
             @if (canReview && app.status === 'UNDER_REVIEW') {
               @if (schedulingId() === app.id) {
-                <div class="flex items-center gap-2 rounded-lg border border-brand-lime/30 p-2">
+                <div class="flex items-center gap-2 rounded-lg border border-brand-cream/30 p-2">
                   <input
                     type="datetime-local"
-                    class="rounded bg-brand-purple-deep px-2 py-1 text-sm text-brand-lime"
+                    class="rounded bg-brand-green-deep px-2 py-1 text-sm text-brand-cream"
                     [ngModel]="scheduledFor()"
                     (ngModelChange)="scheduledFor.set($event)"
                   />
@@ -229,7 +229,7 @@
           </div>
         </div>
       } @empty {
-        <p class="text-brand-lime/70">Nothing in this queue.</p>
+        <p class="text-brand-cream/70">Nothing in this queue.</p>
       }
     </div>
   }

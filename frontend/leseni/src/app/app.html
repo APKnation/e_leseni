@@ -1,15 +1,15 @@
 <!-- e-Leseni shell: full-height layout with header, routed content and footer. -->
 <div class="flex min-h-dvh flex-col">
-  <header class="sticky top-0 z-10 border-b border-brand-lime/20 bg-brand-purple-deep/95 backdrop-blur">
+  <header class="sticky top-0 z-10 border-b border-brand-cream/20 bg-brand-green-deep/95 backdrop-blur">
     <div class="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
       <a routerLink="/" routerLinkActive="opacity-100" [routerLinkActiveOptions]="{ exact: true }" class="flex items-center gap-2">
         <span
-          class="grid h-9 w-9 place-items-center rounded-lg bg-brand-lime font-black text-brand-purple"
+          class="grid h-9 w-9 place-items-center rounded-lg bg-brand-cream font-black text-brand-green"
           >eL</span
         >
         <span class="text-lg font-bold tracking-tight">e-Leseni</span>
         @if (auth.role(); as role) {
-          <span class="ml-1 hidden rounded-full border border-brand-lime/40 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-brand-lime/80 md:inline">
+          <span class="ml-1 hidden rounded-full border border-brand-cream/40 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-brand-cream/80 md:inline">
             {{ roleLabel[role] }}
           </span>
         }
@@ -21,31 +21,31 @@
           @if (auth.isStaff()) {
             <a
               [routerLink]="auth.homeRoute()"
-              routerLinkActive="bg-brand-lime/15 text-brand-lime"
-              class="rounded-lg px-3 py-2 text-brand-lime/80 transition hover:bg-brand-lime/10"
+              routerLinkActive="bg-brand-cream/15 text-brand-cream"
+              class="rounded-lg px-3 py-2 text-brand-cream/80 transition hover:bg-brand-cream/10"
             >
               My workspace
             </a>
           }
           <a
             routerLink="/dashboard"
-            routerLinkActive="bg-brand-lime/15 text-brand-lime"
-            class="rounded-lg px-3 py-2 text-brand-lime/80 transition hover:bg-brand-lime/10"
+            routerLinkActive="bg-brand-cream/15 text-brand-cream"
+            class="rounded-lg px-3 py-2 text-brand-cream/80 transition hover:bg-brand-cream/10"
           >
             Dashboard
           </a>
           @if (!auth.isStaff()) {
             <a
               routerLink="/businesses"
-              routerLinkActive="bg-brand-lime/15 text-brand-lime"
-              class="rounded-lg px-3 py-2 text-brand-lime/80 transition hover:bg-brand-lime/10"
+              routerLinkActive="bg-brand-cream/15 text-brand-cream"
+              class="rounded-lg px-3 py-2 text-brand-cream/80 transition hover:bg-brand-cream/10"
             >
               My businesses
             </a>
             <a
               routerLink="/apply"
-              routerLinkActive="bg-brand-lime/15 text-brand-lime"
-              class="rounded-lg px-3 py-2 text-brand-lime/80 transition hover:bg-brand-lime/10"
+              routerLinkActive="bg-brand-cream/15 text-brand-cream"
+              class="rounded-lg px-3 py-2 text-brand-cream/80 transition hover:bg-brand-cream/10"
             >
               Apply
             </a>
@@ -56,16 +56,16 @@
         } @else {
           <a
             routerLink="/"
-            routerLinkActive="bg-brand-lime/15 text-brand-lime"
+            routerLinkActive="bg-brand-cream/15 text-brand-cream"
             [routerLinkActiveOptions]="{ exact: true }"
-            class="rounded-lg px-3 py-2 text-brand-lime/80 transition hover:bg-brand-lime/10"
+            class="rounded-lg px-3 py-2 text-brand-cream/80 transition hover:bg-brand-cream/10"
           >
             Home
           </a>
           <a
             routerLink="/login"
-            routerLinkActive="bg-brand-lime/15 text-brand-lime"
-            class="rounded-lg px-3 py-2 text-brand-lime/80 transition hover:bg-brand-lime/10"
+            routerLinkActive="bg-brand-cream/15 text-brand-cream"
+            class="rounded-lg px-3 py-2 text-brand-cream/80 transition hover:bg-brand-cream/10"
           >
             Log in
           </a>
@@ -79,12 +79,12 @@
           class="hidden items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide sm:flex"
           [class]="realtime.live()
             ? 'border-emerald-400/40 bg-emerald-500/10 text-emerald-300'
-            : 'border-brand-lime/20 bg-brand-purple-soft/40 text-brand-lime/40'"
+            : 'border-brand-cream/20 bg-brand-green-soft/40 text-brand-cream/40'"
           [title]="realtime.live() ? 'Live updates connected' : 'Reconnecting…'"
         >
           <span
             class="h-1.5 w-1.5 rounded-full"
-            [class]="realtime.live() ? 'animate-pulse bg-emerald-400' : 'bg-brand-lime/30'"
+            [class]="realtime.live() ? 'animate-pulse bg-emerald-400' : 'bg-brand-cream/30'"
           ></span>
           {{ realtime.live() ? 'Live' : 'Offline' }}
         </span>
@@ -93,7 +93,7 @@
       <!-- Mobile hamburger -->
       <button
         type="button"
-        class="grid h-10 w-10 place-items-center rounded-lg border border-brand-lime/30 text-brand-lime sm:hidden"
+        class="grid h-10 w-10 place-items-center rounded-lg border border-brand-cream/30 text-brand-cream sm:hidden"
         (click)="toggleMenu()"
         [attr.aria-expanded]="menuOpen()"
         aria-label="Toggle menu"
@@ -108,14 +108,14 @@
 
     <!-- Mobile menu -->
     @if (menuOpen()) {
-      <nav class="border-t border-brand-lime/15 bg-brand-purple-deep px-4 py-3 sm:hidden">
+      <nav class="border-t border-brand-cream/15 bg-brand-green-deep px-4 py-3 sm:hidden">
         <div class="flex flex-col gap-1 text-sm font-semibold">
           @if (auth.isLoggedIn()) {
             @if (auth.isStaff()) {
               <a
                 [routerLink]="auth.homeRoute()"
-                routerLinkActive="bg-brand-lime/15"
-                class="rounded-lg px-3 py-2.5 text-brand-lime/90 hover:bg-brand-lime/10"
+                routerLinkActive="bg-brand-cream/15"
+                class="rounded-lg px-3 py-2.5 text-brand-cream/90 hover:bg-brand-cream/10"
                 (click)="closeMenu()"
               >
                 My workspace
@@ -123,8 +123,8 @@
             }
             <a
               routerLink="/dashboard"
-              routerLinkActive="bg-brand-lime/15"
-              class="rounded-lg px-3 py-2.5 text-brand-lime/90 hover:bg-brand-lime/10"
+              routerLinkActive="bg-brand-cream/15"
+              class="rounded-lg px-3 py-2.5 text-brand-cream/90 hover:bg-brand-cream/10"
               (click)="closeMenu()"
             >
               Dashboard
@@ -132,16 +132,16 @@
             @if (!auth.isStaff()) {
               <a
                 routerLink="/businesses"
-                routerLinkActive="bg-brand-lime/15"
-                class="rounded-lg px-3 py-2.5 text-brand-lime/90 hover:bg-brand-lime/10"
+                routerLinkActive="bg-brand-cream/15"
+                class="rounded-lg px-3 py-2.5 text-brand-cream/90 hover:bg-brand-cream/10"
                 (click)="closeMenu()"
               >
                 My businesses
               </a>
               <a
                 routerLink="/apply"
-                routerLinkActive="bg-brand-lime/15"
-                class="rounded-lg px-3 py-2.5 text-brand-lime/90 hover:bg-brand-lime/10"
+                routerLinkActive="bg-brand-cream/15"
+                class="rounded-lg px-3 py-2.5 text-brand-cream/90 hover:bg-brand-cream/10"
                 (click)="closeMenu()"
               >
                 Apply
@@ -153,17 +153,17 @@
           } @else {
             <a
               routerLink="/"
-              routerLinkActive="bg-brand-lime/15"
+              routerLinkActive="bg-brand-cream/15"
               [routerLinkActiveOptions]="{ exact: true }"
-              class="rounded-lg px-3 py-2.5 text-brand-lime/90 hover:bg-brand-lime/10"
+              class="rounded-lg px-3 py-2.5 text-brand-cream/90 hover:bg-brand-cream/10"
               (click)="closeMenu()"
             >
               Home
             </a>
             <a
               routerLink="/login"
-              routerLinkActive="bg-brand-lime/15"
-              class="rounded-lg px-3 py-2.5 text-brand-lime/90 hover:bg-brand-lime/10"
+              routerLinkActive="bg-brand-cream/15"
+              class="rounded-lg px-3 py-2.5 text-brand-cream/90 hover:bg-brand-cream/10"
               (click)="closeMenu()"
             >
               Log in
@@ -186,37 +186,37 @@
     <button
       type="button"
       (click)="goToApplication()"
-      class="fixed bottom-5 right-5 z-50 max-w-sm cursor-pointer rounded-xl border border-brand-lime/30 bg-brand-purple-deep/95 p-4 text-left shadow-2xl backdrop-blur transition hover:border-brand-lime/60"
+      class="fixed bottom-5 right-5 z-50 max-w-sm cursor-pointer rounded-xl border border-brand-cream/30 bg-brand-green-deep/95 p-4 text-left shadow-2xl backdrop-blur transition hover:border-brand-cream/60"
     >
       <div class="flex items-start gap-3">
         <span class="text-xl">🔔</span>
         <div class="min-w-0">
-          <p class="text-xs font-black uppercase tracking-wide text-brand-lime/60">
+          <p class="text-xs font-black uppercase tracking-wide text-brand-cream/60">
             Live update · {{ t.changed_by }}
           </p>
-          <p class="mt-0.5 truncate text-sm font-bold text-brand-lime">{{ t.reference_number }}</p>
-          <p class="text-sm text-brand-lime/80">
-            {{ t.business_name }} — now <strong class="text-brand-lime">{{ t.to_status_label }}</strong>
+          <p class="mt-0.5 truncate text-sm font-bold text-brand-cream">{{ t.reference_number }}</p>
+          <p class="text-sm text-brand-cream/80">
+            {{ t.business_name }} — now <strong class="text-brand-cream">{{ t.to_status_label }}</strong>
           </p>
         </div>
-        <span class="ml-2 text-xs text-brand-lime/40" (click)="dismissToast(); $event.stopPropagation()">✕</span>
+        <span class="ml-2 text-xs text-brand-cream/40" (click)="dismissToast(); $event.stopPropagation()">✕</span>
       </div>
     </button>
   }
 
-  <footer class="border-t border-brand-lime/20 bg-brand-purple-deep/95">
+  <footer class="border-t border-brand-cream/20 bg-brand-green-deep/95">
     <div
-      class="mx-auto flex w-full max-w-6xl flex-col items-center justify-between gap-4 px-4 py-8 text-sm text-brand-lime/70 sm:flex-row sm:px-6"
+      class="mx-auto flex w-full max-w-6xl flex-col items-center justify-between gap-4 px-4 py-8 text-sm text-brand-cream/70 sm:flex-row sm:px-6"
     >
       <div class="flex flex-col items-center gap-1 sm:items-start">
         <span>© {{ year }} e-Leseni — Business licensing, simplified.</span>
-        <span class="text-xs text-brand-lime/50">
+        <span class="text-xs text-brand-cream/50">
           Coverage: all 31 regions · 200+ councils · 2900+ wards
         </span>
       </div>
       <div class="flex items-center gap-4">
-        <a routerLink="/register" class="hover:text-brand-lime">Register</a>
-        <a routerLink="/login" class="hover:text-brand-lime">Log in</a>
+        <a routerLink="/register" class="hover:text-brand-cream">Register</a>
+        <a routerLink="/login" class="hover:text-brand-cream">Log in</a>
         <span class="badge-outline">Powered by LGA e-Services</span>
       </div>
     </div>

@@ -14,15 +14,15 @@ export type ApplicationStatus =
   | 'REJECTED';
 
 export const STATUS_STYLES: Record<ApplicationStatus, string> = {
-  DRAFT: 'bg-brand-lime/10 text-brand-lime border border-brand-lime/30',
-  SUBMITTED: 'bg-brand-lime/10 text-brand-lime border border-brand-lime/30',
+  DRAFT: 'bg-brand-cream/10 text-brand-cream border border-brand-cream/30',
+  SUBMITTED: 'bg-brand-cream/10 text-brand-cream border border-brand-cream/30',
   UNDER_REVIEW: 'bg-blue-500/15 text-blue-300 border border-blue-400/40',
   INSPECTION_SCHEDULED: 'bg-blue-500/15 text-blue-300 border border-blue-400/40',
   INSPECTED: 'bg-blue-500/15 text-blue-300 border border-blue-400/40',
   APPROVED: 'bg-emerald-500/15 text-emerald-300 border border-emerald-400/40',
   PAYMENT_PENDING: 'bg-amber-500/15 text-amber-300 border border-amber-400/40',
   PAID: 'bg-emerald-500/15 text-emerald-300 border border-emerald-400/40',
-  ISSUED: 'bg-brand-lime text-brand-purple border border-brand-lime',
+  ISSUED: 'bg-brand-cream text-brand-green border border-brand-cream',
   RETURNED_FOR_CORRECTION: 'bg-orange-500/15 text-orange-300 border border-orange-400/40',
   REJECTED: 'bg-red-500/15 text-red-300 border border-red-400/40',
 };

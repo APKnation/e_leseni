@@ -1,14 +1,14 @@
 <section class="mx-auto w-full max-w-3xl px-4 py-12 sm:px-6">
   @if (created(); as app) {
-    <div class="card bg-brand-lime text-brand-purple">
+    <div class="card bg-brand-cream text-brand-green">
       <h1 class="text-2xl font-black">Application submitted 🎉</h1>
       <p class="mt-2 font-semibold">
         Reference number:
-        <span class="rounded-lg bg-brand-purple px-3 py-1 font-mono text-brand-lime">
+        <span class="rounded-lg bg-brand-green px-3 py-1 font-mono text-brand-cream">
           {{ app.reference_number }}
         </span>
       </p>
-      <p class="mt-3 text-sm text-brand-purple/80">
+      <p class="mt-3 text-sm text-brand-green/80">
         {{ app.licence_type_name }} — {{ app.business_name }} ({{ app.lga_name }}).
         You will get an SMS at every status change.
       </p>
@@ -19,7 +19,7 @@
     </div>
   } @else {
     <h1 class="text-3xl font-black">Apply for a licence</h1>
-    <p class="mt-2 text-brand-lime/70">
+    <p class="mt-2 text-brand-cream/70">
       Hi {{ userName }} — pick your area and licence, confirm your business details,
       attach the required documents, then submit.
     </p>
@@ -75,7 +75,7 @@
       <div class="card flex flex-col gap-4">
         <h2 class="text-lg font-black">2. What kind of licence?</h2>
         @if (!lgaId()) {
-          <p class="text-sm text-brand-lime/60">Choose a council first.</p>
+          <p class="text-sm text-brand-cream/60">Choose a council first.</p>
         } @else {
           <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
             @for (category of categories; track category.value) {
@@ -84,15 +84,15 @@
                 class="rounded-xl border-2 p-4 text-left transition"
                 [class]="
                   categoryId() === category.value
-                    ? 'border-brand-lime bg-brand-lime text-brand-purple'
-                    : 'border-brand-lime/30 hover:border-brand-lime/60'
+                    ? 'border-brand-cream bg-brand-cream text-brand-green'
+                    : 'border-brand-cream/30 hover:border-brand-cream/60'
                 "
                 (click)="onCategoryChange(category.value)"
               >
                 <span class="text-2xl">{{ category.icon }}</span>
                 <p class="mt-1 font-black">{{ category.label }}</p>
-                <p class="text-xs" [class.text-brand-purple/70]="categoryId() === category.value"
-                   [class.text-brand-lime/60]="categoryId() !== category.value">
+                <p class="text-xs" [class.text-brand-green/70]="categoryId() === category.value"
+                   [class.text-brand-cream/60]="categoryId() !== category.value">
                   {{ category.hint }}
                 </p>
               </button>
@@ -101,7 +101,7 @@
 
           @if (categoryId()) {
             @if (licencesForCategory.length === 0) {
-              <p class="text-sm text-brand-lime/60">No licences in this category for the selected council.</p>
+              <p class="text-sm text-brand-cream/60">No licences in this category for the selected council.</p>
             } @else {
               <div class="flex flex-col gap-2">
                 @for (licence of licencesForCategory; track licence.id) {
@@ -109,20 +109,20 @@
                     class="flex cursor-pointer items-center justify-between gap-4 rounded-xl border p-4 transition"
                     [class]="
                       licenceTypeId() === licence.id
-                        ? 'border-brand-lime bg-brand-lime/10'
-                        : 'border-brand-lime/20 hover:border-brand-lime/50'
+                        ? 'border-brand-cream bg-brand-cream/10'
+                        : 'border-brand-cream/20 hover:border-brand-cream/50'
                     "
                   >
                     <div>
                       <p class="font-bold">{{ licence.name }}</p>
-                      <p class="text-sm text-brand-lime/70">{{ licence.description }}</p>
+                      <p class="text-sm text-brand-cream/70">{{ licence.description }}</p>
                       @if (licence.requires_inspection) {
                         <p class="mt-1 text-xs text-blue-300">🔍 Premises inspection required</p>
                       }
                     </div>
                     <div class="text-right">
                       <p class="font-black">{{ licence.fee }} TZS</p>
-                      <p class="text-xs text-brand-lime/60">{{ licence.validity_months }} months</p>
+                      <p class="text-xs text-brand-cream/60">{{ licence.validity_months }} months</p>
                     </div>
                     <input
                       class="sr-only"
@@ -191,7 +191,7 @@
               </button>
             }
             @if (addingLocation()) {
-              <div class="grid gap-4 rounded-xl border border-brand-lime/20 p-4 sm:grid-cols-2">
+              <div class="grid gap-4 rounded-xl border border-brand-cream/20 p-4 sm:grid-cols-2">
                 <label class="flex flex-col gap-2 text-sm font-semibold">
                   Ward
                   @if (wards().length > 0) {
@@ -229,10 +229,10 @@
             + Register a new business
           </button>
         } @else {
-          <p class="rounded-lg bg-brand-lime/10 px-4 py-3 text-xs text-brand-lime/80">
+          <p class="rounded-lg bg-brand-cream/10 px-4 py-3 text-xs text-brand-cream/80">
             <strong>New business?</strong> Register it here first — your TIN is checked with
             <strong>TRA</strong> and your registration number with <strong>BRELA</strong>.
-            Once both pass, the business is marked <span class="badge-lime !px-2 !py-0.5">verified ✓</span>
+            Once both pass, the business is marked <span class="badge-green !px-2 !py-0.5">verified ✓</span>
             and officers will see it as trusted during review.
           </p>
           <div class="grid gap-4 sm:grid-cols-2">
@@ -263,9 +263,9 @@
                      (ngModelChange)="newBusiness.update(v => ({ ...v, brela_registration_number: $event }))" />
             </label>
           </div>
-          <p class="text-xs text-brand-lime/60">{{ businessVerificationHint }}</p>
-          <p class="text-xs text-brand-lime/60">
-            Council: <span class="font-bold text-brand-lime">{{ selectedLga?.name }}</span>
+          <p class="text-xs text-brand-cream/60">{{ businessVerificationHint }}</p>
+          <p class="text-xs text-brand-cream/60">
+            Council: <span class="font-bold text-brand-cream">{{ selectedLga?.name }}</span>
             (from your area selection) — add ward/street for the premises.
           </p>
           <div class="grid gap-4 sm:grid-cols-2">
@@ -306,9 +306,9 @@
       <div class="card flex flex-col gap-4">
         <h2 class="text-lg font-black">4. Required documents</h2>
         @if (!licenceTypeId()) {
-          <p class="text-sm text-brand-lime/60">Choose a licence first to see its document requirements.</p>
+          <p class="text-sm text-brand-cream/60">Choose a licence first to see its document requirements.</p>
         } @else {
-          <p class="text-sm text-brand-lime/70">
+          <p class="text-sm text-brand-cream/70">
             Attach clear PDF scans (max 10 MB each) — JPG/PNG photos are not accepted, the
             council only takes PDF documents. Mandatory items must be uploaded before you can
             submit, and your business must be verified with TRA & BRELA.
@@ -317,7 +317,7 @@
             @for (row of uploadRows(); track row.label) {
               <div
                 class="flex flex-col gap-2 rounded-xl border p-4 sm:flex-row sm:items-center sm:justify-between"
-                [class]="row.uploaded ? 'border-emerald-400/50 bg-emerald-500/10' : 'border-brand-lime/20'"
+                [class]="row.uploaded ? 'border-emerald-400/50 bg-emerald-500/10' : 'border-brand-cream/20'"
               >
                 <div class="min-w-0">
                   <p class="font-bold">
@@ -325,7 +325,7 @@
                     @if (row.mandatory) {
                       <span class="ml-1 text-xs font-black text-red-300">*required</span>
                     } @else {
-                      <span class="ml-1 text-xs text-brand-lime/50">(optional)</span>
+                      <span class="ml-1 text-xs text-brand-cream/50">(optional)</span>
                     }
                   </p>
                   @if (row.uploaded) {
@@ -348,7 +348,7 @@
             }
           </div>
           @if (uploadRows().length > 0) {
-            <p class="text-xs text-brand-lime/60">
+            <p class="text-xs text-brand-cream/60">
               {{ uploadedCount }} of {{ uploadRows().length }} documents attached.
             </p>
           }
