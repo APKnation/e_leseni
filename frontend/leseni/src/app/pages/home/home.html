@@ -43,10 +43,10 @@
     <div class="card flex flex-col justify-center gap-5">
       <h2 class="text-2xl font-black text-foreground">How it works</h2>
       <ol class="space-y-6">
-        @for (step of steps; track step.title) {
+        @for (step of steps; track step.title; let i = $index) {
           <li class="flex items-start gap-4">
-            <span class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary text-base text-surface shadow-sm">
-              {{ step.icon }}
+            <span class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary text-base text-surface shadow-sm font-bold">
+              {{ i + 1 }}
             </span>
             <div>
               <p class="font-bold text-foreground">{{ step.title }}</p>
@@ -68,10 +68,7 @@
     </p>
     <div class="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
       @for (feature of features; track feature.title) {
-        <div class="card flex flex-col gap-4 hover:shadow-lg transition-shadow">
-          <span class="grid h-12 w-12 place-items-center rounded-xl bg-accent text-xl text-surface">
-            {{ feature.icon }}
-          </span>
+        <div class="card flex flex-col gap-3 hover:shadow-lg transition-shadow">
           <h3 class="text-xl font-bold text-foreground">{{ feature.title }}</h3>
           <p class="text-sm text-muted leading-relaxed">{{ feature.body }}</p>
         </div>
@@ -91,8 +88,7 @@
   
   <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
     @for (role of roleCards; track role.title) {
-      <div class="card flex flex-col gap-4 border border-muted/10 hover:-translate-y-1 transition-transform duration-300">
-        <span class="text-4xl">{{ role.icon }}</span>
+      <div class="card flex flex-col gap-3 border border-muted/10 hover:-translate-y-1 transition-transform duration-300">
         <h3 class="text-xl font-bold text-foreground">{{ role.title }}</h3>
         <p class="text-sm text-muted leading-relaxed flex-grow">{{ role.body }}</p>
         <a [routerLink]="role.link" class="mt-4 text-sm font-bold text-primary hover:text-accent transition-colors">

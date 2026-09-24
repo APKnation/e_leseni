@@ -25,40 +25,34 @@ export class Home {
     .reduce((sum, region) => sum + this.geo.districts(region).length, 0);
 
   protected readonly steps = [
-    { icon: '📝', title: 'Apply online', body: 'Register your business and submit your licence application — no queueing at the council office.' },
-    { icon: '🔍', title: 'Get inspected', body: 'Your LGA officer reviews the application and schedules a premises inspection.' },
-    { icon: '💳', title: 'Pay via control number', body: 'Once approved, pay the invoice using an official GePG control number — mobile money, bank or agent.' },
-    { icon: '🎫', title: 'Receive your licence', body: 'Download a QR-verifiable licence that anyone can scan to confirm it is genuine and current.' },
+    { title: 'Apply online', body: 'Register your business and submit your licence application — no queueing at the council office.' },
+    { title: 'Get inspected', body: 'Your LGA officer reviews the application and schedules a premises inspection.' },
+    { title: 'Pay via control number', body: 'Once approved, pay the invoice using an official GePG control number — mobile money, bank or agent.' },
+    { title: 'Receive your licence', body: 'Download a QR-verifiable licence that anyone can scan to confirm it is genuine and current.' },
   ];
 
   protected readonly features = [
     {
-      icon: '📄',
       title: 'Online applications',
       body: 'Apply from anywhere, track every status change, and get SMS updates at each step.',
     },
     {
-      icon: '💳',
       title: 'Pay with control numbers',
       body: 'Invoices are issued with official GePG control numbers — pay by mobile money, bank or agent.',
     },
     {
-      icon: '🔐',
       title: 'QR-verified licences',
       body: 'Every licence carries a QR code that anyone can scan to confirm it is genuine and current.',
     },
     {
-      icon: '🏛️',
       title: 'All 31 regions covered',
       body: 'Ward-level coverage across every region — select your council and ward from official data.',
     },
     {
-      icon: '📱',
       title: 'USSD for basic phones',
       body: 'No smartphone? Apply and check your application status over USSD from any phone.',
     },
     {
-      icon: '🛡️',
       title: 'Role-based workflow',
       body: 'Dedicated workspaces for officers, inspectors and approvers keep every step accountable.',
     },
@@ -66,28 +60,24 @@ export class Home {
 
   protected readonly roleCards = [
     {
-      icon: '👤',
       title: 'Applicants',
       body: 'Register businesses, apply for licences, pay invoices and download QR-verifiable licences.',
       cta: 'Create an account',
       link: '/register',
     },
     {
-      icon: '🗂️',
       title: 'Licensing officers',
       body: 'Review submitted applications, schedule inspections, return or reject incomplete ones.',
       cta: 'Officer log in',
       link: '/login',
     },
     {
-      icon: '📐',
       title: 'Inspectors',
       body: 'See scheduled inspections, record pass/fail results with findings on site.',
       cta: 'Inspector log in',
       link: '/login',
     },
     {
-      icon: '✅',
       title: 'Approvers',
       body: 'Give final approval on inspected applications and trigger invoicing.',
       cta: 'Approver log in',
