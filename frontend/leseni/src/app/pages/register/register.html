@@ -19,7 +19,7 @@
               class="input-field"
               type="text"
               name="first_name"
-              placeholder="Jane"
+              placeholder="First name"
               required
               [ngModel]="form().first_name"
               (ngModelChange)="update('first_name', $event)"
@@ -31,7 +31,7 @@
               class="input-field"
               type="text"
               name="last_name"
-              placeholder="Doe"
+              placeholder="Last name"
               required
               [ngModel]="form().last_name"
               (ngModelChange)="update('last_name', $event)"
@@ -46,7 +46,7 @@
             type="text"
             name="username"
             autocomplete="username"
-            placeholder="your_username"
+            placeholder="Username"
             required
             [ngModel]="form().username"
             (ngModelChange)="update('username', $event)"
@@ -60,7 +60,7 @@
             type="email"
             name="email"
             autocomplete="email"
-            placeholder="jane@example.com"
+            placeholder="Email address"
             required
             [ngModel]="form().email"
             (ngModelChange)="update('email', $event)"
@@ -73,7 +73,7 @@
             class="input-field"
             type="tel"
             name="phone_number"
-            placeholder="07xx xxx xxx"
+            placeholder="Phone number"
             required
             [ngModel]="form().phone_number"
             (ngModelChange)="update('phone_number', $event)"
@@ -91,7 +91,7 @@
             name="nida_number"
             inputmode="numeric"
             maxlength="20"
-            placeholder="20 digits — e.g. 19991234567890123456"
+            placeholder="NIDA number (20 digits)"
             [ngModel]="form().nida_number"
             (ngModelChange)="update('nida_number', $event)"
           />
@@ -104,7 +104,7 @@
             type="password"
             name="password"
             autocomplete="new-password"
-            placeholder="Min. 8 characters"
+            placeholder="Password"
             minlength="8"
             required
             [ngModel]="form().password"
