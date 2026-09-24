@@ -1,9 +1,16 @@
-from rest_framework import generics, permissions, viewsets
+from rest_framework import generics, permissions, status, viewsets
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 
-from .models import User
-from .serializers import LoginSerializer, ProfileUpdateSerializer, RegisterSerializer, UserSerializer
+from .models import PasswordResetToken, User
+from .serializers import (
+    LoginSerializer,
+    PasswordResetConfirmSerializer,
+    PasswordResetRequestSerializer,
+    ProfileUpdateSerializer,
+    RegisterSerializer,
+    UserSerializer,
+)
 
 
 class RegisterView(generics.CreateAPIView):
@@ -60,3 +67,42 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = UserSerializer
     filterset_fields = ['role', 'lga']
     search_fields = ['username', 'first_name', 'last_name', 'email', 'phone_number']
+
+
+class PasswordResetRequestView(generics.GenericAPIView):
+    """Step 1: verify username + phone, return a reset token.
+
+    In production replace the token response with an SMS dispatch.
+    For the demo the token is returned directly so the frontend can pass it
+    to step 2 without any SMS infrastructure.
+    """
+
+    serializer_class = PasswordResetRequestSerializer
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.validated_data['user']
+        reset_token = PasswordResetToken.generate_for(user)
+        return Response({
+            'detail': 'Account verified. Use the token below to reset your password.',
+            'token': reset_token.token,          # In production: send via SMS, hide from response
+            'expires_in_minutes': PasswordResetToken.TOKEN_EXPIRY_MINUTES,
+        }, status=status.HTTP_200_OK)
+
+
+class PasswordResetConfirmView(generics.GenericAPIView):
+    """Step 2: consume token and set a new password."""
+
+    serializer_class = PasswordResetConfirmSerializer
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(
+            {'detail': 'Password updated successfully. You can now log in.'},
+            status=status.HTTP_200_OK,
+        )
