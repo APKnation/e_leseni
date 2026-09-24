@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import LGA, LicenceType, OfficerAssignment, Requirement
+from .models import LGA, LicenceType, OfficerAssignment, Requirement, InspectionChecklistItem
 
 
 class LGASerializer(serializers.ModelSerializer):
@@ -8,7 +8,7 @@ class LGASerializer(serializers.ModelSerializer):
 
     class Meta:
         model = LGA
-        fields = ['id', 'name', 'region', 'code', 'licence_type_count']
+        fields = ['id', 'name', 'region', 'code', 'tier', 'licence_type_count']
 
 
 class RequirementSerializer(serializers.ModelSerializer):
@@ -19,15 +19,22 @@ class RequirementSerializer(serializers.ModelSerializer):
         fields = ['id', 'licence_type', 'name', 'kind', 'kind_display', 'is_mandatory', 'order']
 
 
+class InspectionChecklistItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = InspectionChecklistItem
+        fields = ['id', 'licence_type', 'name', 'description', 'is_mandatory', 'order']
+
+
 class LicenceTypeSerializer(serializers.ModelSerializer):
     lga_name = serializers.CharField(source='lga.name', read_only=True)
     requirements = RequirementSerializer(many=True, read_only=True)
+    inspection_items = InspectionChecklistItemSerializer(many=True, read_only=True)
 
     class Meta:
         model = LicenceType
         fields = [
             'id', 'name', 'code', 'category', 'description', 'fee', 'validity_months',
-            'requires_inspection', 'lga', 'lga_name', 'requirements',
+            'requires_inspection', 'bylaw_reference', 'lga', 'lga_name', 'requirements', 'inspection_items',
         ]
 
 
