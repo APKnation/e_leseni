@@ -1,90 +1,89 @@
 <!-- e-Leseni shell: full-height layout with header, routed content and footer. -->
-<div class="flex min-h-dvh flex-col">
-  <header class="sticky top-0 z-10 border-b border-brand-cream/20 bg-brand-green-deep/95 backdrop-blur">
+<div class="flex min-h-dvh flex-col bg-gray-50">
+  <header class="sticky top-0 z-30 border-b border-muted/20 bg-surface/95 backdrop-blur shadow-sm">
     <div class="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
-      <a routerLink="/" routerLinkActive="opacity-100" [routerLinkActiveOptions]="{ exact: true }" class="flex items-center gap-2">
-        <span
-          class="grid h-9 w-9 place-items-center rounded-lg bg-brand-cream font-black text-brand-green"
-          >eL</span
-        >
-        <span class="text-lg font-bold tracking-tight">e-Leseni</span>
+      <a routerLink="/" routerLinkActive="opacity-100" [routerLinkActiveOptions]="{ exact: true }" class="flex items-center gap-3">
+        <span class="grid h-10 w-10 place-items-center rounded-lg bg-accent font-black text-surface shadow-sm">
+          eL
+        </span>
+        <span class="text-xl font-bold tracking-tight text-foreground font-heading">e-Leseni</span>
         @if (auth.role(); as role) {
-          <span class="ml-1 hidden rounded-full border border-brand-cream/40 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-brand-cream/80 md:inline">
+          <span class="ml-2 hidden rounded-full border border-primary px-2.5 py-0.5 text-xs font-bold uppercase tracking-wide text-primary md:inline">
             {{ roleLabel[role] }}
           </span>
         }
       </a>
 
       <!-- Desktop nav -->
-      <nav class="hidden items-center gap-1 text-sm font-semibold sm:flex">
+      <nav class="hidden items-center gap-2 text-sm font-semibold sm:flex">
         @if (auth.isLoggedIn()) {
           @if (auth.isStaff()) {
             <a
               [routerLink]="auth.homeRoute()"
-              routerLinkActive="bg-brand-cream/15 text-brand-cream"
-              class="rounded-lg px-3 py-2 text-brand-cream/80 transition hover:bg-brand-cream/10"
+              routerLinkActive="bg-gray-100 text-foreground"
+              class="rounded-lg px-4 py-2 text-muted transition hover:bg-gray-50 hover:text-foreground"
             >
               My workspace
             </a>
           }
           <a
             routerLink="/dashboard"
-            routerLinkActive="bg-brand-cream/15 text-brand-cream"
-            class="rounded-lg px-3 py-2 text-brand-cream/80 transition hover:bg-brand-cream/10"
+            routerLinkActive="bg-gray-100 text-foreground"
+            class="rounded-lg px-4 py-2 text-muted transition hover:bg-gray-50 hover:text-foreground"
           >
             Dashboard
           </a>
           @if (!auth.isStaff()) {
             <a
               routerLink="/businesses"
-              routerLinkActive="bg-brand-cream/15 text-brand-cream"
-              class="rounded-lg px-3 py-2 text-brand-cream/80 transition hover:bg-brand-cream/10"
+              routerLinkActive="bg-gray-100 text-foreground"
+              class="rounded-lg px-4 py-2 text-muted transition hover:bg-gray-50 hover:text-foreground"
             >
               My businesses
             </a>
             <a
               routerLink="/apply"
-              routerLinkActive="bg-brand-cream/15 text-brand-cream"
-              class="rounded-lg px-3 py-2 text-brand-cream/80 transition hover:bg-brand-cream/10"
+              routerLinkActive="bg-gray-100 text-foreground"
+              class="rounded-lg px-4 py-2 text-muted transition hover:bg-gray-50 hover:text-foreground"
             >
               Apply
             </a>
           }
-          <button type="button" class="btn-secondary ml-2 !px-4 !py-2" (click)="logout()">
+          <button type="button" class="btn-secondary ml-3 !px-4 !py-2 !text-sm" (click)="logout()">
             Log out
           </button>
         } @else {
           <a
             routerLink="/"
-            routerLinkActive="bg-brand-cream/15 text-brand-cream"
+            routerLinkActive="bg-gray-100 text-foreground"
             [routerLinkActiveOptions]="{ exact: true }"
-            class="rounded-lg px-3 py-2 text-brand-cream/80 transition hover:bg-brand-cream/10"
+            class="rounded-lg px-4 py-2 text-muted transition hover:bg-gray-50 hover:text-foreground"
           >
             Home
           </a>
           <a
             routerLink="/login"
-            routerLinkActive="bg-brand-cream/15 text-brand-cream"
-            class="rounded-lg px-3 py-2 text-brand-cream/80 transition hover:bg-brand-cream/10"
+            routerLinkActive="bg-gray-100 text-foreground"
+            class="rounded-lg px-4 py-2 text-muted transition hover:bg-gray-50 hover:text-foreground"
           >
             Log in
           </a>
-          <a routerLink="/register" class="btn-primary ml-2 !px-4 !py-2">Get started</a>
+          <a routerLink="/register" class="btn-primary ml-3 !px-4 !py-2 !text-sm">Get started</a>
         }
       </nav>
 
       <!-- Live connection indicator -->
       @if (auth.isLoggedIn()) {
         <span
-          class="hidden items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide sm:flex"
+          class="hidden items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-bold uppercase tracking-wide sm:flex transition-colors"
           [class]="realtime.live()
-            ? 'border-emerald-400/40 bg-emerald-500/10 text-emerald-300'
-            : 'border-brand-cream/20 bg-brand-green-soft/40 text-brand-cream/40'"
+            ? 'border-green-200 bg-green-50 text-green-700'
+            : 'border-muted/20 bg-gray-50 text-muted'"
           [title]="realtime.live() ? 'Live updates connected' : 'Reconnecting…'"
         >
           <span
-            class="h-1.5 w-1.5 rounded-full"
-            [class]="realtime.live() ? 'animate-pulse bg-emerald-400' : 'bg-brand-cream/30'"
+            class="h-2 w-2 rounded-full"
+            [class]="realtime.live() ? 'animate-pulse bg-green-500' : 'bg-muted'"
           ></span>
           {{ realtime.live() ? 'Live' : 'Offline' }}
         </span>
@@ -93,29 +92,29 @@
       <!-- Mobile hamburger -->
       <button
         type="button"
-        class="grid h-10 w-10 place-items-center rounded-lg border border-brand-cream/30 text-brand-cream sm:hidden"
+        class="grid h-10 w-10 place-items-center rounded-lg border border-muted/30 text-foreground sm:hidden hover:bg-gray-50 transition-colors focus:ring-2 focus:ring-primary focus:outline-none"
         (click)="toggleMenu()"
         [attr.aria-expanded]="menuOpen()"
         aria-label="Toggle menu"
       >
         @if (menuOpen()) {
-          ✕
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         } @else {
-          ☰
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
         }
       </button>
     </div>
 
     <!-- Mobile menu -->
     @if (menuOpen()) {
-      <nav class="border-t border-brand-cream/15 bg-brand-green-deep px-4 py-3 sm:hidden">
-        <div class="flex flex-col gap-1 text-sm font-semibold">
+      <nav class="border-t border-muted/20 bg-surface px-4 py-4 sm:hidden shadow-lg">
+        <div class="flex flex-col gap-2 text-sm font-semibold">
           @if (auth.isLoggedIn()) {
             @if (auth.isStaff()) {
               <a
                 [routerLink]="auth.homeRoute()"
-                routerLinkActive="bg-brand-cream/15"
-                class="rounded-lg px-3 py-2.5 text-brand-cream/90 hover:bg-brand-cream/10"
+                routerLinkActive="bg-gray-100 text-foreground"
+                class="rounded-lg px-4 py-3 text-muted hover:bg-gray-50 transition-colors"
                 (click)="closeMenu()"
               >
                 My workspace
@@ -123,8 +122,8 @@
             }
             <a
               routerLink="/dashboard"
-              routerLinkActive="bg-brand-cream/15"
-              class="rounded-lg px-3 py-2.5 text-brand-cream/90 hover:bg-brand-cream/10"
+              routerLinkActive="bg-gray-100 text-foreground"
+              class="rounded-lg px-4 py-3 text-muted hover:bg-gray-50 transition-colors"
               (click)="closeMenu()"
             >
               Dashboard
@@ -132,43 +131,43 @@
             @if (!auth.isStaff()) {
               <a
                 routerLink="/businesses"
-                routerLinkActive="bg-brand-cream/15"
-                class="rounded-lg px-3 py-2.5 text-brand-cream/90 hover:bg-brand-cream/10"
+                routerLinkActive="bg-gray-100 text-foreground"
+                class="rounded-lg px-4 py-3 text-muted hover:bg-gray-50 transition-colors"
                 (click)="closeMenu()"
               >
                 My businesses
               </a>
               <a
                 routerLink="/apply"
-                routerLinkActive="bg-brand-cream/15"
-                class="rounded-lg px-3 py-2.5 text-brand-cream/90 hover:bg-brand-cream/10"
+                routerLinkActive="bg-gray-100 text-foreground"
+                class="rounded-lg px-4 py-3 text-muted hover:bg-gray-50 transition-colors"
                 (click)="closeMenu()"
               >
                 Apply
               </a>
             }
-            <button type="button" class="btn-secondary mt-2 !py-2.5" (click)="logout()">
+            <button type="button" class="btn-secondary mt-3 !py-3 w-full" (click)="logout()">
               Log out
             </button>
           } @else {
             <a
               routerLink="/"
-              routerLinkActive="bg-brand-cream/15"
+              routerLinkActive="bg-gray-100 text-foreground"
               [routerLinkActiveOptions]="{ exact: true }"
-              class="rounded-lg px-3 py-2.5 text-brand-cream/90 hover:bg-brand-cream/10"
+              class="rounded-lg px-4 py-3 text-muted hover:bg-gray-50 transition-colors"
               (click)="closeMenu()"
             >
               Home
             </a>
             <a
               routerLink="/login"
-              routerLinkActive="bg-brand-cream/15"
-              class="rounded-lg px-3 py-2.5 text-brand-cream/90 hover:bg-brand-cream/10"
+              routerLinkActive="bg-gray-100 text-foreground"
+              class="rounded-lg px-4 py-3 text-muted hover:bg-gray-50 transition-colors"
               (click)="closeMenu()"
             >
               Log in
             </a>
-            <a routerLink="/register" class="btn-primary mt-2 !py-2.5" (click)="closeMenu()">
+            <a routerLink="/register" class="btn-primary mt-3 !py-3 w-full" (click)="closeMenu()">
               Get started
             </a>
           }
@@ -177,7 +176,7 @@
     }
   </header>
 
-  <main class="flex-1">
+  <main class="flex-1 w-full bg-surface">
     <router-outlet />
   </main>
 
@@ -186,37 +185,37 @@
     <button
       type="button"
       (click)="goToApplication()"
-      class="fixed bottom-5 right-5 z-50 max-w-sm cursor-pointer rounded-xl border border-brand-cream/30 bg-brand-green-deep/95 p-4 text-left shadow-2xl backdrop-blur transition hover:border-brand-cream/60"
+      class="fixed bottom-6 right-6 z-50 max-w-sm cursor-pointer rounded-xl border border-primary bg-surface p-5 text-left shadow-custom transition hover:-translate-y-1 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
     >
-      <div class="flex items-start gap-3">
-        <span class="text-xl">🔔</span>
-        <div class="min-w-0">
-          <p class="text-xs font-black uppercase tracking-wide text-brand-cream/60">
+      <div class="flex items-start gap-4">
+        <span class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-accent/10 text-xl text-accent">🔔</span>
+        <div class="min-w-0 flex-1">
+          <p class="text-xs font-bold uppercase tracking-wide text-primary">
             Live update · {{ t.changed_by }}
           </p>
-          <p class="mt-0.5 truncate text-sm font-bold text-brand-cream">{{ t.reference_number }}</p>
-          <p class="text-sm text-brand-cream/80">
-            {{ t.business_name }} — now <strong class="text-brand-cream">{{ t.to_status_label }}</strong>
+          <p class="mt-1 truncate text-sm font-black text-foreground">{{ t.reference_number }}</p>
+          <p class="mt-0.5 text-sm text-muted">
+            {{ t.business_name }} — now <strong class="text-foreground">{{ t.to_status_label }}</strong>
           </p>
         </div>
-        <span class="ml-2 text-xs text-brand-cream/40" (click)="dismissToast(); $event.stopPropagation()">✕</span>
+        <button type="button" class="ml-2 text-muted hover:text-foreground p-1 rounded-full transition-colors" (click)="dismissToast(); $event.stopPropagation()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
       </div>
     </button>
   }
 
-  <footer class="border-t border-brand-cream/20 bg-brand-green-deep/95">
-    <div
-      class="mx-auto flex w-full max-w-6xl flex-col items-center justify-between gap-4 px-4 py-8 text-sm text-brand-cream/70 sm:flex-row sm:px-6"
-    >
-      <div class="flex flex-col items-center gap-1 sm:items-start">
-        <span>© {{ year }} e-Leseni — Business licensing, simplified.</span>
-        <span class="text-xs text-brand-cream/50">
+  <footer class="border-t border-muted/20 bg-gray-50">
+    <div class="mx-auto flex w-full max-w-6xl flex-col items-center justify-between gap-6 px-4 py-10 text-sm text-muted sm:flex-row sm:px-6">
+      <div class="flex flex-col items-center gap-2 sm:items-start">
+        <span class="font-medium">© {{ year }} e-Leseni — Business licensing, simplified.</span>
+        <span class="text-xs opacity-80">
           Coverage: all 31 regions · 200+ councils · 2900+ wards
         </span>
       </div>
-      <div class="flex items-center gap-4">
-        <a routerLink="/register" class="hover:text-brand-cream">Register</a>
-        <a routerLink="/login" class="hover:text-brand-cream">Log in</a>
+      <div class="flex items-center gap-6">
+        <a routerLink="/register" class="hover:text-foreground font-medium transition-colors">Register</a>
+        <a routerLink="/login" class="hover:text-foreground font-medium transition-colors">Log in</a>
         <span class="badge-outline">Powered by LGA e-Services</span>
       </div>
     </div>
