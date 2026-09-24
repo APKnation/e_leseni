@@ -9,13 +9,14 @@ from core_docs.validation import validate_pdf_document
 
 from lga.models import Requirement
 
-from .models import Application, ApplicationDocument, Inspection
+from .models import Application, ApplicationDocument, Inspection, InspectionPhoto
 from .permissions import allowed_statuses_for
 from .serializers import (
     ApplicationDocumentSerializer,
     ApplicationSerializer,
     ApplicationTransitionSerializer,
     InspectionSerializer,
+    InspectionPhotoSerializer,
 )
 
 
@@ -266,3 +267,18 @@ class InspectionViewSet(viewsets.ModelViewSet):
             serializer.save(inspector=user)
         else:
             serializer.save()
+
+
+class InspectionPhotoViewSet(viewsets.ModelViewSet):
+    serializer_class = InspectionPhotoSerializer
+    parser_classes = [MultiPartParser, FormParser]
+    filterset_fields = ['inspection', 'checklist_item']
+
+    def get_queryset(self):
+        qs = InspectionPhoto.objects.select_related('inspection', 'checklist_item')
+        user = self.request.user
+        if user.is_authenticated and user.is_lga_staff:
+            if user.is_superuser or user.role == 'ADMIN':
+                return qs
+            return qs.filter(inspection__application__licence_type__lga=user.lga)
+        return qs.filter(inspection__application__applicant=user)
