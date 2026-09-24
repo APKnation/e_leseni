@@ -1,21 +1,7 @@
-<!-- Register page: two-panel layout -->
+<!-- Register page: form left, branding right -->
 <div class="min-h-[calc(100dvh-5rem)] grid lg:grid-cols-2">
 
-  <!-- Left: Switch to Login -->
-  <section class="hidden lg:flex flex-col items-center justify-center bg-primary text-surface px-12 py-16 order-first">
-    <div class="max-w-sm text-center flex flex-col gap-6">
-      <h2 class="text-4xl font-black leading-tight">Already have an account?</h2>
-      <p class="text-lg opacity-90">
-        Log back in and continue tracking your applications, paying invoices, and downloading your licences.
-      </p>
-      <a routerLink="/login" class="btn-primary border-none text-primary self-center px-8 bg-surface">
-        Log in
-      </a>
-      <p class="text-sm opacity-60">Your data is safe and always accessible.</p>
-    </div>
-  </section>
-
-  <!-- Right: Register form -->
+  <!-- Left: Register form -->
   <section class="flex flex-col justify-center px-6 py-16 sm:px-12 bg-surface">
     <div class="mx-auto w-full max-w-md">
 
@@ -135,17 +121,36 @@
         <button type="submit" class="btn-primary w-full mt-2" [disabled]="submitting()">
           @if (submitting()) { Creating account… } @else { Create account }
         </button>
+
+        <!-- Mobile fallback -->
+        <p class="text-center text-sm text-muted lg:hidden">
+          Already have an account?
+          <a routerLink="/login" class="ml-1 font-bold text-primary hover:underline">Log in →</a>
+        </p>
       </form>
 
     </div>
   </section>
 
-  <!-- Mobile: switch link -->
-  <div class="lg:hidden flex items-center justify-center py-6 bg-gray-50 border-t border-muted/10">
-    <p class="text-sm text-muted">
-      Already have an account?
-      <a routerLink="/login" class="ml-1 font-bold text-primary hover:underline">Log in →</a>
-    </p>
-  </div>
+  <!-- Right: Brand / switch to Login -->
+  <section class="hidden lg:flex flex-col items-center justify-center bg-primary text-surface px-12 py-16">
+    <div class="max-w-sm text-center flex flex-col gap-6">
+      <div class="flex flex-col gap-2">
+        <p class="text-sm font-bold uppercase tracking-widest opacity-70">e-Leseni Platform</p>
+        <h2 class="text-5xl font-black leading-tight">Already part of the platform?</h2>
+      </div>
+      <p class="text-lg opacity-90 leading-relaxed">
+        Log back in and continue tracking your applications, paying invoices, and downloading your QR licences.
+      </p>
+
+      <div class="border-t border-white/20 pt-6 flex flex-col gap-4">
+        <p class="text-base font-semibold">Have an existing account?</p>
+        <a routerLink="/login" class="btn-primary border-none text-primary self-center px-8 bg-surface">
+          Log in
+        </a>
+        <p class="text-sm opacity-50">Your data is safe and always accessible.</p>
+      </div>
+    </div>
+  </section>
 
 </div>
