@@ -202,9 +202,34 @@ class Inspection(models.Model):
     conducted_at = models.DateTimeField(null=True, blank=True)
     findings = models.TextField(blank=True)
     passed = models.BooleanField(null=True, blank=True, help_text='Null until the inspection is conducted.')
+    latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    location_accuracy = models.FloatField(null=True, blank=True, help_text='Accuracy in meters')
+    inspector_signature_hash = models.CharField(max_length=64, blank=True)
+    device_fingerprint = models.CharField(max_length=255, blank=True)
 
     class Meta:
         ordering = ['-scheduled_for']
 
     def __str__(self):
         return f'Inspection for {self.application.reference_number} on {self.scheduled_for:%Y-%m-%d}'
+
+
+class InspectionPhoto(models.Model):
+    """Time-stamped and geotagged photo evidence from an inspection."""
+
+    inspection = models.ForeignKey(Inspection, on_delete=models.CASCADE, related_name='photos')
+    checklist_item = models.ForeignKey(
+        'lga.InspectionChecklistItem', null=True, blank=True, on_delete=models.SET_NULL, related_name='photos'
+    )
+    photo = models.FileField(upload_to='inspection_photos/%Y/%m/')
+    client_capture_time = models.DateTimeField()
+    server_receipt_time = models.DateTimeField(auto_now_add=True)
+    sha256_hash = models.CharField(max_length=64)
+    exif_data = models.JSONField(default=dict, blank=True)
+
+    class Meta:
+        ordering = ['server_receipt_time']
+
+    def __str__(self):
+        return f'Photo for {self.inspection} ({self.sha256_hash[:8]})'

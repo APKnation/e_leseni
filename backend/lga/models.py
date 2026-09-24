@@ -4,9 +4,16 @@ from django.db import models
 class LGA(models.Model):
     """Local Government Authority."""
 
+    class Tier(models.TextChoices):
+        CITY = 'CITY', 'City Council'
+        MUNICIPAL = 'MUNICIPAL', 'Municipal Council'
+        TOWN = 'TOWN', 'Town Council'
+        DISTRICT = 'DISTRICT', 'District Council'
+
     name = models.CharField(max_length=100)
     region = models.CharField(max_length=100)
     code = models.CharField(max_length=30, unique=True)
+    tier = models.CharField(max_length=20, choices=Tier.choices, default=Tier.DISTRICT)
 
     class Meta:
         verbose_name = 'LGA'
@@ -34,6 +41,7 @@ class LicenceType(models.Model):
     fee = models.DecimalField(max_digits=12, decimal_places=2)
     validity_months = models.PositiveIntegerField(default=12)
     requires_inspection = models.BooleanField(default=True)
+    bylaw_reference = models.URLField(blank=True, help_text="Link to enabling bylaw document")
     lga = models.ForeignKey(LGA, on_delete=models.CASCADE, related_name='licence_types')
 
     class Meta:
@@ -57,6 +65,22 @@ class Requirement(models.Model):
     licence_type = models.ForeignKey(LicenceType, on_delete=models.CASCADE, related_name='requirements')
     name = models.CharField(max_length=150)
     kind = models.CharField(max_length=20, choices=Kind.choices, default=Kind.DOCUMENT)
+    is_mandatory = models.BooleanField(default=True)
+    order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ['licence_type', 'order', 'name']
+
+    def __str__(self):
+        return f'{self.licence_type.code}: {self.name}'
+
+
+class InspectionChecklistItem(models.Model):
+    """Configurable inspection checklist items per licence type."""
+
+    licence_type = models.ForeignKey(LicenceType, on_delete=models.CASCADE, related_name='inspection_items')
+    name = models.CharField(max_length=150)
+    description = models.TextField(blank=True)
     is_mandatory = models.BooleanField(default=True)
     order = models.PositiveIntegerField(default=0)
 
