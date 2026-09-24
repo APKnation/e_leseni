@@ -90,6 +90,20 @@ export class AuthService {
       .pipe(tap((res) => this.storeSession(res)));
   }
 
+  passwordResetRequest(username: string, phone_number: string): Observable<{ token: string; detail: string }> {
+    return this.http.post<{ token: string; detail: string }>(
+      `${this.baseUrl}/auth/password-reset/`,
+      { username, phone_number },
+    );
+  }
+
+  passwordResetConfirm(token: string, new_password: string): Observable<{ detail: string }> {
+    return this.http.post<{ detail: string }>(
+      `${this.baseUrl}/auth/password-reset/confirm/`,
+      { token, new_password },
+    );
+  }
+
   refresh(): Observable<{ access: string }> {
     const refresh = sessionStorage.getItem(REFRESH_KEY) ?? '';
     return this.http.post<{ access: string }>(`${this.baseUrl}/auth/refresh/`, { refresh });
