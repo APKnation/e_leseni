@@ -3,7 +3,7 @@ from rest_framework import serializers
 from accounts.models import User
 
 from .permissions import allowed_statuses_for
-from .models import Application, ApplicationDocument, Inspection, StatusHistory
+from .models import Application, ApplicationDocument, Inspection, InspectionPhoto, StatusHistory
 
 
 class ApplicationDocumentSerializer(serializers.ModelSerializer):
@@ -97,5 +97,16 @@ class InspectionSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'application', 'application_reference', 'inspector', 'inspector_name',
             'scheduled_for', 'conducted_at', 'findings', 'passed',
+            'latitude', 'longitude', 'location_accuracy', 'inspector_signature_hash', 'device_fingerprint'
         ]
         read_only_fields = ['inspector_name', 'application_reference']
+
+
+class InspectionPhotoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = InspectionPhoto
+        fields = [
+            'id', 'inspection', 'checklist_item', 'photo', 'client_capture_time',
+            'server_receipt_time', 'sha256_hash', 'exif_data'
+        ]
+        read_only_fields = ['server_receipt_time']
