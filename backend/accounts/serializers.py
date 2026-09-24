@@ -1,7 +1,8 @@
+from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
-from .models import User
+from .models import PasswordResetToken, User
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -71,3 +72,53 @@ class LoginSerializer(TokenObtainPairSerializer):
         data = super().validate(attrs)
         data['user'] = UserSerializer(self.user).data
         return data
+
+
+class PasswordResetRequestSerializer(serializers.Serializer):
+    """Step 1: identify the account by username + phone number."""
+
+    username = serializers.CharField()
+    phone_number = serializers.CharField()
+
+    def validate(self, attrs):
+        try:
+            user = User.objects.get(
+                username=attrs['username'],
+                phone_number=attrs['phone_number'],
+            )
+        except User.DoesNotExist:
+            raise serializers.ValidationError(
+                'No account found with that username and phone number.'
+            )
+        attrs['user'] = user
+        return attrs
+
+
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    """Step 2: validate the token and set a new password."""
+
+    token = serializers.CharField()
+    new_password = serializers.CharField(min_length=8, write_only=True)
+
+    def validate_token(self, value):
+        try:
+            reset_token = PasswordResetToken.objects.select_related('user').get(token=value)
+        except PasswordResetToken.DoesNotExist:
+            raise serializers.ValidationError('Invalid or expired reset token.')
+        if not reset_token.is_valid:
+            raise serializers.ValidationError('This reset token has expired or already been used.')
+        self._reset_token = reset_token
+        return value
+
+    def validate_new_password(self, value):
+        validate_password(value)
+        return value
+
+    def save(self):
+        reset_token = self._reset_token
+        user = reset_token.user
+        user.set_password(self.validated_data['new_password'])
+        user.save(update_fields=['password'])
+        reset_token.used = True
+        reset_token.save(update_fields=['used'])
+        return user
