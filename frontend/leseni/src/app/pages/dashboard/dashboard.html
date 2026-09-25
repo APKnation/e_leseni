@@ -52,8 +52,10 @@
         </div>
         <ol class="flex flex-col gap-2">
           @for (s of onboardingSteps; track s.label) {
-            <li class="flex items-center justify-between gap-3 rounded-lg px-3 py-2" [class]="s.done ? 'bg-emerald-500/10' : 'bg-brand-green-soft/40'">
-              <span class="flex items-center gap-3 text-sm font-semibold">
+            <li class="flex items-center justify-between gap-3">
+              <span
+                class="flex items-center gap-3 text-sm font-semibold"
+              >
                 <span
                   class="grid h-6 w-6 shrink-0 place-items-center rounded-full text-xs"
                   [class]="s.done ? 'bg-emerald-500/25 text-emerald-300' : 'bg-brand-cream/10 text-brand-cream/50'"
@@ -89,9 +91,9 @@
                 </p>
               </div>
               <div class="flex flex-col items-start gap-2 sm:items-end">
-                <span class="rounded-full px-3 py-1 text-xs font-bold" [class]="STATUS_STYLES[app.status]">
-                  {{ STATUS_LABELS[app.status] }}
-                </span>
+                <span
+                  class="badge-green"
+                >{{ STATUS_LABELS[app.status] }}</span>
                 <button
                   type="button"
                   class="text-xs font-bold text-brand-cream/70 underline transition hover:text-brand-cream"
@@ -182,9 +184,7 @@
         @for (invoice of invoices(); track invoice.id) {
           <div class="card flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p class="font-mono text-sm text-brand-cream/70">
-                {{ invoice.control_number || 'control number pending' }}
-              </p>
+              <p class="font-mono text-sm text-brand-cream/70">{{ invoice.control_number || 'control number pending' }}</p>
               <p class="text-lg font-bold">
                 {{ invoice.amount }} {{ invoice.currency }}
               </p>
@@ -285,23 +285,21 @@
             <p class="mt-2 font-mono text-xs text-brand-green/60">
               QR: {{ licence.qr_payload }}
             </p>
-            @if (licenceQrCode() !== null) {
+            @if (licence.qr_payload) {
               <div class="mt-3 text-center">
                 <qr-code
-                  [value]="licenceQrCode()"
+                  [value]="licence.qr_payload"
                   [size]="220"
                   [level]="'M'"
                   [color]="'#1d3557'"
                   [backgroundColor]="'#f1faee'"
-                  [iconUrl]="'/assets/logo.png'"                />
+                  [iconUrl]="'/assets/logo.png'"
+                />
               </div>
             }
           </div>
-       }
-        </div>
-      }
-   </section>
-
-
-
-
+        }
+      </div>
+    }
+  }
+</section>
