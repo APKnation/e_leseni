@@ -1,4 +1,6 @@
 import { Component, DestroyRef, inject, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { QRCodeComponent } from 'angularx-qrcode';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 
@@ -29,7 +31,7 @@ interface TimelineStep {
 }
 
 @Component({
-  imports: [RouterLink],
+  imports: [CommonModule, QRCodeComponent, RouterLink],
   selector: 'app-dashboard',
   templateUrl: './dashboard.html',
 })
@@ -195,6 +197,10 @@ export class Dashboard {
       },
       error: () => done(),
     });
+
+    // Keep the QR element in sync whenever the licence list changes.
+    this.licences();
+    this.licences.update(() => this.licences());
   }
 
   /** Applicant onboarding checklist: BRELA -> TRA -> business -> licence. */
@@ -274,6 +280,9 @@ export class Dashboard {
         error: () => this.payingInvoiceId.set(null),
       });
   }
+
+  /** QR payload for the currently shown licence card; null until the first licence is loaded. */
+  protected readonly licenceQrCode = signal<string | null>(null);
 
   protected user = () => this.auth.currentUser();
 
