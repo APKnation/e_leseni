@@ -224,6 +224,9 @@
                 (click)="goToStep(2)">
           @if (working()) { Please wait… } @else { Continue to BRELA → }
         </button>
+        @if (fieldError('step1')) {
+          <p class="text-xs text-red-300">{{ fieldError('step1') }}</p>
+        }
       }
 
       <!-- STEP 2: BRELA -->
@@ -268,6 +271,9 @@
                      maxlength="20" required
                      placeholder="e.g. 1999 1234 5678 9012 3456"
                      [ngModel]="nidaNumber()" (ngModelChange)="nidaNumber.set($event)" />
+              @if (fieldError('step3')) {
+                <p class="text-xs text-red-300">{{ fieldError('step3') }}</p>
+              }
             </label>
             <label class="flex flex-col gap-2 text-sm font-semibold">
               Copy of your national ID (NIDA) * — PDF only
@@ -277,9 +283,8 @@
                        (change)="onNidaCopySelected($event)" />
               </label>
             </label>
-          </div>
-          <button type="button" class="btn-primary mt-4"
-                  [disabled]="working() || !nidaCopyFile() || !nidaValid" (click)="applyForTin()">
+          </div>            <button type="button" class="btn-primary mt-4"
+                  [disabled]="working() || !nidaCopyFile()" (click)="applyForTin()">
             @if (working()) { Applying at TRA… } @else { Apply for TIN → }
           </button>
         </div>
@@ -402,9 +407,9 @@
                    [ngModel]="plotNumber()" (ngModelChange)="plotNumber.set($event)" />
           </label>
         </div>
-        @if (errorMessage()) {
+        @if (fieldError('step5')) {
           <p class="rounded-lg bg-red-500/15 px-4 py-3 text-sm font-semibold text-red-300">
-            {{ errorMessage() }}
+            {{ fieldError('step5') }}
           </p>
         }
         <div class="flex flex-wrap items-center gap-3">

@@ -64,6 +64,9 @@ export class Businesses {
   protected readonly nidaCopyName = signal('');
 
   // Results from the demo government systems
+  // Field-level validation messages (per step).
+  protected readonly fieldErrors = signal<Record<string, string>>({});
+
   protected readonly brelaNumber = signal('');
   protected readonly tinNumber = signal('');
   protected readonly brelaReceipt = signal<StepReceipt | null>(null);
@@ -73,6 +76,29 @@ export class Businesses {
   // Verification + save
   protected readonly verificationMessage = signal('');
   protected readonly createdBusiness = signal<Business | null>(null);
+
+  /** Get a field-level error message for a step. */
+  protected fieldError(step: string): string {
+    return this.fieldErrors()[step] ?? '';
+  }
+
+  /** Set a field-level error message for a step. */
+  protected setFieldError(step: string, message: string): void {
+    this.fieldErrors.update((e) => ({ ...e, [step]: message }));
+  }
+
+  /** Clear all field errors for a step. */
+  protected clearFieldErrors(step: string): void {
+    this.fieldErrors.update((e) => {
+      const next = { ...e };
+      delete next[step];
+      return next;
+    });
+  }
+
+  // ---- Construction / layout ----------------------------------------------------
+
+  protected readonly journeySteps = [
 
   // Per-business supporting documents (TIN certificate, BRELA certificate, …)
   protected readonly uploadForBusinessId = signal<number | null>(null);
@@ -134,6 +160,7 @@ export class Businesses {
 
   protected openWizard(): void {
     this.resetWizard();
+    this.step.set(1);
     this.wizardOpen.set(true);
   }
 
@@ -181,20 +208,16 @@ export class Businesses {
     { title: 'Apply for a licence', hint: 'Take your verified business to the council and apply online.' },
   ];  // ---- Step 4: street identification letter -------------------------------
 
-  protected get nidaValid(): boolean {
-    const nida = this.nidaNumber().trim();
-    return nida.length === 20 && /^\d+$/.test(nida);
-  }
-
   protected get hasNidaOnProfile(): boolean {
     return this.auth.currentUser()?.has_nida ?? false;
   }
 
   protected continueToLocation(): void {
     if (!this.streetLetterFile()) {
-      this.errorMessage.set('The street identification letter (PDF) is required before continuing.');
+      this.setFieldError('step4', 'The street identification letter (PDF) is required before continuing.');
       return;
     }
+    this.clearFieldErrors('step4');
     this.errorMessage.set('');
     this.goToStep(5);
   }
@@ -206,6 +229,22 @@ export class Businesses {
     this.streetLetterName.set(file.name);
     this.errorMessage.set('');
   }
+
+  /** Validate NIDA — must be exactly 20 digits. Show a field-level error if invalid. */
+  protected validateNida(): boolean {
+    const nida = this.nidaNumber().trim();
+    if (!nida) {
+      this.setFieldError('step3', 'NIDA number is required.');
+      return false;
+    }
+    if (nida.length !== 20 || !/^\d+$/.test(nida)) {
+      this.setFieldError('step3', 'NIDA number must be exactly 20 digits (e.g. 1999 1234 5678 9012 3456).');
+      return false;
+    }
+    this.clearFieldErrors('step3');
+    return true;
+  }
+
 
   protected onNidaCopySelected(event: Event): void {
     const file = this.readPdfFile(event);
@@ -235,11 +274,28 @@ export class Businesses {
     return file;
   }
 
-  // ---- Step 5: location + save -------------------------------------------
+  /** Validate the business details from step 1. Returns true when all fields are valid. */
+  protected validateDetails(): boolean {
+    const name = this.name().trim();
+    const sector = this.sector().trim();
+    const taxpayer = this.taxpayerName().trim();
+
+    if (name.length < 3) {
+      this.setFieldError('step1', 'Business name must be at least 3 characters.');
+      return false;
+    }
+    if (taxpayer.length < 3) {
+      this.setFieldError('step1', 'Taxpayer name must be at least 3 characters.');
+      return false;
+    }
+    // Sector is optional
+    this.clearFieldErrors('step1');
+    return true;
+  }
 
   // ---- Step 2: BRELA ------------------------------------------------------
 
-  protected get detailsValid(): boolean {
+  protected registerWithBrela(): void {
     return this.name().trim().length >= 3 && this.taxpayerName().trim().length >= 3;
   }
 
@@ -272,9 +328,10 @@ export class Businesses {
   // ---- Step 3: TRA TIN ----------------------------------------------------
 
   protected applyForTin(): void {
-    if (!this.detailsValid || !this.nidaValid || this.working()) return;
+    if (this.working()) return;
+    if (!this.validateNida()) return;
     if (!this.nidaCopyFile()) {
-      this.errorMessage.set('Attach a PDF copy of your national ID — TRA requires it with every TIN application.');
+      this.setFieldError('step3', 'Attach a PDF copy of your national ID — TRA requires it with every TIN application.');
       return;
     }
     this.working.set(true);
