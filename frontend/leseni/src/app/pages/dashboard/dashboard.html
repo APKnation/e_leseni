@@ -259,9 +259,7 @@
 
     <!-- Licences -->
     <h2 class="mt-12 text-xl font-black">Licences</h2>
-    @if (licenceQrCode() === null) {
-      <p class="mt-4 text-brand-cream/60">No QR code ready yet.</p>
-    } @else if (licences().length === 0) {
+    @else if (licences().length === 0) {
       <p class="mt-4 text-brand-cream/70">No licences issued yet.</p>
     } @else {
       <div class="mt-4 grid gap-4 md:grid-cols-2">

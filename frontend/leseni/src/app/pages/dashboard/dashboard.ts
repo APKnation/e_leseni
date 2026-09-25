@@ -263,8 +263,6 @@ export class Dashboard {
   }
 
   /** QR code payload for the currently shown licence card; null until the first licence is loaded. */
-  protected readonly licenceQrCode = signal<string | null>(null);
-
   /** SIMULATED payment (mock GePG): pay the full amount from the dashboard. */
   protected payInvoice(invoice: Invoice): void {
     if (this.payingInvoiceId()) return;
