@@ -197,7 +197,32 @@ export class Businesses {
     this.step.set(n);
   }
 
-  protected get stepLabels(): string[] {
+  /** Validate the business details from step 1. */
+  protected get detailsValid(): boolean {
+    return this.validateDetails();
+  }
+
+  /** Validate the business details from step 1. */
+  protected validateDetails(): boolean {
+    const name = this.name().trim();
+    const sector = this.sector().trim();
+    const taxpayer = this.taxpayerName().trim();
+
+    if (name.length < 3) {
+      this.setFieldError('step1', 'Business name must be at least 3 characters.');
+      return false;
+    }
+    if (taxpayer.length < 3) {
+      this.setFieldError('step1', 'Taxpayer name must be at least 3 characters.');
+      return false;
+    }
+    // Sector is optional
+    this.clearFieldErrors('step1');
+    return true;
+  }
+
+  // Step 2: BRELA
+  protected registerWithBrela(): void {
     return ['Business details', 'BRELA registration', 'TRA TIN + NIDA', 'Street letter', 'Location & finish'];
   }
 
