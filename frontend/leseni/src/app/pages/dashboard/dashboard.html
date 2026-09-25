@@ -287,13 +287,12 @@
             </p>
             @if (licence.qr_payload) {
               <div class="mt-3 text-center">
-                <qr-code
-                  [value]="licence.qr_payload"
-                  [size]="220"
-                  [level]="'M'"
-                  [color]="'#1d3557'"
-                  [backgroundColor]="'#f1faee'"
-                  [iconUrl]="'/assets/logo.png'"
+                <qrcode
+                  [qrdata]="licence.qr_payload"
+                  [width]="220"
+                  [errorCorrectionLevel]="'M'"
+                  [colorDark]="'#1d3557'"
+                  [colorLight]="'#f1faee'"
                 />
               </div>
             }

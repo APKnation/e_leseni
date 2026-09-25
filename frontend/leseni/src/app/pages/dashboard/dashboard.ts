@@ -282,9 +282,6 @@ export class Dashboard {
       });
   }
 
-  /** QR payload for the currently shown licence card; null until the first licence is loaded. */
-  protected readonly licenceQrCode = signal<string | null>(null);
-
   protected user = () => this.auth.currentUser();
 
   /** Staff see admin actions instead of the applicant CTA. */
