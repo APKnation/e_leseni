@@ -541,6 +541,8 @@ export class Businesses {
     this.api.uploadBusinessDocument(businessId, file, this.uploadKind()).subscribe({
       next: () => {
         this.uploadingDoc.set(false);
+        next: () => {
+        this.uploadingDoc.set(false);
         this.uploadForBusinessId.set(null);
         this.loadAll();
       },
