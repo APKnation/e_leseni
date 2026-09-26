@@ -245,4 +245,8 @@ export class ApiService {
   licences(filters?: ListOptions['filters']): Observable<Paginated<Licence>> {
     return this.list<Licence>('licences', { filters });
   }
+
+  verifyLicence(token: string): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/licences/verify/${token}/`);
+  }
 }
