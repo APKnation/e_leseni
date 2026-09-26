@@ -155,6 +155,20 @@ export class Staff implements OnInit {
     return this.applications().filter((a) => statuses.includes(a.status));
   }
 
+  protected captureLocation(app: Application): void {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          this.successMessage.set(`Location captured: ${pos.coords.latitude}, ${pos.coords.longitude} for ${app.business_name}`);
+          setTimeout(() => this.successMessage.set(""), 3000);
+        },
+        (err) => this.errorMessage.set("Error capturing location: " + err.message)
+      );
+    } else {
+      this.errorMessage.set("Geolocation is not supported by this browser.");
+    }
+  }
+
   protected countFor(filter: QueueFilter): number {
     if (!filter.statuses) return this.applications().length;
     return this.applications().filter((a) => filter.statuses!.includes(a.status)).length;
