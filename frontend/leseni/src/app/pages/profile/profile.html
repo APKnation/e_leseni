@@ -1,95 +1,261 @@
 <section class="mx-auto w-full max-w-2xl px-4 py-12 sm:px-6">
-  <div class="flex items-center justify-between mb-8">
-    <h1 class="text-3xl font-black">My Profile</h1>
-    <a [routerLink]="auth.homeRoute()" class="text-sm font-semibold text-muted hover:text-foreground">
-      &larr; Back to Dashboard
+
+  <!-- Header -->
+  <div class="mb-8 flex flex-wrap items-center justify-between gap-4">
+    <div>
+      <h1 class="text-3xl font-black">My Profile</h1>
+      <p class="mt-1 text-muted">Manage your personal details and account security.</p>
+    </div>
+    <a [routerLink]="auth.homeRoute()" class="text-sm font-semibold text-muted underline hover:text-foreground">
+      &larr; Back to dashboard
     </a>
   </div>
 
+  <!-- Alert banners -->
   @if (successMessage()) {
-    <p class="mb-6 rounded-lg bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm font-semibold text-emerald-700">
-      {{ successMessage() }}
-    </p>
+    <div class="mb-6 flex items-center gap-3 rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm font-semibold text-emerald-700">
+      <span class="text-lg">✅</span> {{ successMessage() }}
+    </div>
   }
   @if (errorMessage()) {
-    <p class="mb-6 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm font-semibold text-red-700">
-      {{ errorMessage() }}
-    </p>
+    <div class="mb-6 flex items-center gap-3 rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm font-semibold text-red-700">
+      <span class="text-lg">⚠️</span> {{ errorMessage() }}
+    </div>
   }
 
-  <div class="card">
-    @if (!editing()) {
-      <div class="space-y-6">
-        <div>
-          <h3 class="text-sm font-bold uppercase text-muted">Full Name</h3>
-          <p class="text-lg font-medium text-foreground">{{ user()?.first_name }} {{ user()?.last_name }}</p>
+  <!-- Tab bar -->
+  <div class="mb-6 flex gap-1 rounded-xl bg-muted/10 p-1">
+    <button
+      type="button"
+      id="tab-view"
+      class="flex-1 rounded-lg px-4 py-2 text-sm font-bold transition"
+      [class]="activeTab() === 'view' ? 'bg-surface shadow-sm text-foreground' : 'text-muted hover:text-foreground'"
+      (click)="activeTab.set('view')"
+    >
+      View Profile
+    </button>
+    <button
+      type="button"
+      id="tab-edit"
+      class="flex-1 rounded-lg px-4 py-2 text-sm font-bold transition"
+      [class]="activeTab() === 'edit' ? 'bg-surface shadow-sm text-foreground' : 'text-muted hover:text-foreground'"
+      (click)="openEdit()"
+    >
+      Edit Profile
+    </button>
+    <button
+      type="button"
+      id="tab-password"
+      class="flex-1 rounded-lg px-4 py-2 text-sm font-bold transition"
+      [class]="activeTab() === 'password' ? 'bg-surface shadow-sm text-foreground' : 'text-muted hover:text-foreground'"
+      (click)="openPassword()"
+    >
+      Change Password
+    </button>
+  </div>
+
+  <!-- ── View Profile ────────────────────────────────────────────────────── -->
+  @if (activeTab() === 'view') {
+    <div class="card space-y-5">
+      <div class="flex items-center gap-4">
+        <div class="grid h-16 w-16 shrink-0 place-items-center rounded-full bg-primary/10 text-2xl font-black text-primary">
+          {{ (user()?.first_name?.[0] ?? user()?.username?.[0] ?? '?') | uppercase }}
         </div>
         <div>
-          <h3 class="text-sm font-bold uppercase text-muted">Username</h3>
-          <p class="text-lg font-medium text-foreground">{{ user()?.username }}</p>
+          <p class="text-xl font-black">{{ user()?.first_name }} {{ user()?.last_name }}</p>
+          <p class="text-sm text-muted">&#64;{{ user()?.username }}</p>
         </div>
-        <div>
-          <h3 class="text-sm font-bold uppercase text-muted">Email Address</h3>
-          <p class="text-lg font-medium text-foreground">{{ user()?.email || '—' }}</p>
-        </div>
-        <div>
-          <h3 class="text-sm font-bold uppercase text-muted">Phone Number</h3>
-          <p class="text-lg font-medium text-foreground">{{ user()?.phone_number || '—' }}</p>
-        </div>
-        <div>
-          <h3 class="text-sm font-bold uppercase text-muted">NIDA Number</h3>
-          <p class="text-lg font-medium text-foreground">
-            {{ user()?.nida_number || '—' }}
-            @if (user()?.has_nida) {
-              <span class="badge-green ml-2">Verified</span>
-            }
-          </p>
-        </div>
-        <div>
-          <h3 class="text-sm font-bold uppercase text-muted">Role</h3>
-          <p class="text-lg font-medium text-foreground">{{ user()?.role }}</p>
-        </div>
-        
-        <div class="pt-4 border-t border-muted/20">
-          <button type="button" class="btn-primary" (click)="startEditing()">
-            Edit Profile
-          </button>
-        </div>
+        <span class="badge-green ml-auto">{{ user()?.role }}</span>
       </div>
-    } @else {
+
+      <hr class="border-muted/20">
+
+      <dl class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div>
+          <dt class="text-xs font-bold uppercase tracking-wide text-muted">Email</dt>
+          <dd class="mt-0.5 text-base font-medium text-foreground">{{ user()?.email || '—' }}</dd>
+        </div>
+        <div>
+          <dt class="text-xs font-bold uppercase tracking-wide text-muted">Phone Number</dt>
+          <dd class="mt-0.5 text-base font-medium text-foreground">{{ user()?.phone_number || '—' }}</dd>
+        </div>
+        <div>
+          <dt class="text-xs font-bold uppercase tracking-wide text-muted">NIDA Number</dt>
+          <dd class="mt-0.5 flex items-center gap-2 text-base font-medium text-foreground">
+            {{ user()?.has_nida ? '●●●●●●●●●●●●●●' : '—' }}
+            @if (user()?.has_nida) {
+              <span class="badge-green !px-2 !py-0.5 text-[10px]">Verified ✓</span>
+            }
+          </dd>
+        </div>
+        <div>
+          <dt class="text-xs font-bold uppercase tracking-wide text-muted">Council (LGA)</dt>
+          <dd class="mt-0.5 text-base font-medium text-foreground">{{ user()?.lga_name || '—' }}</dd>
+        </div>
+      </dl>
+
+      <div class="pt-2 flex flex-wrap gap-3">
+        <button type="button" id="btn-go-edit" class="btn-primary !py-2" (click)="openEdit()">
+          Edit Profile
+        </button>
+        <button type="button" id="btn-go-password" class="btn-secondary !py-2" (click)="openPassword()">
+          Change Password
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- ── Edit Profile ────────────────────────────────────────────────────── -->
+  @if (activeTab() === 'edit') {
+    <div class="card">
+      <h2 class="mb-5 text-lg font-black">Edit Profile</h2>
       <form class="space-y-4" (ngSubmit)="saveProfile()">
-        <div class="grid grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <label class="block">
             <span class="text-sm font-bold text-muted">First Name</span>
-            <input type="text" class="input-field mt-1" [ngModel]="formData().first_name" (ngModelChange)="formData.update(d => { d.first_name = $event; return d; })" name="first_name">
+            <input
+              id="edit-first-name"
+              type="text"
+              class="input-field mt-1"
+              [ngModel]="formData().first_name"
+              (ngModelChange)="formData.update(d => ({ ...d, first_name: $event }))"
+              name="first_name"
+            >
           </label>
           <label class="block">
             <span class="text-sm font-bold text-muted">Last Name</span>
-            <input type="text" class="input-field mt-1" [ngModel]="formData().last_name" (ngModelChange)="formData.update(d => { d.last_name = $event; return d; })" name="last_name">
+            <input
+              id="edit-last-name"
+              type="text"
+              class="input-field mt-1"
+              [ngModel]="formData().last_name"
+              (ngModelChange)="formData.update(d => ({ ...d, last_name: $event }))"
+              name="last_name"
+            >
           </label>
         </div>
+
         <label class="block">
           <span class="text-sm font-bold text-muted">Email Address</span>
-          <input type="email" class="input-field mt-1" [ngModel]="formData().email" (ngModelChange)="formData.update(d => { d.email = $event; return d; })" name="email">
-        </label>
-        <label class="block">
-          <span class="text-sm font-bold text-muted">Phone Number</span>
-          <input type="tel" class="input-field mt-1" [ngModel]="formData().phone_number" (ngModelChange)="formData.update(d => { d.phone_number = $event; return d; })" name="phone_number">
-        </label>
-        <label class="block">
-          <span class="text-sm font-bold text-muted">NIDA Number</span>
-          <input type="text" class="input-field mt-1" [ngModel]="formData().nida_number" (ngModelChange)="formData.update(d => { d.nida_number = $event; return d; })" name="nida_number">
+          <input
+            id="edit-email"
+            type="email"
+            class="input-field mt-1"
+            [ngModel]="formData().email"
+            (ngModelChange)="formData.update(d => ({ ...d, email: $event }))"
+            name="email"
+          >
         </label>
 
-        <div class="pt-4 flex gap-3">
-          <button type="submit" class="btn-primary" [disabled]="saving()">
+        <label class="block">
+          <span class="text-sm font-bold text-muted">Phone Number</span>
+          <input
+            id="edit-phone"
+            type="tel"
+            class="input-field mt-1"
+            placeholder="+255 7XX XXX XXX"
+            [ngModel]="formData().phone_number"
+            (ngModelChange)="formData.update(d => ({ ...d, phone_number: $event }))"
+            name="phone_number"
+          >
+        </label>
+
+        <label class="block">
+          <span class="text-sm font-bold text-muted">NIDA Number <span class="font-normal">(20 digits)</span></span>
+          <input
+            id="edit-nida"
+            type="text"
+            class="input-field mt-1 font-mono"
+            maxlength="20"
+            placeholder="20-digit NIDA number"
+            [ngModel]="formData().nida_number"
+            (ngModelChange)="formData.update(d => ({ ...d, nida_number: $event }))"
+            name="nida_number"
+          >
+        </label>
+
+        <div class="flex flex-wrap gap-3 pt-2">
+          <button
+            id="btn-save-profile"
+            type="submit"
+            class="btn-primary !py-2"
+            [disabled]="saving()"
+          >
             {{ saving() ? 'Saving…' : 'Save Changes' }}
           </button>
-          <button type="button" class="btn-secondary" (click)="cancelEditing()">
+          <button type="button" class="btn-secondary !py-2" (click)="activeTab.set('view')">
             Cancel
           </button>
         </div>
       </form>
-    }
-  </div>
+    </div>
+  }
+
+  <!-- ── Change Password ─────────────────────────────────────────────────── -->
+  @if (activeTab() === 'password') {
+    <div class="card">
+      <h2 class="mb-1 text-lg font-black">Change Password</h2>
+      <p class="mb-5 text-sm text-muted">
+        After a successful change you will be logged out and must sign in with the new password.
+      </p>
+
+      <form class="space-y-4" (ngSubmit)="changePassword()">
+        <label class="block">
+          <span class="text-sm font-bold text-muted">Current Password</span>
+          <input
+            id="pw-current"
+            type="password"
+            class="input-field mt-1"
+            [ngModel]="pwForm().current_password"
+            (ngModelChange)="pwForm.update(f => ({ ...f, current_password: $event }))"
+            name="current_password"
+            required
+          >
+        </label>
+
+        <label class="block">
+          <span class="text-sm font-bold text-muted">New Password</span>
+          <input
+            id="pw-new"
+            type="password"
+            class="input-field mt-1"
+            [ngModel]="pwForm().new_password"
+            (ngModelChange)="pwForm.update(f => ({ ...f, new_password: $event }))"
+            name="new_password"
+            minlength="8"
+            required
+          >
+        </label>
+
+        <label class="block">
+          <span class="text-sm font-bold text-muted">Confirm New Password</span>
+          <input
+            id="pw-confirm"
+            type="password"
+            class="input-field mt-1"
+            [ngModel]="pwForm().confirm_password"
+            (ngModelChange)="pwForm.update(f => ({ ...f, confirm_password: $event }))"
+            name="confirm_password"
+            minlength="8"
+            required
+          >
+        </label>
+
+        <div class="flex flex-wrap gap-3 pt-2">
+          <button
+            id="btn-change-password"
+            type="submit"
+            class="btn-primary !py-2"
+            [disabled]="saving()"
+          >
+            {{ saving() ? 'Changing…' : 'Change Password' }}
+          </button>
+          <button type="button" class="btn-secondary !py-2" (click)="activeTab.set('view')">
+            Cancel
+          </button>
+        </div>
+      </form>
+    </div>
+  }
+
 </section>
