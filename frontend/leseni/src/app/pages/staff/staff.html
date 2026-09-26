@@ -155,6 +155,13 @@
             @if (canInspect && app.status === 'INSPECTION_SCHEDULED') {
               <button
                 type="button"
+                class="btn-secondary !py-2 !px-3 text-xs"
+                (click)="captureLocation(app)"
+              >
+                📍 Capture location
+              </button>
+              <button
+                type="button"
                 class="btn-primary !py-2"
                 [disabled]="processingId() === app.id"
                 (click)="advance(app, 'INSPECTED')"
@@ -216,6 +223,13 @@
                   (canReview && app.status === 'SUBMITTED' && status === 'UNDER_REVIEW') ||
                   (canReview && app.status === 'UNDER_REVIEW' && status === 'INSPECTION_SCHEDULED') ||
                   (canInspect && app.status === 'INSPECTION_SCHEDULED' && (status === 'INSPECTED' || status === 'REJECTED')) ||
+              <button
+                type="button"
+                class="btn-secondary !py-2 !px-3 text-xs"
+                (click)="captureLocation(app)"
+              >
+                📍 Capture location
+              </button>
                   (canApprove && app.status === 'INSPECTED') ||
                   (canApprove && app.status === 'APPROVED' && status === 'PAYMENT_PENDING')
                 )
