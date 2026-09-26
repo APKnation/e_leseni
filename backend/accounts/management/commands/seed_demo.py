@@ -1,178 +1,269 @@
-import datetime
-from django.core.management.base import BaseCommand
-from django.utils import timezone
-from django.contrib.auth import get_user_model
-from django.db import transaction
+"""
+Management command: seed_demo
+Creates a full demo dataset so judges can experience the entire e-Leseni flow
+without needing to register anything manually.
 
-from accounts.models import NidaData
-from lga.models import LGA, LicenceType, Ward
+Usage:
+    python manage.py seed_demo
+"""
+
+import datetime
+
+from django.contrib.auth import get_user_model
+from django.core.management.base import BaseCommand
+from django.db import transaction
+from django.utils import timezone
+
 from businesses.models import Business, BusinessLocation
-from applications.models import Application, DocumentRequirement, ApplicationDocument, StatusHistory
+from applications.models import Application
+from lga.models import LGA, LicenceType, Requirement, Ward
 from licences.models import Licence
 
 User = get_user_model()
 
+
 class Command(BaseCommand):
-    help = 'Seeds the database with a full demo flow'
+    help = "Seeds the database with a complete demo flow for judges."
 
     @transaction.atomic
     def handle(self, *args, **kwargs):
-        self.stdout.write("Seeding demo data...")
+        self.stdout.write(self.style.MIGRATE_HEADING("Seeding demo data…"))
 
-        # 1. Users
-        applicant, _ = User.objects.get_or_create(username='applicant', defaults={
-            'email': 'applicant@example.com',
-            'first_name': 'Demo',
-            'last_name': 'Applicant',
-            'role': 'APPLICANT'
-        })
-        applicant.set_password('Password1234!')
-        applicant.save()
-        
-        NidaData.objects.get_or_create(
-            nin='19900101123456789012',
-            defaults={
-                'first_name': 'Demo',
-                'last_name': 'Applicant',
-                'date_of_birth': '1990-01-01',
-                'gender': 'M'
-            }
+        # ── 1. Users ──────────────────────────────────────────────────────────
+        applicant = self._upsert_user(
+            username="applicant",
+            role="APPLICANT",
+            first_name="Demo",
+            last_name="Applicant",
+            email="applicant@eleseni.demo",
+            phone_number="0712000001",
+            nida_number="12345678901234567890",
         )
-        applicant.nida_number = '19900101123456789012'
-        applicant.nida_verified = True
-        applicant.save()
 
-        officer, _ = User.objects.get_or_create(username='officer', defaults={
-            'role': 'LGA_OFFICER',
-            'first_name': 'LGA',
-            'last_name': 'Officer'
-        })
-        officer.set_password('Password1234!')
-        officer.save()
+        officer = self._upsert_user(
+            username="officer",
+            role="OFFICER",
+            first_name="LGA",
+            last_name="Officer",
+            email="officer@eleseni.demo",
+            phone_number="0712000002",
+        )
 
-        inspector, _ = User.objects.get_or_create(username='inspector', defaults={
-            'role': 'LGA_INSPECTOR',
-            'first_name': 'LGA',
-            'last_name': 'Inspector'
-        })
-        inspector.set_password('Password1234!')
-        inspector.save()
+        inspector = self._upsert_user(
+            username="inspector",
+            role="INSPECTOR",
+            first_name="LGA",
+            last_name="Inspector",
+            email="inspector@eleseni.demo",
+            phone_number="0712000003",
+        )
 
-        approver, _ = User.objects.get_or_create(username='approver', defaults={
-            'role': 'LGA_APPROVER',
-            'first_name': 'LGA',
-            'last_name': 'Approver'
-        })
-        approver.set_password('Password1234!')
-        approver.save()
+        approver = self._upsert_user(
+            username="approver",
+            role="APPROVER",
+            first_name="LGA",
+            last_name="Approver",
+            email="approver@eleseni.demo",
+            phone_number="0712000004",
+        )
 
-        # 2. LGA & Licence Type
-        lga, _ = LGA.objects.get_or_create(name='Dar es Salaam City Council', defaults={
-            'code': 'DAR01',
-            'region': 'Dar es Salaam'
-        })
-        
-        ward, _ = Ward.objects.get_or_create(lga=lga, name='Kivukoni', defaults={'code': 'KV01'})
+        admin = self._upsert_user(
+            username="admin",
+            role="ADMIN",
+            first_name="System",
+            last_name="Admin",
+            email="admin@eleseni.demo",
+            phone_number="0712000005",
+            is_staff=True,
+            is_superuser=True,
+        )
 
-        licence_type, _ = LicenceType.objects.get_or_create(lga=lga, name='Food Handler', defaults={
-            'code': 'FH01',
-            'fee': 50000.00,
-            'description': 'Licence for food handling businesses'
-        })
+        # ── 2. LGA ────────────────────────────────────────────────────────────
+        lga, _ = LGA.objects.get_or_create(
+            code="DSM01",
+            defaults={
+                "name": "Dar es Salaam City Council",
+                "region": "Dar es Salaam",
+                "tier": LGA.Tier.CITY,
+            },
+        )
 
-        req, _ = DocumentRequirement.objects.get_or_create(licence_type=licence_type, name='Health Certificate', defaults={
-            'is_mandatory': True
-        })
+        # Assign LGA staff to this LGA
+        for staff_user in [officer, inspector, approver, admin]:
+            staff_user.lga = lga
+            staff_user.save(update_fields=["lga"])
 
-        # 3. Business
-        business, _ = Business.objects.get_or_create(owner=applicant, name='Demo Restaurant', defaults={
-            'tin_number': '123-456-789',
-            'tin_verified': True,
-            'brela_registration_number': 'BRELA-999',
-            'brela_verified': True,
-            'is_verified': True,
-            'sector': 'Food & Beverage'
-        })
+        ward, _ = Ward.objects.get_or_create(
+            lga=lga,
+            name="Kivukoni",
+        )
 
-        loc, _ = BusinessLocation.objects.get_or_create(business=business, lga=lga, defaults={
-            'ward': ward,
-            'street': 'Samora Ave'
-        })
+        # ── 3. Licence Types ──────────────────────────────────────────────────
+        food_handler, _ = LicenceType.objects.get_or_create(
+            lga=lga,
+            code="FH01",
+            defaults={
+                "name": "Food Handler",
+                "category": LicenceType.Category.BUSINESS,
+                "description": "Licence required for all food handling and preparation businesses.",
+                "fee": 50000.00,
+                "validity_months": 12,
+                "requires_inspection": True,
+            },
+        )
 
-        # 4. Application Flow (DRAFT, SUBMITTED, INSPECTED, ISSUED)
-        
-        # Application 1: DRAFT
-        Application.objects.get_or_create(
-            business=business, 
-            licence_type=licence_type, 
-            lga=lga, 
+        general_trade, _ = LicenceType.objects.get_or_create(
+            lga=lga,
+            code="GT01",
+            defaults={
+                "name": "General Trade",
+                "category": LicenceType.Category.BUSINESS,
+                "description": "General business trading licence.",
+                "fee": 30000.00,
+                "validity_months": 12,
+                "requires_inspection": False,
+            },
+        )
+
+        # Document requirements for Food Handler
+        Requirement.objects.get_or_create(
+            licence_type=food_handler,
+            name="Health Certificate",
+            defaults={"is_mandatory": True, "kind": "DOCUMENT", "order": 1},
+        )
+        Requirement.objects.get_or_create(
+            licence_type=food_handler,
+            name="Premises Certificate",
+            defaults={"is_mandatory": True, "kind": "DOCUMENT", "order": 2},
+        )
+
+        # ── 4. Business ───────────────────────────────────────────────────────
+        business, _ = Business.objects.get_or_create(
+            owner=applicant,
+            name="Demo Restaurant & Catering",
+            defaults={
+                "tin_number": "123-456-789",
+                "brela_registration_number": "BRELA-DEMO-9999",
+                "nida_number": applicant.nida_number,
+                "sector": "Food & Beverage",
+                "is_verified": True,
+            },
+        )
+
+        location, _ = BusinessLocation.objects.get_or_create(
+            business=business,
+            lga=lga,
+            defaults={
+                "ward": ward.name,
+                "street": "Samora Avenue",
+                "plot_number": "17",
+                "is_primary": True,
+            },
+        )
+
+        # ── 5. Applications at each stage ─────────────────────────────────────
+        # 5a. DRAFT
+        self._get_or_create_application(
+            applicant=applicant,
+            business=business,
+            location=location,
+            licence_type=food_handler,
             status=Application.Status.DRAFT,
-            defaults={
-                'applicant': applicant,
-                'business_location': loc,
-                'reference_number': 'APP-DRAFT-001',
-            }
+            purpose_statement="New restaurant at Samora Avenue — draft.",
         )
 
-        # Application 2: SUBMITTED
-        Application.objects.get_or_create(
-            business=business, 
-            licence_type=licence_type, 
-            lga=lga, 
+        # 5b. SUBMITTED
+        self._get_or_create_application(
+            applicant=applicant,
+            business=business,
+            location=location,
+            licence_type=food_handler,
             status=Application.Status.SUBMITTED,
-            defaults={
-                'applicant': applicant,
-                'business_location': loc,
-                'reference_number': 'APP-SUBMITTED-002',
-                'purpose_statement': 'Demo submitted application'
-            }
+            purpose_statement="Takeaway food outlet — awaiting officer review.",
         )
 
-        # Application 3: INSPECTED
-        Application.objects.get_or_create(
-            business=business, 
-            licence_type=licence_type, 
-            lga=lga, 
+        # 5c. UNDER_REVIEW
+        self._get_or_create_application(
+            applicant=applicant,
+            business=business,
+            location=location,
+            licence_type=general_trade,
+            status=Application.Status.UNDER_REVIEW,
+            purpose_statement="General merchandise — under officer review.",
+        )
+
+        # 5d. INSPECTED
+        self._get_or_create_application(
+            applicant=applicant,
+            business=business,
+            location=location,
+            licence_type=general_trade,
             status=Application.Status.INSPECTED,
-            defaults={
-                'applicant': applicant,
-                'business_location': loc,
-                'reference_number': 'APP-INSPECTED-003',
-                'purpose_statement': 'Demo inspected application'
-            }
+            purpose_statement="Passed site inspection — awaiting approver decision.",
         )
 
-        # Application 4: ISSUED
+        # 5e. ISSUED — create application + licence (with scannable QR)
         app_issued, created = Application.objects.get_or_create(
-            business=business, 
-            licence_type=licence_type, 
-            lga=lga, 
+            business=business,
+            licence_type=food_handler,
             status=Application.Status.ISSUED,
             defaults={
-                'applicant': applicant,
-                'business_location': loc,
-                'reference_number': 'APP-ISSUED-004',
-                'purpose_statement': 'Demo issued application'
-            }
+                "applicant": applicant,
+                "location": location,
+                "purpose_statement": "Licence already issued — demo the QR code scan.",
+            },
         )
 
-        if created:
-            # Create a licence for the ISSUED application
-            from licences.services import build_qr_payload
-            licence = Licence.objects.create(
+        if not Licence.objects.filter(application=app_issued).exists():
+            Licence.objects.create(
                 application=app_issued,
                 holder=applicant,
-                licence_type=licence_type,
+                licence_type=food_handler,
                 lga=lga,
                 business_name=business.name,
-                business_tin=business.tin_number,
-                licence_number='LIC-DEMO-999',
                 status=Licence.Status.ACTIVE,
                 valid_from=timezone.now().date(),
-                valid_until=(timezone.now() + datetime.timedelta(days=365)).date()
+                valid_until=(timezone.now() + datetime.timedelta(days=365)).date(),
             )
-            # The signal will create a qr_token. We can re-save if needed.
+            self.stdout.write("  Created issued licence with QR token.")
 
-        self.stdout.write(self.style.SUCCESS('Successfully seeded demo data!'))
-        self.stdout.write('Users: applicant, officer, inspector, approver (password: Password1234!)')
+        # ── Done ──────────────────────────────────────────────────────────────
+        self.stdout.write(self.style.SUCCESS("\n✅  Demo seed complete!\n"))
+        self.stdout.write("Demo accounts (password: Password1234!):")
+        self.stdout.write("  applicant  — APPLICANT role")
+        self.stdout.write("  officer    — LGA Officer (can review)")
+        self.stdout.write("  inspector  — LGA Inspector (can conduct inspections)")
+        self.stdout.write("  approver   — LGA Approver (can approve/issue)")
+        self.stdout.write("  admin      — System Admin (full access)\n")
 
+    # ── Helpers ───────────────────────────────────────────────────────────────
+
+    def _upsert_user(self, username, role, **kwargs):
+        is_staff = kwargs.pop("is_staff", False)
+        is_superuser = kwargs.pop("is_superuser", False)
+        user, created = User.objects.get_or_create(
+            username=username,
+            defaults={"role": role, "is_staff": is_staff, "is_superuser": is_superuser, **kwargs},
+        )
+        if created:
+            user.set_password("Password1234!")
+            user.save()
+            self.stdout.write(f"  Created user: {username}")
+        else:
+            self.stdout.write(f"  Existing user: {username}")
+        return user
+
+    def _get_or_create_application(self, *, applicant, business, location, licence_type, status, purpose_statement):
+        app, created = Application.objects.get_or_create(
+            business=business,
+            licence_type=licence_type,
+            status=status,
+            defaults={
+                "applicant": applicant,
+                "location": location,
+                "purpose_statement": purpose_statement,
+            },
+        )
+        label = "Created" if created else "Existing"
+        self.stdout.write(f"  {label} application: {status}")
+        return app

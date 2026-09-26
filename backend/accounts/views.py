@@ -4,6 +4,7 @@ from rest_framework.response import Response
 
 from .models import PasswordResetToken, User
 from .serializers import (
+    ChangePasswordSerializer,
     LoginSerializer,
     PasswordResetConfirmSerializer,
     PasswordResetRequestSerializer,
@@ -37,6 +38,25 @@ class MeUpdateView(generics.UpdateAPIView):
 
     def get_object(self):
         return self.request.user
+
+
+class ChangePasswordView(generics.GenericAPIView):
+    """POST to change the currently logged-in user's password.
+
+    Body: { "current_password": "...", "new_password": "..." }
+    Returns 200 on success; the client must log in again to get fresh tokens.
+    """
+
+    serializer_class = ChangePasswordSerializer
+
+    def post(self, request):
+        serializer = self.get_serializer(data=request.data, context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(
+            {'detail': 'Password changed successfully. Please log in again.'},
+            status=status.HTTP_200_OK,
+        )
 
 
 @api_view(['POST'])
