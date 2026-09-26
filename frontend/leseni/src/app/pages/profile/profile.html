@@ -1,0 +1,95 @@
+<section class="mx-auto w-full max-w-2xl px-4 py-12 sm:px-6">
+  <div class="flex items-center justify-between mb-8">
+    <h1 class="text-3xl font-black">My Profile</h1>
+    <a [routerLink]="auth.homeRoute()" class="text-sm font-semibold text-muted hover:text-foreground">
+      &larr; Back to Dashboard
+    </a>
+  </div>
+
+  @if (successMessage()) {
+    <p class="mb-6 rounded-lg bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm font-semibold text-emerald-700">
+      {{ successMessage() }}
+    </p>
+  }
+  @if (errorMessage()) {
+    <p class="mb-6 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm font-semibold text-red-700">
+      {{ errorMessage() }}
+    </p>
+  }
+
+  <div class="card">
+    @if (!editing()) {
+      <div class="space-y-6">
+        <div>
+          <h3 class="text-sm font-bold uppercase text-muted">Full Name</h3>
+          <p class="text-lg font-medium text-foreground">{{ user()?.first_name }} {{ user()?.last_name }}</p>
+        </div>
+        <div>
+          <h3 class="text-sm font-bold uppercase text-muted">Username</h3>
+          <p class="text-lg font-medium text-foreground">{{ user()?.username }}</p>
+        </div>
+        <div>
+          <h3 class="text-sm font-bold uppercase text-muted">Email Address</h3>
+          <p class="text-lg font-medium text-foreground">{{ user()?.email || '—' }}</p>
+        </div>
+        <div>
+          <h3 class="text-sm font-bold uppercase text-muted">Phone Number</h3>
+          <p class="text-lg font-medium text-foreground">{{ user()?.phone_number || '—' }}</p>
+        </div>
+        <div>
+          <h3 class="text-sm font-bold uppercase text-muted">NIDA Number</h3>
+          <p class="text-lg font-medium text-foreground">
+            {{ user()?.nida_number || '—' }}
+            @if (user()?.has_nida) {
+              <span class="badge-green ml-2">Verified</span>
+            }
+          </p>
+        </div>
+        <div>
+          <h3 class="text-sm font-bold uppercase text-muted">Role</h3>
+          <p class="text-lg font-medium text-foreground">{{ user()?.role }}</p>
+        </div>
+        
+        <div class="pt-4 border-t border-muted/20">
+          <button type="button" class="btn-primary" (click)="startEditing()">
+            Edit Profile
+          </button>
+        </div>
+      </div>
+    } @else {
+      <form class="space-y-4" (ngSubmit)="saveProfile()">
+        <div class="grid grid-cols-2 gap-4">
+          <label class="block">
+            <span class="text-sm font-bold text-muted">First Name</span>
+            <input type="text" class="input-field mt-1" [ngModel]="formData().first_name" (ngModelChange)="formData.update(d => { d.first_name = $event; return d; })" name="first_name">
+          </label>
+          <label class="block">
+            <span class="text-sm font-bold text-muted">Last Name</span>
+            <input type="text" class="input-field mt-1" [ngModel]="formData().last_name" (ngModelChange)="formData.update(d => { d.last_name = $event; return d; })" name="last_name">
+          </label>
+        </div>
+        <label class="block">
+          <span class="text-sm font-bold text-muted">Email Address</span>
+          <input type="email" class="input-field mt-1" [ngModel]="formData().email" (ngModelChange)="formData.update(d => { d.email = $event; return d; })" name="email">
+        </label>
+        <label class="block">
+          <span class="text-sm font-bold text-muted">Phone Number</span>
+          <input type="tel" class="input-field mt-1" [ngModel]="formData().phone_number" (ngModelChange)="formData.update(d => { d.phone_number = $event; return d; })" name="phone_number">
+        </label>
+        <label class="block">
+          <span class="text-sm font-bold text-muted">NIDA Number</span>
+          <input type="text" class="input-field mt-1" [ngModel]="formData().nida_number" (ngModelChange)="formData.update(d => { d.nida_number = $event; return d; })" name="nida_number">
+        </label>
+
+        <div class="pt-4 flex gap-3">
+          <button type="submit" class="btn-primary" [disabled]="saving()">
+            {{ saving() ? 'Saving…' : 'Save Changes' }}
+          </button>
+          <button type="button" class="btn-secondary" (click)="cancelEditing()">
+            Cancel
+          </button>
+        </div>
+      </form>
+    }
+  </div>
+</section>

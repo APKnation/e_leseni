@@ -44,6 +44,11 @@ export const routes: Routes = [
     canActivate: [authGuard],
   },
   {
+    path: 'profile',
+    loadComponent: () => import('./pages/profile/profile').then((m) => m.Profile),
+    canActivate: [authGuard],
+  },
+  {
     // Lands each staff role on its own workspace.
     path: 'staff',
     pathMatch: 'full',
