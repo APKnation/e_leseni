@@ -68,20 +68,14 @@ export class Home {
     {
       title: 'Licensing officers',
       body: 'Review submitted applications, schedule inspections, return or reject incomplete ones.',
-      cta: 'Officer log in',
-      link: '/login',
     },
     {
       title: 'Inspectors',
       body: 'See scheduled inspections, record pass/fail results with findings on site.',
-      cta: 'Inspector log in',
-      link: '/login',
     },
     {
       title: 'Approvers',
       body: 'Give final approval on inspected applications and trigger invoicing.',
-      cta: 'Approver log in',
-      link: '/login',
     },
   ];
 

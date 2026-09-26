@@ -88,9 +88,11 @@
         <div class="card flex flex-col border border-muted/10 hover:border-primary/40 hover:shadow-md transition-all duration-200">
           <h3 class="text-lg font-bold text-foreground mb-2">{{ role.title }}</h3>
           <p class="text-sm text-muted leading-relaxed flex-grow">{{ role.body }}</p>
-          <a [routerLink]="role.link" class="mt-5 inline-block text-sm font-bold text-primary hover:underline transition-colors">
-            {{ role.cta }} &rarr;
-          </a>
+          @if (role.link) {
+            <a [routerLink]="role.link" class="mt-5 inline-block text-sm font-bold text-primary hover:underline transition-colors">
+              {{ role.cta }} &rarr;
+            </a>
+          }
         </div>
       }
     </div>
