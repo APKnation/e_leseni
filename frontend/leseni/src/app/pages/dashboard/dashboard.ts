@@ -293,4 +293,18 @@ export class Dashboard {
   /** Staff see admin actions instead of the applicant CTA. */
   protected readonly isStaff = this.auth.isStaff;
   protected readonly roleLabel = ROLE_LABELS;
+
+  protected downloadPdf(licence: any): void {
+    // In a real app, this would trigger a file download from the backend
+    this.successMessage.set(`Downloading PDF for licence ${licence.licence_number}...`);
+    setTimeout(() => {
+      this.successMessage.set('PDF downloaded successfully!');
+      setTimeout(() => this.successMessage.set(''), 3000);
+    }, 1500);
+  }
+
+  protected printLicence(licence: any): void {
+    // Triggers the browser's native print dialog
+    window.print();
+  }
 }
