@@ -24,7 +24,7 @@ export const STATUS_STYLES: Record<ApplicationStatus, string> = {
   PAID: 'bg-emerald-500/15 text-emerald-300 border border-emerald-400/40',
   ISSUED: 'bg-brand-cream text-brand-green border border-brand-cream',
   RETURNED_FOR_CORRECTION: 'bg-orange-500/15 text-orange-300 border border-orange-400/40',
-  REJECTED: 'bg-red-500/15 text-red-300 border border-red-400/40',
+  REJECTED: 'bg-red-50 text-red-700 border border-red-200',
 };
 
 export const STATUS_LABELS: Record<ApplicationStatus, string> = {

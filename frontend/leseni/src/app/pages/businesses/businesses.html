@@ -11,13 +11,17 @@
   </div>
 
   @if (errorMessage()) {
-    <p class="mt-6 rounded-lg bg-red-500/15 px-4 py-3 text-sm font-semibold text-red-300">
+    <p class="mt-6 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm font-semibold text-red-700">
       {{ errorMessage() }}
     </p>
   }
 
   @if (loading()) {
-    <p class="mt-10 animate-pulse text-brand-cream/60">Loading…</p>
+    <div class="mt-10 animate-pulse space-y-4">
+      <div class="h-4 w-1/4 rounded bg-muted/20"></div>
+      <div class="h-32 rounded-xl bg-muted/10"></div>
+      <div class="h-32 rounded-xl bg-muted/10"></div>
+    </div>
   } @else if (!wizardOpen()) {
     <!-- Journey explainer -->
     <div class="mt-8 grid gap-4 md:grid-cols-4">
@@ -408,7 +412,7 @@
           </label>
         </div>
         @if (fieldError('step5')) {
-          <p class="rounded-lg bg-red-500/15 px-4 py-3 text-sm font-semibold text-red-300">
+          <p class="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm font-semibold text-red-700">
             {{ fieldError('step5') }}
           </p>
         }

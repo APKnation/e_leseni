@@ -99,11 +99,11 @@ export class Businesses {
   // ---- Construction / layout ----------------------------------------------------
 
   protected readonly journeySteps = [
-
-  // Per-business supporting documents (TIN certificate, BRELA certificate, …)
-  protected readonly uploadForBusinessId = signal<number | null>(null);
-  protected readonly uploadKind = signal<string>('TIN_CERTIFICATE');
-  protected readonly uploadingDoc = signal(false);
+    { title: 'Register with BRELA', hint: 'We submit your business to BRELA and get your registration number.' },
+    { title: 'Get a TIN from TRA', hint: 'We apply for your TIN with your NIDA number and a PDF copy of your ID.' },
+    { title: 'Street ID letter', hint: 'The mtaa/street chairman letter confirms where you operate.' },
+    { title: 'Apply for a licence', hint: 'Take your verified business to the council and apply online.' },
+  ];
 
   protected readonly docKinds = [
     { value: 'TIN_CERTIFICATE', label: 'TIN certificate (TRA)' },
@@ -221,17 +221,32 @@ export class Businesses {
     return true;
   }
 
-  // Step 2: BRELA
+  // ---- Step 2: BRELA ------------------------------------------------------
   protected registerWithBrela(): void {
-    return ['Business details', 'BRELA registration', 'TRA TIN + NIDA', 'Street letter', 'Location & finish'];
+    if (!this.detailsValid || this.working()) return;
+    this.working.set(true);
+    this.errorMessage.set('');
+    this.api.brelaRegister(this.name().trim()).subscribe({
+      next: (res) => {
+        this.brelaNumber.set(res.registration_number);
+        this.brelaReceipt.set({
+          title: 'BRELA — Registration confirmed',
+          lines: [
+            { label: 'Registration no.', value: res.registration_number },
+            { label: 'Entity name', value: res.entity_name },
+            { label: 'Status', value: res.status },
+            { label: 'Issued by', value: res.source },
+          ],
+        });
+        this.working.set(false);
+        this.goToStep(3);
+      },
+      error: () => {
+        this.errorMessage.set('BRELA registration failed. Please try again.');
+        this.working.set(false);
+      },
+    });
   }
-
-  protected readonly journeySteps = [
-    { title: 'Register with BRELA', hint: 'We submit your business to BRELA and get your registration number.' },
-    { title: 'Get a TIN from TRA', hint: 'We apply for your TIN with your NIDA number and a PDF copy of your ID.' },
-    { title: 'Street ID letter', hint: 'The mtaa/street chairman letter confirms where you operate.' },
-    { title: 'Apply for a licence', hint: 'Take your verified business to the council and apply online.' },
-  ];  // ---- Step 4: street identification letter -------------------------------
 
   protected get hasNidaOnProfile(): boolean {
     return this.auth.currentUser()?.has_nida ?? false;
@@ -299,31 +314,7 @@ export class Businesses {
     return file;
   }
 
-  /** Validate the business details from step 1. Returns true when all fields are valid. */
-  protected validateDetails(): boolean {
-    const name = this.name().trim();
-    const sector = this.sector().trim();
-    const taxpayer = this.taxpayerName().trim();
-
-    if (name.length < 3) {
-      this.setFieldError('step1', 'Business name must be at least 3 characters.');
-      return false;
-    }
-    if (taxpayer.length < 3) {
-      this.setFieldError('step1', 'Taxpayer name must be at least 3 characters.');
-      return false;
-    }
-    // Sector is optional
-    this.clearFieldErrors('step1');
-    return true;
-  }
-
   // ---- Step 2: BRELA ------------------------------------------------------
-
-  protected registerWithBrela(): void {
-    return this.name().trim().length >= 3 && this.taxpayerName().trim().length >= 3;
-  }
-
   protected registerWithBrela(): void {
     if (!this.detailsValid || this.working()) return;
     this.working.set(true);
@@ -518,7 +509,6 @@ export class Businesses {
   // ---- Supporting documents on existing businesses ------------------------
 
   protected toggleDocUpload(businessId: number): void {
-    this.uploadForBusinessId.update((id) => (id === businessId ? null : businessId));
     this.errorMessage.set('');
   }
 
@@ -536,18 +526,12 @@ export class Businesses {
       this.errorMessage.set(`${file.name} is too large (max 10 MB).`);
       return;
     }
-    this.uploadingDoc.set(true);
     this.errorMessage.set('');
-    this.api.uploadBusinessDocument(businessId, file, this.uploadKind()).subscribe({
+    this.api.uploadBusinessDocument(businessId, file, 'STREET_ID_LETTER').subscribe({
       next: () => {
-        this.uploadingDoc.set(false);
-        next: () => {
-        this.uploadingDoc.set(false);
-        this.uploadForBusinessId.set(null);
         this.loadAll();
       },
       error: () => {
-        this.uploadingDoc.set(false);
         this.errorMessage.set('Upload failed — make sure the file is a PDF under 10 MB and try again.');
       },
     });
