@@ -54,6 +54,11 @@ export class Businesses {
   protected readonly ward = signal('');
   protected readonly street = signal('');
   protected readonly plotNumber = signal('');
+  protected readonly stepLabels = ['Details', 'BRELA', 'NIDA', 'Location', 'Submit'];
+  protected readonly uploadKind = signal('BRELA_CERTIFICATE');
+  protected readonly uploadForBusinessId = signal<number | null>(null);
+  protected readonly uploadingDoc = signal(false);
+
 
   // Street identification letter (from the mtaa/street chairman) — PDF only.
   protected readonly streetLetterFile = signal<File | null>(null);
@@ -221,32 +226,7 @@ export class Businesses {
     return true;
   }
 
-  // ---- Step 2: BRELA ------------------------------------------------------
-  protected registerWithBrela(): void {
-    if (!this.detailsValid || this.working()) return;
-    this.working.set(true);
-    this.errorMessage.set('');
-    this.api.brelaRegister(this.name().trim()).subscribe({
-      next: (res) => {
-        this.brelaNumber.set(res.registration_number);
-        this.brelaReceipt.set({
-          title: 'BRELA — Registration confirmed',
-          lines: [
-            { label: 'Registration no.', value: res.registration_number },
-            { label: 'Entity name', value: res.entity_name },
-            { label: 'Status', value: res.status },
-            { label: 'Issued by', value: res.source },
-          ],
-        });
-        this.working.set(false);
-        this.goToStep(3);
-      },
-      error: () => {
-        this.errorMessage.set('BRELA registration failed. Please try again.');
-        this.working.set(false);
-      },
-    });
-  }
+
 
   protected get hasNidaOnProfile(): boolean {
     return this.auth.currentUser()?.has_nida ?? false;
