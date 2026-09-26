@@ -18,6 +18,7 @@
 
     <div class="flex items-center gap-3">
       <span class="badge-green">{{ workspace.badge }}</span>
+      <a routerLink="/profile" class="text-sm font-semibold text-muted underline hover:text-foreground">My Profile</a>
       @if (isAdmin) {
         <a routerLink="/staff/review" class="text-sm font-semibold text-muted underline hover:text-foreground">
           Switch workspace
