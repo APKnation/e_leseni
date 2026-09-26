@@ -99,34 +99,6 @@
   </div>
 </section>
 
-<!-- FAQ -->
-<section class="bg-gray-50 border-t border-muted/10">
-  <div class="mx-auto w-full max-w-3xl px-4 py-16 sm:px-6">
-    <h2 class="text-center text-3xl md:text-4xl font-black text-foreground">Frequently asked questions</h2>
-    <div class="mt-10 flex flex-col gap-3">
-      @for (faq of faqs; track faq.q; let i = $index) {
-        <div class="card border border-muted/10 p-0 overflow-hidden">
-          <button
-            type="button"
-            class="flex w-full items-center justify-between gap-4 px-6 py-5 text-left hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-inset"
-            (click)="toggleFaq(i)"
-            [attr.aria-expanded]="openFaq() === i"
-          >
-            <span class="font-bold text-foreground">{{ faq.q }}</span>
-            <span class="text-sm font-bold text-primary shrink-0 transition-opacity">
-              {{ openFaq() === i ? 'Close' : 'Show' }}
-            </span>
-          </button>
-          @if (openFaq() === i) {
-            <div class="border-t border-muted/10 px-6 py-5 text-sm text-muted leading-relaxed">
-              {{ faq.a }}
-            </div>
-          }
-        </div>
-      }
-    </div>
-  </div>
-</section>
 
 <!-- Final CTA -->
 <section class="bg-accent text-surface relative overflow-hidden">
