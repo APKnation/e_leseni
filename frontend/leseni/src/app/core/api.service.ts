@@ -249,4 +249,11 @@ export class ApiService {
   verifyLicence(token: string): Observable<any> {
     return this.http.get<any>(`${this.baseUrl}/licences/verify/${token}/`);
   }
+
+  changePassword(currentPassword: string, newPassword: string): Observable<{ detail: string }> {
+    return this.http.post<{ detail: string }>(`${this.baseUrl}/auth/me/change-password/`, {
+      current_password: currentPassword,
+      new_password: newPassword,
+    });
+  }
 }
