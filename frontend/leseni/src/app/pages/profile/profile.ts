@@ -58,8 +58,7 @@ export class Profile {
 
     this.api.updateProfile(this.formData()).subscribe({
       next: (updatedUser) => {
-        // Need to update auth service current user somehow
-        this.auth.refreshUser().subscribe();
+        this.auth.updateUserSession(updatedUser);
         
         this.saving.set(false);
         this.editing.set(false);

@@ -131,6 +131,11 @@ export class AuthService {
     this.currentUserSignal.set(res.user);
   }
 
+  updateUserSession(user: User): void {
+    sessionStorage.setItem(USER_KEY, JSON.stringify(user));
+    this.currentUserSignal.set(user);
+  }
+
   private readStoredUser(): User | null {
     try {
       const raw = sessionStorage.getItem(USER_KEY);
