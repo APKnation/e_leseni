@@ -49,7 +49,16 @@
               Apply
             </a>
           }
-          <button type="button" class="btn-secondary ml-3 !px-4 !py-2 !text-sm" (click)="logout()">
+          <!-- Profile link visible to ALL logged-in users -->
+          <a
+            routerLink="/profile"
+            routerLinkActive="bg-gray-100 text-foreground"
+            class="flex items-center gap-1.5 rounded-lg px-4 py-2 text-muted transition hover:bg-gray-50 hover:text-foreground"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>
+            My Profile
+          </a>
+          <button type="button" class="btn-secondary ml-2 !px-4 !py-2 !text-sm" (click)="logout()">
             Log out
           </button>
         } @else {
@@ -146,6 +155,16 @@
                 Apply
               </a>
             }
+            <!-- Profile link visible to ALL logged-in users -->
+            <a
+              routerLink="/profile"
+              routerLinkActive="bg-gray-100 text-foreground"
+              class="flex items-center gap-2 rounded-lg px-4 py-3 text-muted hover:bg-gray-50 transition-colors"
+              (click)="closeMenu()"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>
+              My Profile
+            </a>
             <button type="button" class="btn-secondary mt-3 !py-3 w-full" (click)="logout()">
               Log out
             </button>
