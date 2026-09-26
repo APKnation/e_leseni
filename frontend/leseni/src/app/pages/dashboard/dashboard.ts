@@ -45,6 +45,7 @@ export class Dashboard {
 
   protected readonly loading = signal(true);
   protected readonly errorMessage = signal('');
+  protected readonly successMessage = signal('');
 
   protected readonly applications = signal<Application[]>([]);
   protected readonly licences = signal<Licence[]>([]);
@@ -277,7 +278,12 @@ export class Dashboard {
         reference: 'WEB-DEMO',
       })
       .subscribe({
-        next: () => this.loadAll(),
+        next: () => {
+          this.successMessage.set(`Payment of ${invoice.amount} successful!`);
+          setTimeout(() => this.successMessage.set(''), 5000);
+          this.payingInvoiceId.set(null);
+          this.loadAll();
+        },
         error: () => this.payingInvoiceId.set(null),
       });
   }
