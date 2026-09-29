@@ -58,6 +58,8 @@ export class Businesses {
   protected readonly uploadKind = signal('BRELA_CERTIFICATE');
   protected readonly uploadForBusinessId = signal<number | null>(null);
   protected readonly uploadingDoc = signal(false);
+  protected readonly pendingDocFile = signal<File | null>(null);
+  protected readonly pendingDocBusinessId = signal<number | null>(null);
 
 
   // Street identification letter (from the mtaa/street chairman) — PDF only.
@@ -490,6 +492,7 @@ export class Businesses {
 
   protected toggleDocUpload(businessId: number): void {
     this.errorMessage.set('');
+    this.pendingDocFile.set(null);
     this.uploadForBusinessId.update((current) => (current === businessId ? null : businessId));
   }
 
@@ -508,11 +511,25 @@ export class Businesses {
       return;
     }
     this.errorMessage.set('');
-    this.api.uploadBusinessDocument(businessId, file, 'STREET_ID_LETTER').subscribe({
+    this.pendingDocFile.set(file);
+    this.pendingDocBusinessId.set(businessId);
+  }
+
+  protected submitBusinessDoc(businessId: number): void {
+    const file = this.pendingDocFile();
+    if (!file || this.pendingDocBusinessId() !== businessId) return;
+
+    this.errorMessage.set('');
+    this.uploadingDoc.set(true);
+    const kind = this.uploadKind();
+    this.api.uploadBusinessDocument(businessId, file, kind).subscribe({
       next: () => {
+        this.uploadingDoc.set(false);
+        this.pendingDocFile.set(null);
         this.loadAll();
       },
       error: () => {
+        this.uploadingDoc.set(false);
         this.errorMessage.set('Upload failed — make sure the file is a PDF under 10 MB and try again.');
       },
     });

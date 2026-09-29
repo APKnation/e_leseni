@@ -102,10 +102,15 @@
                   </select>
                 </label>
                 <label [for]="'bus-doc-' + business.id" class="btn-secondary mt-2 inline-block cursor-pointer !py-2 !px-3 text-xs" [class.opacity-50]="uploadingDoc()" [class.pointer-events-none]="uploadingDoc()">
-                  {{ uploadingDoc() ? 'Uploading…' : 'Choose PDF file' }}
+                  {{ pendingDocFile() && pendingDocBusinessId() === business.id ? 'Done ' + pendingDocFile()!.name : 'Choose PDF file' }}
                 </label>
                 <input [id]="'bus-doc-' + business.id" class="sr-only" type="file" accept="application/pdf,.pdf" [disabled]="uploadingDoc()"
                        (change)="onBusinessDocSelected(business.id, $event)" />
+                @if (pendingDocFile() && pendingDocBusinessId() === business.id) {
+                  <button type="button" class="btn-primary mt-2 ml-2 !py-2 !px-3 text-xs" [disabled]="uploadingDoc()" (click)="submitBusinessDoc(business.id)">
+                    {{ uploadingDoc() ? 'Uploading…' : 'Upload document' }}
+                  </button>
+                }
                 <p class="mt-2 text-[10px] text-brand-cream/50">PDF only, max 10 MB.</p>
               </div>
             }
