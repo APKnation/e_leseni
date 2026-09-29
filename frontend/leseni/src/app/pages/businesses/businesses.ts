@@ -490,6 +490,7 @@ export class Businesses {
 
   protected toggleDocUpload(businessId: number): void {
     this.errorMessage.set('');
+    this.uploadForBusinessId.update((current) => (current === businessId ? null : businessId));
   }
 
   protected onBusinessDocSelected(businessId: number, event: Event): void {
