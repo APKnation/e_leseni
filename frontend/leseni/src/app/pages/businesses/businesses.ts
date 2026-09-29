@@ -38,6 +38,7 @@ export class Businesses {
 
   protected readonly loading = signal(true);
   protected readonly errorMessage = signal('');
+  protected readonly successMessage = signal('');
 
   // Wizard state
   protected readonly wizardOpen = signal(false);
@@ -482,9 +483,26 @@ export class Businesses {
   // ---- Existing businesses ------------------------------------------------
 
   protected verifyNow(business: Business): void {
+    this.errorMessage.set('');
+    this.successMessage.set('');
     this.api.verifyBusiness(business.id).subscribe({
-      next: () => this.loadAll(),
-      error: () => this.errorMessage.set('Verification failed. Please try again.'),
+      next: (res: any) => {
+        this.successMessage.set(
+          res?.is_verified
+            ? `${business.name} verified with TRA & BRELA.`
+            : 'Verification did not pass — check the TIN and BRELA numbers.',
+        );
+        this.loadAll();
+      },
+      error: (err) => {
+        // Surface the backend's real reason (missing street letter, no NIDA, etc.)
+        const detail = err?.error?.detail ?? err?.error?.non_field_errors?.[0];
+        this.errorMessage.set(
+          typeof detail === 'string' && detail
+            ? detail
+            : 'Verification failed. Please try again.',
+        );
+      },
     });
   }
 
