@@ -194,6 +194,9 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # e-Leseni domain settings
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# Public frontend URL — used to build licence QR verification links.
+FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:4200')
+
 # Integrations (mock BRELA / TRA / GePG endpoints)
 INTEGRATIONS = {
     'BRELA_BASE_URL': 'http://localhost:9001/mock/brela/',

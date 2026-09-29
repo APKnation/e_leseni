@@ -1,4 +1,4 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpParams, HttpResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
@@ -248,6 +248,14 @@ export class ApiService {
 
   verifyLicence(token: string): Observable<any> {
     return this.http.get<any>(`${this.baseUrl}/licences/verify/${token}/`);
+  }
+
+  /** Download the printable PDF certificate for a licence. */
+  downloadLicencePdf(licenceId: number): Observable<HttpResponse<Blob>> {
+    return this.http.get(`${this.baseUrl}/licences/${licenceId}/download/`, {
+      responseType: 'blob',
+      observe: 'response',
+    });
   }
 
   changePassword(currentPassword: string, newPassword: string): Observable<{ detail: string }> {

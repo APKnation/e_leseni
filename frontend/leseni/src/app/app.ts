@@ -1,6 +1,7 @@
 import { Component, DestroyRef, inject, signal } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { filter, map, startWith } from 'rxjs';
 
 import { ApplicationStatusEvent, RealtimeService } from './core/realtime.service';
 import { AuthService, ROLE_LABELS } from './core/auth.service';
@@ -17,6 +18,16 @@ export class App {
   protected readonly roleLabel = ROLE_LABELS;
   protected readonly year = new Date().getFullYear();
   private readonly router = inject(Router);
+
+  /** The marketing footer is hidden on the auth pages (login / register). */
+  protected readonly hideFooter = toSignal(
+    this.router.events.pipe(
+      filter((e): e is NavigationEnd => e instanceof NavigationEnd),
+      startWith(null),
+      map(() => this.router.url.startsWith('/login') || this.router.url.startsWith('/register')),
+    ),
+    { initialValue: this.router.url.startsWith('/login') || this.router.url.startsWith('/register') },
+  );
 
   /** Mobile navigation drawer state. */
   protected readonly menuOpen = signal(false);

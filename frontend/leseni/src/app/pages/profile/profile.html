@@ -58,14 +58,12 @@
   @if (activeTab() === 'view') {
     <div class="card space-y-5">
       <div class="flex items-center gap-4">
-        <div class="grid h-16 w-16 shrink-0 place-items-center rounded-full bg-primary/10 text-2xl font-black text-primary">
-          {{ (user()?.first_name?.[0] ?? user()?.username?.[0] ?? '?') | uppercase }}
-        </div>
-        <div>
-          <p class="text-xl font-black">{{ user()?.first_name }} {{ user()?.last_name }}</p>
-          <p class="text-sm text-muted">&#64;{{ user()?.username }}</p>
-        </div>
+        <h2 class="text-xl font-black">My profile</h2>
         <span class="badge-green ml-auto">{{ user()?.role }}</span>
+      </div>
+      <div>
+        <p class="text-xl font-black">{{ user()?.first_name }} {{ user()?.last_name }}</p>
+        <p class="text-sm text-muted">&#64;{{ user()?.username }}</p>
       </div>
 
       <hr class="border-muted/20">

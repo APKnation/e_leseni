@@ -293,12 +293,31 @@ export class Dashboard {
   protected readonly roleLabel = ROLE_LABELS;
 
   protected downloadPdf(licence: any): void {
-    // In a real app, this would trigger a file download from the backend
-    this.successMessage.set(`Downloading PDF for licence ${licence.licence_number}...`);
-    setTimeout(() => {
-      this.successMessage.set('PDF downloaded successfully!');
-      setTimeout(() => this.successMessage.set(''), 3000);
-    }, 1500);
+    this.successMessage.set(`Preparing PDF for licence ${licence.licence_number}...`);
+    this.api.downloadLicencePdf(licence.id).subscribe({
+      next: (response) => {
+        const blob = response.body;
+        if (!blob) {
+          this.successMessage.set('');
+          this.errorMessage.set('The PDF file was empty. Please try again.');
+          return;
+        }
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `licence-${licence.licence_number}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        this.successMessage.set('PDF downloaded successfully!');
+        setTimeout(() => this.successMessage.set(''), 3000);
+      },
+      error: () => {
+        this.successMessage.set('');
+        this.errorMessage.set('Could not download the licence PDF. Please try again.');
+      },
+    });
   }
 
   protected printLicence(licence: any): void {
