@@ -9,7 +9,7 @@
       </div>
     } @else if (error()) {
       <div class="w-full rounded-xl bg-red-50 border border-red-200 p-8 text-center text-red-700">
-        <span class="text-6xl mb-4 block">❌</span>
+        <span class="text-6xl mb-4 block">Invalid</span>
         <h2 class="text-2xl font-bold mb-2">Verification Failed</h2>
         <p>{{ error() }}</p>
       </div>
@@ -23,7 +23,7 @@
         [class.border-red-200]="!result().valid"
         [class.text-red-900]="!result().valid"
       >
-        <span class="text-6xl mb-4 block">{{ result().valid ? '✅' : '❌' }}</span>
+        <span class="text-6xl mb-4 block">{{ result().valid ? 'Valid' : 'Invalid' }}</span>
         <h2 class="text-2xl font-bold mb-2">
           {{ result().valid ? 'Valid Licence' : 'Invalid / Expired Licence' }}
         </h2>

@@ -22,7 +22,6 @@ import {
 interface TimelineStep {
   status: ApplicationStatus;
   label: string;
-  icon: string;
   /** 'done' | 'current' | 'upcoming' for main-line steps; 'event' for extras. */
   state: 'done' | 'current' | 'upcoming' | 'event';
   when: string | null;
@@ -62,14 +61,14 @@ export class Dashboard {
   }
 
   /** The main-line journey every application walks through. */
-  private static readonly MAIN_LINE: { status: ApplicationStatus; label: string; icon: string }[] = [
-    { status: 'DRAFT', label: 'Draft', icon: '📝' },
-    { status: 'SUBMITTED', label: 'Submitted', icon: '📤' },
-    { status: 'UNDER_REVIEW', label: 'Under review', icon: '👀' },
-    { status: 'INSPECTED', label: 'Inspected', icon: '🔍' },
-    { status: 'APPROVED', label: 'Approved', icon: '✅' },
-    { status: 'PAID', label: 'Paid', icon: '💳' },
-    { status: 'ISSUED', label: 'Issued', icon: '🎫' },
+  private static readonly MAIN_LINE: { status: ApplicationStatus; label: string }[] = [
+    { status: 'DRAFT', label: 'Draft' },
+    { status: 'SUBMITTED', label: 'Submitted' },
+    { status: 'UNDER_REVIEW', label: 'Under review' },
+    { status: 'INSPECTED', label: 'Inspected' },
+    { status: 'APPROVED', label: 'Approved' },
+    { status: 'PAID', label: 'Paid' },
+    { status: 'ISSUED', label: 'Issued' },
   ];
 
   /**
@@ -115,7 +114,6 @@ export class Dashboard {
       .map((h) => ({
         status: h.to_status,
         label: STATUS_LABELS[h.to_status] ?? h.to_status,
-        icon: h.to_status === 'REJECTED' ? '⛔' : h.to_status === 'RETURNED_FOR_CORRECTION' ? '↩️' : '🔔',
         state: 'event' as const,
         when: fmt(h.changed_at),
         actor: h.changed_by_name,

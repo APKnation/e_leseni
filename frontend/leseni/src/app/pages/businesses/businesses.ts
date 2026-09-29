@@ -350,7 +350,7 @@ export class Businesses {
               { label: 'Taxpayer', value: app.taxpayer_name },
               { label: 'Business', value: app.business_name },
               { label: 'NIDA no.', value: nida },
-              { label: 'ID copy', value: 'Attached ✓' },
+              { label: 'ID copy', value: 'Attached' },
               { label: 'Status', value: app.status },
             ],
           });
@@ -361,7 +361,7 @@ export class Businesses {
                 title: 'NIDA — Identity recorded',
                 lines: [
                   { label: 'NIDA no.', value: nida },
-                  { label: 'ID copy', value: 'Attached ✓' },
+                  { label: 'ID copy', value: 'Attached' },
                   { label: 'Verified with', value: 'TRA (with TIN application)' },
                 ],
               });

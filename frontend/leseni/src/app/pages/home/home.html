@@ -2,7 +2,6 @@
 <section class="relative overflow-hidden bg-surface">
   <div class="mx-auto grid w-full max-w-6xl gap-10 px-4 py-16 sm:px-6 lg:grid-cols-2 lg:py-24">
     <div class="flex flex-col justify-center gap-6">
-      <span class="badge-outline w-fit">LGA Business Licensing</span>
       <h1 class="text-5xl md:text-6xl text-foreground font-black leading-tight tracking-tight">
         Apply for your business licence in <span class="text-primary">minutes</span>, not weeks.
       </h1>
@@ -12,13 +11,13 @@
       </p>
       <div class="flex flex-wrap gap-4 mt-4">
         @if (auth.isLoggedIn()) {
-          <a routerLink="/dashboard" class="btn-primary">Go to dashboard →</a>
-          @if (auth.isStaff()) {
-            <a [routerLink]="auth.homeRoute()" class="btn-secondary">My workspace</a>
-          }
+        <a routerLink="/dashboard" class="btn-primary">Go to dashboard →</a>
+        @if (auth.isStaff()) {
+        <a [routerLink]="auth.homeRoute()" class="btn-secondary">My workspace</a>
+        }
         } @else {
-          <a routerLink="/register" class="btn-primary">Get Started</a>
-          <a routerLink="/login" class="btn-secondary">Log in</a>
+        <a routerLink="/register" class="btn-primary">Get Started</a>
+        <a routerLink="/login" class="btn-secondary">Log in</a>
         }
       </div>
 
@@ -44,11 +43,11 @@
       <h2 class="text-2xl font-black text-foreground">How it works</h2>
       <ol class="flex flex-col gap-5">
         @for (step of steps; track step.title; let i = $index) {
-          <li class="border-l-4 border-primary pl-4">
-            <p class="text-xs font-bold uppercase tracking-widest text-primary mb-1">Step {{ i + 1 }}</p>
-            <p class="font-bold text-foreground">{{ step.title }}</p>
-            <p class="text-sm text-muted mt-1">{{ step.body }}</p>
-          </li>
+        <li class="border-l-4 border-primary pl-4">
+          <p class="text-xs font-bold uppercase tracking-widest text-primary mb-1">Step {{ i + 1 }}</p>
+          <p class="font-bold text-foreground">{{ step.title }}</p>
+          <p class="text-sm text-muted mt-1">{{ step.body }}</p>
+        </li>
         }
       </ol>
     </div>
@@ -64,10 +63,10 @@
     </p>
     <div class="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
       @for (feature of features; track feature.title) {
-        <div class="card border border-muted/10 hover:border-primary/40 hover:shadow-md transition-all duration-200">
-          <h3 class="text-lg font-bold text-foreground mb-2">{{ feature.title }}</h3>
-          <p class="text-sm text-muted leading-relaxed">{{ feature.body }}</p>
-        </div>
+      <div class="card border border-muted/10 hover:border-primary/40 hover:shadow-md transition-all duration-200">
+        <h3 class="text-lg font-bold text-foreground mb-2">{{ feature.title }}</h3>
+        <p class="text-sm text-muted leading-relaxed">{{ feature.body }}</p>
+      </div>
       }
     </div>
   </div>
@@ -85,15 +84,17 @@
 
     <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
       @for (role of roleCards; track role.title) {
-        <div class="card flex flex-col border border-muted/10 hover:border-primary/40 hover:shadow-md transition-all duration-200">
-          <h3 class="text-lg font-bold text-foreground mb-2">{{ role.title }}</h3>
-          <p class="text-sm text-muted leading-relaxed flex-grow">{{ role.body }}</p>
-          @if (role.link) {
-            <a [routerLink]="role.link" class="mt-5 inline-block text-sm font-bold text-primary hover:underline transition-colors">
-              {{ role.cta }} &rarr;
-            </a>
-          }
-        </div>
+      <div
+        class="card flex flex-col border border-muted/10 hover:border-primary/40 hover:shadow-md transition-all duration-200">
+        <h3 class="text-lg font-bold text-foreground mb-2">{{ role.title }}</h3>
+        <p class="text-sm text-muted leading-relaxed flex-grow">{{ role.body }}</p>
+        @if (role.link) {
+        <a [routerLink]="role.link"
+          class="mt-5 inline-block text-sm font-bold text-primary hover:underline transition-colors">
+          {{ role.cta }} &rarr;
+        </a>
+        }
+      </div>
       }
     </div>
   </div>
@@ -110,16 +111,16 @@
     </p>
     <div class="flex flex-wrap justify-center gap-4">
       @if (auth.isLoggedIn()) {
-        <a routerLink="/dashboard" class="btn-primary border-none text-accent">
-          Go to dashboard →
-        </a>
+      <a routerLink="/dashboard" class="btn-primary border-none text-accent">
+        Go to dashboard →
+      </a>
       } @else {
-        <a routerLink="/register" class="btn-primary border-none text-accent">
-          Create your free account
-        </a>
-        <a routerLink="/apply" class="btn-secondary border-surface text-surface hover:bg-surface hover:text-accent">
-          Browse licences
-        </a>
+      <a routerLink="/register" class="btn-primary border-none text-accent">
+        Create your free account
+      </a>
+      <a routerLink="/apply" class="btn-secondary border-surface text-surface hover:bg-surface hover:text-accent">
+        Browse licences
+      </a>
       }
     </div>
   </div>

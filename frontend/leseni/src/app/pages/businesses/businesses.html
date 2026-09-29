@@ -56,7 +56,7 @@
                 <p class="text-sm text-brand-cream/70">{{ business.sector || 'General' }}</p>
               </div>
               @if (business.is_verified) {
-                <span class="badge-green !px-2 !py-0.5">verified ✓</span>
+                <span class="badge-green !px-2 !py-0.5">verified</span>
               } @else {
                 <span class="badge-outline !px-2 !py-0.5">unverified</span>
               }
@@ -68,14 +68,14 @@
               <div class="flex flex-wrap gap-1">
                 @for (doc of business.documents; track doc.id) {
                   <span class="rounded bg-brand-green-soft/60 px-1.5 py-0.5 text-[10px] text-brand-cream/70">
-                    📄 {{ doc.kind_display }}
+                    {{ doc.kind_display }}
                   </span>
                 }
               </div>
             }
             @if (business.locations.length > 0) {
               <p class="text-xs text-brand-cream/50">
-                📍 {{ business.locations[0].ward }}, {{ business.locations[0].street }} — {{ business.locations[0].lga_name }}
+                {{ business.locations[0].ward }}, {{ business.locations[0].street }} — {{ business.locations[0].lga_name }}
               </p>
             }
             <div class="mt-1 flex flex-wrap gap-2">
@@ -166,7 +166,7 @@
                   : 'bg-brand-green-soft/60 text-brand-cream/40'
             "
           >
-            <span>{{ step() > i + 1 ? '✓' : i + 1 }}</span>
+            <span>{{ step() > i + 1 ? 'Done' : i + 1 }}</span>
             {{ label }}
           </li>
         }
@@ -175,11 +175,11 @@
       <!-- DONE state -->
       @if (createdBusiness(); as biz) {
         <div class="rounded-xl bg-emerald-500/10 p-6">
-          <h3 class="text-lg font-black text-emerald-300">Business registered ✓</h3>
+          <h3 class="text-lg font-black text-emerald-300">Business registered</h3>
           <p class="mt-2 text-sm text-brand-cream/80">
             <strong>{{ biz.name }}</strong> is now
             @if (biz.is_verified) {
-              <span class="badge-green !px-2 !py-0.5">verified ✓</span>
+              <span class="badge-green !px-2 !py-0.5">verified</span>
             } @else {
               <span class="badge-outline !px-2 !py-0.5">unverified</span>
             }
@@ -282,7 +282,7 @@
             <label class="flex flex-col gap-2 text-sm font-semibold">
               Copy of your national ID (NIDA) * — PDF only
               <label class="btn-secondary cursor-pointer !py-2.5 !px-4 text-xs">
-                {{ nidaCopyName() ? '✓ ' + nidaCopyName() : 'Choose PDF file' }}
+                {{ nidaCopyName() ? 'Done ' + nidaCopyName() : 'Choose PDF file' }}
                 <input class="sr-only" type="file" accept="application/pdf,.pdf"
                        (change)="onNidaCopySelected($event)" />
               </label>
@@ -318,7 +318,7 @@
           <label class="mt-4 flex flex-col gap-2 text-sm font-semibold">
             Street identification letter * — PDF only
             <label class="btn-secondary cursor-pointer !py-2.5 !px-4 text-xs">
-              {{ streetLetterName() ? '✓ ' + streetLetterName() : 'Choose PDF file' }}
+              {{ streetLetterName() ? 'Done ' + streetLetterName() : 'Choose PDF file' }}
               <input class="sr-only" type="file" accept="application/pdf,.pdf"
                      (change)="onLetterSelected($event)" />
             </label>
@@ -349,7 +349,7 @@
       @else if (step() === 5) {
         <div class="rounded-xl bg-brand-cream/10 p-5 text-sm text-brand-cream/90">
           <p>
-            ✓ BRELA no. <span class="font-mono font-bold">{{ brelaNumber() }}</span>
+            BRELA no. <span class="font-mono font-bold">{{ brelaNumber() }}</span>
             · TIN <span class="font-mono font-bold">{{ tinNumber() }}</span>
             · NIDA <span class="font-mono font-bold">verified</span>
             @if (streetLetterName()) {
@@ -419,7 +419,7 @@
         <div class="flex flex-wrap items-center gap-3">
           <button type="button" class="btn-secondary" (click)="goToStep(3)">← Back</button>
           <button type="button" class="btn-primary" [disabled]="!canFinish || working()" (click)="saveBusiness()">
-            @if (working()) { Saving & verifying… } @else { Save business ✓ }
+            @if (working()) { Saving & verifying… } @else { Save business }
           </button>
         </div>
       }

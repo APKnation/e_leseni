@@ -14,12 +14,12 @@
   <!-- Alert banners -->
   @if (successMessage()) {
     <div class="mb-6 flex items-center gap-3 rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm font-semibold text-emerald-700">
-      <span class="text-lg">✅</span> {{ successMessage() }}
+      <span class="text-lg"></span> {{ successMessage() }}
     </div>
   }
   @if (errorMessage()) {
     <div class="mb-6 flex items-center gap-3 rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm font-semibold text-red-700">
-      <span class="text-lg">⚠️</span> {{ errorMessage() }}
+      <span class="text-lg"></span> {{ errorMessage() }}
     </div>
   }
 
@@ -84,7 +84,7 @@
           <dd class="mt-0.5 flex items-center gap-2 text-base font-medium text-foreground">
             {{ user()?.has_nida ? '●●●●●●●●●●●●●●' : '—' }}
             @if (user()?.has_nida) {
-              <span class="badge-green !px-2 !py-0.5 text-[10px]">Verified ✓</span>
+              <span class="badge-green !px-2 !py-0.5 text-[10px]">Verified</span>
             }
           </dd>
         </div>

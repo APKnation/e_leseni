@@ -2,7 +2,7 @@
   <div class="flex flex-wrap items-center justify-between gap-4">
     <div>
       <h1 class="text-3xl font-black">
-        Karibu{{ user()?.first_name ? ', ' + user()?.first_name : '' }} 👋
+        Karibu{{ user()?.first_name ? ', ' + user()?.first_name : '' }}
       </h1>
       <p class="mt-1 text-muted">Your licence applications, payments and licences.</p>
     </div>
@@ -68,9 +68,9 @@
                 class="flex items-center gap-3 text-sm font-semibold"
               >
                 <span
-                  class="grid h-6 w-6 shrink-0 place-items-center rounded-full text-xs"
-                  [class]="s.done ? 'bg-emerald-500/25 text-emerald-300' : 'bg-muted/10 text-muted'"
-                >{{ s.done ? '✓' : '○' }}</span>
+                  class="grid h-6 w-6 shrink-0 place-items-center rounded-full text-[10px] font-bold"
+                  [class]="s.done ? 'bg-emerald-500/25 text-emerald-600' : 'bg-muted/10 text-muted'"
+                >{{ s.done ? 'DONE' : '' }}</span>
                 <span [class.text-muted]="s.done">{{ s.label }}</span>
               </span>
               @if (!s.done && s.link) {
@@ -143,9 +143,9 @@
                           "
                         >
                           @if (step.state === 'done') {
-                            ✓
+                            
                           } @else {
-                            {{ step.icon }}
+                            
                           }
                         </span>
                         @if (!last) {
@@ -249,7 +249,7 @@
             <div class="flex items-start justify-between gap-2">
               <p class="text-lg font-bold">{{ business.name }}</p>
               @if (business.is_verified) {
-                <span class="badge-green !px-2 !py-0.5">verified ✓</span>
+                <span class="badge-green !px-2 !py-0.5">verified</span>
               } @else {
                 <span class="badge-outline !px-2 !py-0.5">unverified</span>
               }
