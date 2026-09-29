@@ -1,17 +1,17 @@
 <section class="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6">
   <div class="flex flex-wrap items-center justify-between gap-4">
     <div>
-      <h1 class="text-3xl font-black">{{ workspace.title }}</h1>
+      <h1 class="text-3xl font-bold">{{ workspace.title }}</h1>
       <p class="mt-1 text-muted">{{ workspace.subtitle }}</p>
     </div>
   @if (isAdmin) {
     <div class="mt-4 p-4 rounded-xl border border-muted/20 bg-surface shadow-sm w-full lg:w-auto">
       <h2 class="text-xs font-bold uppercase tracking-wide text-muted mb-2">eGA GovESB Integration Status</h2>
       <div class="flex flex-wrap gap-2">
-        <span class="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-1 text-xs font-bold text-emerald-700 border border-emerald-200"> BRELA</span>
-        <span class="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-1 text-xs font-bold text-emerald-700 border border-emerald-200"> TRA</span>
-        <span class="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-1 text-xs font-bold text-emerald-700 border border-emerald-200"> GePG</span>
-        <span class="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-1 text-xs font-bold text-emerald-700 border border-emerald-200"> NIDA</span>
+        <span class="badge-tag"> BRELA</span>
+        <span class="badge-tag"> TRA</span>
+        <span class="badge-tag"> GePG</span>
+        <span class="badge-tag"> NIDA</span>
       </div>
     </div>
   }
@@ -28,12 +28,12 @@
   </div>
 
   @if (errorMessage()) {
-    <p class="mt-8 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm font-semibold text-red-700">
+    <p class="mt-8 px-4 py-3 text-sm font-semibold text-danger border border-danger/30 bg-danger/5" style="border-radius: 2px;">
       {{ errorMessage() }}
     </p>
   }
   @if (successMessage()) {
-    <p class="mt-8 rounded-lg bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm font-semibold text-emerald-700">
+    <p class="mt-8 px-4 py-3 text-sm font-semibold text-success-deep border border-primary/40 bg-primary/5" style="border-radius: 2px;">
       {{ successMessage() }}
     </p>
   }
@@ -50,7 +50,7 @@
       @for (filter of workspace.queueFilters; track filter.label) {
         <button
           type="button"
-          class="rounded-full px-4 py-2 text-sm font-bold transition"
+          class="px-4 py-2 text-sm font-bold transition" style="border-radius: 2px;"
           [class]="
             activeFilter().label === filter.label
               ? 'bg-surface text-foreground'
@@ -70,7 +70,7 @@
           <div class="min-w-0">
             <div class="flex flex-wrap items-center gap-3">
               <p class="font-mono text-sm text-muted">{{ app.reference_number }}</p>
-              <span class="rounded-full px-3 py-1 text-xs font-bold" [class]="STATUS_STYLES[app.status]">
+              <span class="px-3 py-1 text-xs font-bold" [class]="STATUS_STYLES[app.status]">
                 {{ STATUS_LABELS[app.status] }}
               </span>
             </div>

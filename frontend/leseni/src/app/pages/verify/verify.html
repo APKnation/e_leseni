@@ -1,6 +1,6 @@
 <section class="mx-auto w-full max-w-2xl px-4 py-12 sm:px-6">
   <div class="card flex flex-col items-center justify-center text-center">
-    <h1 class="text-3xl font-black mb-6">Licence Verification</h1>
+    <h1 class="text-3xl font-bold mb-6">Licence Verification</h1>
 
     @if (loading()) {
       <div class="mt-4 animate-pulse space-y-4 w-full">
@@ -16,9 +16,9 @@
     } @else if (result()) {
       <div
         class="w-full rounded-xl border p-8 text-center"
-        [class.bg-emerald-50]="result().valid"
-        [class.border-emerald-200]="result().valid"
-        [class.text-emerald-900]="result().valid"
+        [class.bg-primary/5]="result().valid"
+        [class.border-primary/40]="result().valid"
+        [class.text-success-deep]="result().valid"
         [class.bg-red-50]="!result().valid"
         [class.border-red-200]="!result().valid"
         [class.text-red-900]="!result().valid"
@@ -58,11 +58,11 @@
             </div>
           </div>
           <div class="mt-4 text-center">
-            <span class="inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider"
-                  [class.bg-emerald-200]="result().status === 'ACTIVE'"
-                  [class.text-emerald-800]="result().status === 'ACTIVE'"
-                  [class.bg-red-200]="result().status !== 'ACTIVE'"
-                  [class.text-red-800]="result().status !== 'ACTIVE'"
+            <span class="inline-block px-3 py-1 text-xs font-bold uppercase tracking-wider" style="border-radius: 2px;"
+                  [class.bg-primary]="result().status === 'ACTIVE'"
+                  [class.text-black]="result().status === 'ACTIVE'"
+                  [class.bg-danger/20]="result().status !== 'ACTIVE'"
+                  [class.text-danger]="result().status !== 'ACTIVE'"
             >
               {{ result().status }}
             </span>

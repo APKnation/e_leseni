@@ -1,7 +1,7 @@
 <section class="mx-auto w-full max-w-5xl px-4 py-12 sm:px-6">
   <div class="flex flex-wrap items-center justify-between gap-4">
     <div>
-      <h1 class="text-3xl font-black">My businesses</h1>
+      <h1 class="text-3xl font-bold">My businesses</h1>
       <p class="mt-1 max-w-2xl text-brand-cream/70">
         Register a business with <strong>BRELA</strong>, get a <strong>TRA TIN</strong>,
         then bring both to your council to apply for a licence.
@@ -11,7 +11,7 @@
   </div>
 
   @if (errorMessage()) {
-    <p class="mt-6 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm font-semibold text-red-700">
+    <p class="mt-6 px-4 py-3 text-sm font-semibold text-danger border border-danger/30 bg-danger/5" style="border-radius: 2px;">
       {{ errorMessage() }}
     </p>
   }
@@ -27,7 +27,7 @@
     <div class="mt-8 grid gap-4 md:grid-cols-4">
       @for (s of journeySteps; track s.title; let i = $index) {
         <div class="card flex flex-col gap-1 p-4">
-          <span class="text-xs font-black text-brand-cream/50">STEP {{ i + 1 }}</span>
+          <span class="text-xs font-bold text-brand-cream/50">STEP {{ i + 1 }}</span>
           <p class="font-bold">{{ s.title }}</p>
           <p class="text-xs text-brand-cream/60">{{ s.hint }}</p>
         </div>
@@ -35,7 +35,7 @@
     </div>
 
     <!-- Businesses list -->
-    <h2 class="mt-12 text-xl font-black">Registered businesses</h2>
+    <h2 class="mt-12 text-xl font-bold">Registered businesses</h2>
     @if (businesses().length === 0) {
       <div class="card mt-4 flex flex-col items-start gap-4">
         <p class="text-brand-cream/70">
@@ -121,7 +121,7 @@
 
     <!-- TIN applications history -->
     @if (tinApps().length > 0) {
-      <h2 class="mt-12 text-xl font-black">TRA TIN applications</h2>
+      <h2 class="mt-12 text-xl font-bold">TRA TIN applications</h2>
       <div class="mt-4 grid gap-2">
         @for (app of tinApps(); track app.id) {
           <div class="card flex items-center justify-between !py-3">
@@ -146,7 +146,7 @@
     <div class="card mt-8 flex flex-col gap-6">
       <div class="flex items-start justify-between gap-4">
         <div>
-          <h2 class="text-xl font-black">Register a new business</h2>
+          <h2 class="text-xl font-bold">Register a new business</h2>
           <p class="mt-1 text-sm text-brand-cream/70">
             BRELA registration → TRA TIN → council licence. We handle the agencies for you.
           </p>
@@ -162,12 +162,12 @@
       <ol class="flex flex-wrap items-center gap-2 text-xs font-bold">
         @for (label of stepLabels; track label; let i = $index) {
           <li
-            class="flex items-center gap-2 rounded-full px-3 py-1.5"
+            class="flex items-center gap-2 px-3 py-1.5" style="border-radius: 2px;"
             [class]="
               step() === i + 1
                 ? 'bg-brand-cream text-brand-green'
                 : step() > i + 1
-                  ? 'bg-emerald-500/15 text-emerald-300'
+                  ? 'bg-primary/15 text-success-deep'
                   : 'bg-brand-green-soft/60 text-brand-cream/40'
             "
           >
@@ -179,8 +179,8 @@
 
       <!-- DONE state -->
       @if (createdBusiness(); as biz) {
-        <div class="rounded-xl bg-emerald-500/10 p-6">
-          <h3 class="text-lg font-black text-emerald-300">Business registered</h3>
+        <div class="bg-primary/10 p-6" style="border-radius: 2px;">
+          <h3 class="text-lg font-bold text-success-deep">Business registered</h3>
           <p class="mt-2 text-sm text-brand-cream/80">
             <strong>{{ biz.name }}</strong> is now
             @if (biz.is_verified) {
@@ -250,8 +250,8 @@
           </button>
         </div>
         @if (brelaReceipt(); as receipt) {
-          <div class="rounded-xl bg-emerald-500/10 p-5">
-            <p class="font-black text-emerald-300">{{ receipt.title }}</p>
+          <div class="bg-primary/10 p-5" style="border-radius: 2px;">
+            <p class="font-bold text-success-deep">{{ receipt.title }}</p>
             <dl class="mt-3 grid gap-x-8 gap-y-2 sm:grid-cols-2">
               @for (line of receipt.lines; track line.label) {
                 <div class="flex justify-between gap-4 border-b border-brand-cream/10 pb-1 text-sm">
@@ -298,8 +298,8 @@
           </button>
         </div>
         @if (tinReceipt(); as receipt) {
-          <div class="rounded-xl bg-emerald-500/10 p-5">
-            <p class="font-black text-emerald-300">{{ receipt.title }}</p>
+          <div class="bg-primary/10 p-5" style="border-radius: 2px;">
+            <p class="font-bold text-success-deep">{{ receipt.title }}</p>
             <dl class="mt-3 grid gap-x-8 gap-y-2 sm:grid-cols-2">
               @for (line of receipt.lines; track line.label) {
                 <div class="flex justify-between gap-4 border-b border-brand-cream/10 pb-1 text-sm">
@@ -336,8 +336,8 @@
           </button>
         </div>
         @if (nidaReceipt(); as receipt) {
-          <div class="rounded-xl bg-emerald-500/10 p-5">
-            <p class="font-black text-emerald-300">{{ receipt.title }}</p>
+          <div class="bg-primary/10 p-5" style="border-radius: 2px;">
+            <p class="font-bold text-success-deep">{{ receipt.title }}</p>
             <dl class="mt-3 grid gap-x-8 gap-y-2 sm:grid-cols-2">
               @for (line of receipt.lines; track line.label) {
                 <div class="flex justify-between gap-4 border-b border-brand-cream/10 pb-1 text-sm">
@@ -417,7 +417,7 @@
           </label>
         </div>
         @if (fieldError('step5')) {
-          <p class="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm font-semibold text-red-700">
+          <p class="px-4 py-3 text-sm font-semibold text-danger border border-danger/30 bg-danger/5" style="border-radius: 2px;">
             {{ fieldError('step5') }}
           </p>
         }

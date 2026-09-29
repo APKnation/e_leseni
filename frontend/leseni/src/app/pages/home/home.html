@@ -1,17 +1,21 @@
-<!-- ══ HERO SECTION ══ -->
-<section class="relative overflow-hidden bg-surface">
-  <div class="mx-auto grid w-full max-w-6xl gap-10 px-4 py-16 sm:px-6 lg:grid-cols-2 lg:py-28">
+<!-- ══ HERO — light canvas, editorial grid, green accents ══ -->
+<section class="bg-surface">
+  <div class="mx-auto grid w-full max-w-7xl gap-10 px-4 py-16 sm:px-6 lg:grid-cols-2 lg:gap-12 lg:py-24">
 
-    <!-- Left: headline + CTA -->
+    <!-- Left: eyebrow + display headline + single green CTA -->
     <div class="flex flex-col justify-center gap-6 animate-fade-up">
-      <h1 class="text-[clamp(2.2rem,5.5vw,4.5rem)] font-bold text-foreground leading-tight tracking-tight">
-        Apply for your business licence in <span class="text-primary relative inline-block hero-underline">minutes</span>, not weeks.
+      <p class="flex items-center gap-3 text-[14px] font-bold uppercase tracking-wide text-primary">
+        <span class="inline-block h-3 w-3 bg-primary" aria-hidden="true"></span>
+        Tanzania e-Licensing Platform
+      </p>
+      <h1 class="text-[clamp(2rem,4.5vw,3.5rem)] font-bold leading-[1.25] tracking-tight text-foreground">
+        Apply for your business licence in <span class="text-primary">minutes</span>, not weeks.
       </h1>
-      <p class="max-w-md text-base text-muted leading-loose">
+      <p class="max-w-md text-[18px] font-normal leading-[1.75] text-muted">
         e-Leseni brings the whole licensing journey online — application, inspection,
         payment via control number, and instant QR-verifiable licences.
       </p>
-      <div class="flex flex-wrap gap-3 mt-2">
+      <div class="mt-2 flex flex-wrap items-center gap-4">
         @if (auth.isLoggedIn()) {
           <a routerLink="/dashboard" class="btn-primary">Go to dashboard →</a>
           @if (auth.isStaff()) {
@@ -23,57 +27,60 @@
         }
       </div>
 
-      <!-- Stats row -->
-      <dl class="mt-2 grid max-w-md grid-cols-3 gap-4">
+      <!-- Stats — callout figures on hairline cards -->
+      <dl class="mt-6 grid max-w-md grid-cols-3 gap-4">
         @for (stat of stats; track stat.label) {
-          <div class="stat-card rounded-xl border border-muted/15 bg-white px-4 py-3 text-center cursor-default
-                       transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-[0_8px_24px_rgba(235,37,0,0.08)]">
-            <dt class="text-[11px] font-semibold uppercase tracking-wider text-muted">{{ stat.label }}</dt>
-            <dd class="mt-0.5 text-2xl font-bold text-foreground">{{ stat.value }}</dd>
+          <div class="stat-card relative border border-hairline bg-surface px-3 py-4 text-left" style="border-radius: 2px;">
+            <span class="corner-square left-0 top-0" aria-hidden="true"></span>
+            <dt class="text-[10px] font-bold uppercase tracking-wide text-muted">{{ stat.label }}</dt>
+            <dd class="mt-1 text-2xl font-bold text-primary">{{ stat.value }}</dd>
           </div>
         }
       </dl>
     </div>
 
-    <!-- Right: hero image — stretches to the same height as the text column -->
-    <div class="flex animate-fade-up-delay">
+    <!-- Right: hero image — same height as the text column, corner-square accent -->
+    <div class="relative flex animate-fade-up-delay">
+      <span class="corner-square left-0 top-0 z-10" aria-hidden="true"></span>
       <img
         src="assets/leseni2.jpg"
         alt="e-Leseni licensing platform in action"
-        class="h-64 w-full rounded-2xl object-cover ring-1 ring-muted/10
-               shadow-[0_24px_60px_rgba(0,0,0,0.15)] sm:h-80 lg:h-full"
+        class="h-64 w-full object-cover ring-1 ring-hairline sm:h-80 lg:h-full"
+        style="border-radius: 2px;"
       />
     </div>
   </div>
 </section>
 
-<!-- ══ HOW IT WORKS SECTION ══ -->
-<section class="bg-[#FAFAFA] border-t border-muted/10">
-  <div class="mx-auto w-full max-w-6xl px-4 py-20 sm:px-6">
+<!-- ══ HOW IT WORKS — soft surface, flat hairline cards ══ -->
+<section class="bg-soft">
+  <div class="mx-auto w-full max-w-7xl px-4 py-16 sm:px-6 lg:py-24">
 
     <!-- Section header -->
-    <div class="text-center mb-14">
-      <h2 class="text-[clamp(1.6rem,4vw,2.5rem)] font-bold text-foreground">How it works</h2>
-      <p class="mx-auto mt-3 max-w-lg text-sm text-muted leading-loose">
+    <div class="mb-12">
+      <p class="text-[14px] font-bold uppercase tracking-wide text-primary">Simple process</p>
+      <h2 class="mt-2 text-[clamp(1.6rem,3.5vw,2.5rem)] font-bold text-foreground">How it works</h2>
+      <p class="mt-3 max-w-lg text-[15px] leading-[1.67] text-muted">
         Four steps from registration to a verifiable business licence — no queueing, no paperwork.
       </p>
     </div>
 
-    <!-- 2 × 2 grid of steps -->
+    <!-- 2 × 2 grid of step cards → 1-up on mobile -->
     <div class="grid gap-6 sm:grid-cols-2">
       @for (step of steps; track step.title; let i = $index) {
         <div
-          class="group relative overflow-hidden rounded-xl border border-muted/10 bg-surface p-6 cursor-default
-                  transition-all duration-300 hover:-translate-y-1
-                  hover:border-primary/30 hover:shadow-[0_12px_36px_rgba(235,37,0,0.08)]"
-          style="box-shadow: 1px 1px 10px 0px rgba(17,17,17,0.05);"
+          class="group relative overflow-hidden border border-hairline bg-surface p-6 cursor-default
+                  transition-colors duration-200 hover:border-primary"
+          style="border-radius: 2px;"
         >
+          <span class="corner-square left-0 top-0" aria-hidden="true"></span>
+
           <div class="min-w-0">
-            <p class="text-[11px] font-bold uppercase tracking-widest text-primary mb-1">Step {{ i + 1 }}</p>
-            <p class="font-bold text-foreground mb-1 transition-colors duration-200 group-hover:text-primary">
+            <p class="text-[11px] font-bold uppercase tracking-widest text-primary">Step {{ i + 1 }}</p>
+            <p class="mb-1 mt-1 text-[17px] font-bold leading-[1.47] text-foreground transition-colors duration-200 group-hover:text-primary">
               {{ step.title }}
             </p>
-            <p class="text-sm text-muted leading-relaxed">{{ step.body }}</p>
+            <p class="text-[15px] leading-[1.67] text-muted">{{ step.body }}</p>
           </div>
         </div>
       }
@@ -81,58 +88,54 @@
   </div>
 </section>
 
-<!-- ══ FEATURE STRIP ══ -->
-<section class="bg-surface border-t border-muted/10">
-  <div class="mx-auto w-full max-w-6xl px-4 py-20 sm:px-6">
-    <div class="text-center mb-14">
-      <h2 class="text-[clamp(1.5rem,4vw,2.5rem)] font-bold text-foreground">Everything licensing, in one place</h2>
-      <p class="mx-auto mt-3 max-w-xl text-muted text-sm leading-loose">
+<!-- ══ FEATURE STRIP — product-card grid on white ══ -->
+<section class="bg-surface">
+  <div class="mx-auto w-full max-w-7xl px-4 py-16 sm:px-6 lg:py-24">
+    <div class="mb-12">
+      <p class="text-[14px] font-bold uppercase tracking-wide text-primary">Platform capabilities</p>
+      <h2 class="mt-2 text-[clamp(1.6rem,3.5vw,2.5rem)] font-bold text-foreground">Everything licensing, in one place</h2>
+      <p class="mt-3 max-w-xl text-[15px] leading-[1.67] text-muted">
         Built for local government — from the first application to the day the licence expires.
       </p>
     </div>
-    <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-      @for (feature of features; track feature.title; let i = $index) {
+    <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      @for (feature of features; track feature.title) {
         <div
-          class="group relative flex flex-col overflow-hidden rounded-xl border border-muted/10 bg-surface p-6 cursor-default
-                  transition-all duration-300 hover:-translate-y-2
-                  hover:border-primary/30 hover:shadow-[0_16px_40px_rgba(235,37,0,0.10)]"
-          style="box-shadow: 1px 1px 10px 0px rgba(17,17,17,0.05);"
-          [style.animation-delay]="(i * 80) + 'ms'"
+          class="group relative flex flex-col overflow-hidden border border-hairline bg-surface p-6 cursor-default
+                  transition-colors duration-200 hover:border-primary"
+          style="border-radius: 2px;"
         >
-          <span class="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-primary to-accent
-                        origin-left scale-x-0 transition-transform duration-400 group-hover:scale-x-100 rounded-t-xl"></span>
-          <h3 class="text-sm font-bold text-foreground mb-2 transition-colors duration-200 group-hover:text-primary">{{ feature.title }}</h3>
-          <p class="text-xs text-muted leading-relaxed">{{ feature.body }}</p>
+          <span class="corner-square right-0 top-0" aria-hidden="true"></span>
+          <h3 class="mb-2 text-[17px] font-bold leading-[1.47] text-foreground transition-colors duration-200 group-hover:text-primary">{{ feature.title }}</h3>
+          <p class="text-[15px] leading-[1.67] text-muted">{{ feature.body }}</p>
         </div>
       }
     </div>
   </div>
 </section>
 
-<!-- ══ WHO IT'S FOR ══ -->
-<section class="bg-[#FAFAFA] border-t border-muted/10">
-  <div class="mx-auto w-full max-w-6xl px-4 py-20 sm:px-6">
-    <div class="text-center mb-14">
-      <h2 class="text-[clamp(1.5rem,4vw,2.5rem)] font-bold text-foreground">Built for every step of the council</h2>
-      <p class="mt-3 text-sm text-muted leading-loose">
+<!-- ══ WHO IT'S FOR — role cards on soft surface ══ -->
+<section class="bg-soft">
+  <div class="mx-auto w-full max-w-7xl px-4 py-16 sm:px-6 lg:py-24">
+    <div class="mb-12">
+      <p class="text-[14px] font-bold uppercase tracking-wide text-primary">Role-based workspaces</p>
+      <h2 class="mt-2 text-[clamp(1.6rem,3.5vw,2.5rem)] font-bold text-foreground">Built for every step of the council</h2>
+      <p class="mt-3 max-w-xl text-[15px] leading-[1.67] text-muted">
         Each role gets its own secure workspace — nobody sees or does more than they should.
       </p>
     </div>
-    <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-      @for (role of roleCards; track role.title; let i = $index) {
+    <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      @for (role of roleCards; track role.title) {
         <div
-          class="group relative flex flex-col overflow-hidden rounded-xl border border-muted/10 bg-surface p-6 cursor-default
-                  transition-all duration-300 hover:-translate-y-2
-                  hover:border-accent/40 hover:shadow-[0_16px_40px_rgba(130,180,64,0.12)]"
-          style="box-shadow: 1px 1px 10px 0px rgba(17,17,17,0.05);"
-          [style.animation-delay]="(i * 90) + 'ms'"
+          class="group relative flex flex-col overflow-hidden border border-hairline bg-surface p-6 cursor-default
+                  transition-colors duration-200 hover:border-primary"
+          style="border-radius: 2px;"
         >
-          <span class="absolute inset-x-0 bottom-0 h-[3px] bg-gradient-to-r from-accent to-primary
-                        origin-left scale-x-0 transition-transform duration-400 group-hover:scale-x-100 rounded-b-xl"></span>
-          <h3 class="text-sm font-bold text-foreground mb-2 transition-colors duration-200 group-hover:text-accent">{{ role.title }}</h3>
-          <p class="text-xs text-muted leading-relaxed flex-grow">{{ role.body }}</p>
+          <span class="corner-square bottom-0 right-0" aria-hidden="true"></span>
+          <h3 class="mb-2 text-[17px] font-bold leading-[1.47] text-foreground transition-colors duration-200 group-hover:text-primary">{{ role.title }}</h3>
+          <p class="text-[15px] leading-[1.67] text-muted">{{ role.body }}</p>
           @if (role.link) {
-            <a [routerLink]="role.link" class="mt-4 inline-flex items-center gap-1 text-xs font-bold text-primary hover:underline">
+            <a [routerLink]="role.link" class="btn-ghost-link mt-4 self-start">
               {{ role.cta }} →
             </a>
           }
@@ -142,24 +145,23 @@
   </div>
 </section>
 
-<!-- ══ FINAL CTA ══ -->
-<section class="relative overflow-hidden bg-foreground text-surface">
-  <div class="relative mx-auto flex w-full max-w-4xl flex-col items-center gap-6 px-4 py-24 text-center sm:px-6">
-    <h2 class="text-[clamp(2rem,5vw,3.5rem)] font-bold leading-tight">Ready to get licensed?</h2>
-    <p class="max-w-xl text-sm opacity-70 leading-loose">
-      Join thousands of businesses across Tanzania applying for council licences online —
-      with SMS updates at every step.
-    </p>
-    <div class="flex flex-wrap justify-center gap-4 mt-2">
+<!-- ══ FINAL CTA — light band with hairline rules, one green CTA ══ -->
+<section class="border-t border-hairline bg-surface">
+  <div class="mx-auto flex w-full max-w-7xl flex-col items-start gap-6 px-4 py-16 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:py-20">
+    <div>
+      <span class="mb-4 inline-block h-3 w-3 bg-primary" aria-hidden="true"></span>
+      <h2 class="text-[clamp(1.75rem,4vw,2.5rem)] font-bold leading-[1.25] text-foreground">Ready to get licensed?</h2>
+      <p class="mt-3 max-w-xl text-[15px] leading-[1.67] text-muted">
+        Join thousands of businesses across Tanzania applying for council licences online —
+        with SMS updates at every step.
+      </p>
+    </div>
+    <div class="flex flex-wrap gap-4">
       @if (auth.isLoggedIn()) {
         <a routerLink="/dashboard" class="btn-primary">Go to dashboard →</a>
       } @else {
         <a routerLink="/register" class="btn-primary">Create your free account</a>
-        <a routerLink="/apply"
-           class="inline-flex items-center justify-center gap-2 rounded-lg border border-surface/40 px-6 py-3 text-sm font-medium text-surface
-                   transition-all duration-200 hover:bg-surface hover:text-foreground hover:-translate-y-0.5 active:scale-[0.97]">
-          Browse licences
-        </a>
+        <a routerLink="/apply" class="btn-secondary">Browse licences</a>
       }
     </div>
   </div>

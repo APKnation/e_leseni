@@ -13,18 +13,20 @@ export type ApplicationStatus =
   | 'RETURNED_FOR_CORRECTION'
   | 'REJECTED';
 
+/* Status chips follow the NVIDIA badge-tag: uppercase bold caption on a
+   soft/semantic surface, 2px radius, hairline border, no rounded-full. */
 export const STATUS_STYLES: Record<ApplicationStatus, string> = {
-  DRAFT: 'bg-brand-cream/10 text-brand-cream border border-brand-cream/30',
-  SUBMITTED: 'bg-brand-cream/10 text-brand-cream border border-brand-cream/30',
-  UNDER_REVIEW: 'bg-blue-500/15 text-blue-300 border border-blue-400/40',
-  INSPECTION_SCHEDULED: 'bg-blue-500/15 text-blue-300 border border-blue-400/40',
-  INSPECTED: 'bg-blue-500/15 text-blue-300 border border-blue-400/40',
-  APPROVED: 'bg-emerald-500/15 text-emerald-300 border border-emerald-400/40',
-  PAYMENT_PENDING: 'bg-amber-500/15 text-amber-300 border border-amber-400/40',
-  PAID: 'bg-emerald-500/15 text-emerald-300 border border-emerald-400/40',
-  ISSUED: 'bg-brand-cream text-brand-green border border-brand-cream',
-  RETURNED_FOR_CORRECTION: 'bg-orange-500/15 text-orange-300 border border-orange-400/40',
-  REJECTED: 'bg-red-50 text-red-700 border border-red-200',
+  DRAFT: 'bg-soft text-muted border border-hairline',
+  SUBMITTED: 'bg-soft text-foreground border border-hairline',
+  UNDER_REVIEW: 'bg-soft text-foreground border border-hairline-strong',
+  INSPECTION_SCHEDULED: 'bg-soft text-foreground border border-hairline-strong',
+  INSPECTED: 'bg-soft text-foreground border border-hairline-strong',
+  APPROVED: 'bg-primary/15 text-success-deep border border-primary/40',
+  PAYMENT_PENDING: 'bg-warning/10 text-warning border border-warning/40',
+  PAID: 'bg-primary/15 text-success-deep border border-primary/40',
+  ISSUED: 'bg-primary text-black border border-primary',
+  RETURNED_FOR_CORRECTION: 'bg-warning/10 text-warning border border-warning/40',
+  REJECTED: 'bg-danger/10 text-danger border border-danger/40',
 };
 
 export const STATUS_LABELS: Record<ApplicationStatus, string> = {

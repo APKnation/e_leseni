@@ -3,7 +3,7 @@
   <!-- Header -->
   <div class="mb-8 flex flex-wrap items-center justify-between gap-4">
     <div>
-      <h1 class="text-3xl font-black">My Profile</h1>
+      <h1 class="text-3xl font-bold">My Profile</h1>
       <p class="mt-1 text-muted">Manage your personal details and account security.</p>
     </div>
     <a [routerLink]="auth.homeRoute()" class="text-sm font-semibold text-muted underline hover:text-foreground">
@@ -13,7 +13,7 @@
 
   <!-- Alert banners -->
   @if (successMessage()) {
-    <div class="mb-6 flex items-center gap-3 rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm font-semibold text-emerald-700">
+    <div class="mb-6 flex items-center gap-3 px-4 py-3 text-sm font-semibold text-success-deep border border-primary/40 bg-primary/5" style="border-radius: 2px;">
       <span class="text-lg"></span> {{ successMessage() }}
     </div>
   }
@@ -58,11 +58,11 @@
   @if (activeTab() === 'view') {
     <div class="card space-y-5">
       <div class="flex items-center gap-4">
-        <h2 class="text-xl font-black">My profile</h2>
+        <h2 class="text-xl font-bold">My profile</h2>
         <span class="badge-green ml-auto">{{ user()?.role }}</span>
       </div>
       <div>
-        <p class="text-xl font-black">{{ user()?.first_name }} {{ user()?.last_name }}</p>
+        <p class="text-xl font-bold">{{ user()?.first_name }} {{ user()?.last_name }}</p>
         <p class="text-sm text-muted">&#64;{{ user()?.username }}</p>
       </div>
 
@@ -106,7 +106,7 @@
   <!-- ── Edit Profile ────────────────────────────────────────────────────── -->
   @if (activeTab() === 'edit') {
     <div class="card">
-      <h2 class="mb-5 text-lg font-black">Edit Profile</h2>
+      <h2 class="mb-5 text-lg font-bold">Edit Profile</h2>
       <form class="space-y-4" (ngSubmit)="saveProfile()">
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <label class="block">
@@ -192,7 +192,7 @@
   <!-- ── Change Password ─────────────────────────────────────────────────── -->
   @if (activeTab() === 'password') {
     <div class="card">
-      <h2 class="mb-1 text-lg font-black">Change Password</h2>
+      <h2 class="mb-1 text-lg font-bold">Change Password</h2>
       <p class="mb-5 text-sm text-muted">
         After a successful change you will be logged out and must sign in with the new password.
       </p>

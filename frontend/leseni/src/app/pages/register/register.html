@@ -6,7 +6,7 @@
     <div class="mx-auto w-full max-w-md">
 
       <div class="mb-8">
-        <h1 class="text-3xl font-black text-foreground">Register</h1>
+        <h1 class="text-3xl font-bold text-foreground">Register</h1>
         <p class="mt-2 text-muted">Create a new account.</p>
       </div>
 
@@ -132,7 +132,7 @@
         </label>
 
         @if (errorMessage()) {
-          <p class="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm font-semibold text-red-700">
+          <p class="px-4 py-3 text-sm font-semibold text-danger border border-danger/30 bg-danger/5" style="border-radius: 2px;">
             {{ errorMessage() }}
           </p>
         }
@@ -155,7 +155,7 @@
   <section class="hidden lg:flex flex-col items-center justify-center bg-primary text-surface px-12 py-16">
     <div class="max-w-sm text-center flex flex-col gap-6">
       <div class="flex flex-col gap-2">
-        <h2 class="text-4xl font-black leading-tight">e-Leseni Platform</h2>
+        <h2 class="text-4xl font-bold leading-tight">e-Leseni Platform</h2>
       </div>
       <p class="text-lg opacity-90 leading-relaxed">
         Start applying for business licences today.
