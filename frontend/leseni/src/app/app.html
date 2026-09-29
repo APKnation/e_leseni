@@ -1,16 +1,16 @@
 <!-- e-Leseni shell: full-height layout with header, routed content and footer. -->
 <div class="flex min-h-dvh flex-col bg-surface">
 
-  <!-- ── HEADER — primary-nav: black bar, 64px, white links ── -->
-  <header class="sticky top-0 z-30 bg-black text-white">
+  <!-- ── HEADER — light primary-nav: white bar, hairline rule, green active states ── -->
+  <header class="sticky top-0 z-30 border-b border-hairline bg-surface">
     <div class="mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-4 sm:px-6">
 
       <!-- Logo + role tag -->
       <a routerLink="/" class="flex items-center gap-2 group">
         <span class="inline-block h-3 w-3 bg-primary" aria-hidden="true"></span>
-        <span class="text-xl font-bold tracking-tight transition-colors group-hover:text-primary">e-Leseni</span>
+        <span class="text-xl font-bold tracking-tight text-foreground transition-colors group-hover:text-primary">e-Leseni</span>
         @if (auth.role(); as role) {
-          <span class="hidden bg-soft px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-foreground md:inline"
+          <span class="hidden bg-primary/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-success-deep md:inline"
                 style="border-radius: 2px;">
             {{ roleLabel[role] }}
           </span>
@@ -44,11 +44,11 @@
           class="hidden items-center gap-1.5 px-3 py-1 text-[11px] font-bold uppercase tracking-wide sm:flex transition-colors"
           style="border-radius: 2px;"
           [class]="realtime.live()
-            ? 'bg-primary/15 text-primary'
-            : 'bg-white/10 text-white/60'"
+            ? 'bg-primary/15 text-success-deep'
+            : 'bg-soft text-muted'"
           [title]="realtime.live() ? 'Live updates connected' : 'Reconnecting…'"
         >
-          <span class="h-1.5 w-1.5" [class]="realtime.live() ? 'animate-pulse bg-primary' : 'bg-white/40'" style="border-radius: 0;"></span>
+          <span class="h-1.5 w-1.5" [class]="realtime.live() ? 'animate-pulse bg-primary' : 'bg-ash'" style="border-radius: 0;"></span>
           {{ realtime.live() ? 'Live' : 'Offline' }}
         </span>
       }
@@ -56,7 +56,7 @@
       <!-- Mobile hamburger -->
       <button
         type="button"
-        class="grid h-11 w-11 place-items-center text-white transition-colors hover:text-primary sm:hidden focus:outline-none focus:ring-2 focus:ring-primary"
+        class="grid h-11 w-11 place-items-center text-foreground transition-colors hover:text-primary sm:hidden focus:outline-none focus:ring-2 focus:ring-primary"
         (click)="toggleMenu()"
         [attr.aria-expanded]="menuOpen()"
         aria-label="Toggle menu"
@@ -69,9 +69,9 @@
       </button>
     </div>
 
-    <!-- Mobile menu — full-width black drawer -->
+    <!-- Mobile menu — white drawer with hairline rules -->
     @if (menuOpen()) {
-      <nav class="border-t border-white/15 bg-black px-4 py-4 sm:hidden">
+      <nav class="border-t border-hairline bg-surface px-4 py-4 sm:hidden">
         <div class="flex flex-col gap-1 text-base font-bold">
           @if (auth.isLoggedIn()) {
             @if (auth.isStaff()) {
@@ -83,7 +83,7 @@
               <a routerLink="/apply"      routerLinkActive="nav-active" class="nav-link" (click)="closeMenu()">Apply</a>
             }
             <a routerLink="/profile"    routerLinkActive="nav-active" class="nav-link" (click)="closeMenu()">Profile</a>
-            <div class="my-2 border-t border-muted/10"></div>
+            <div class="my-2 border-t border-hairline"></div>
             <button type="button" class="nav-link w-full text-left" (click)="logout()">Log out</button>
           } @else {
             <a routerLink="/"        routerLinkActive="nav-active" [routerLinkActiveOptions]="{ exact: true }" class="nav-link" (click)="closeMenu()">Home</a>

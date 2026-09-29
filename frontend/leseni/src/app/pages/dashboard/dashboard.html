@@ -116,7 +116,7 @@
             </div>
 
             @if (app.status === 'RETURNED_FOR_CORRECTION' && app.rejection_reason) {
-              <p class="max-w-xl text-xs text-orange-300">{{ app.rejection_reason }}</p>
+              <p class="max-w-xl text-xs text-warning">{{ app.rejection_reason }}</p>
             }
 
             <!-- Status timeline -->

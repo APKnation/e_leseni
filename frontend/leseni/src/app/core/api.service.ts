@@ -220,6 +220,21 @@ export class ApiService {
     });
   }
 
+  /** Record an inspection outcome (pass/fail, findings, GPS, timing). */
+  updateInspection(
+    inspectionId: number,
+    data: {
+      passed?: boolean;
+      findings?: string;
+      conducted_at?: string;
+      latitude?: number;
+      longitude?: number;
+      location_accuracy?: number;
+    },
+  ): Observable<Inspection> {
+    return this.http.patch<Inspection>(`${this.baseUrl}/inspections/${inspectionId}/`, data);
+  }
+
   // -- Invoices ------------------------------------------------------------
 
   invoices(filters?: ListOptions['filters']): Observable<Paginated<Invoice>> {

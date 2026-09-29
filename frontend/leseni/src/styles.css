@@ -117,9 +117,9 @@ h1, h2, h3, h4, h5, h6 {
     border-radius: 0;
   }
 
-  /* ── Navbar link (dark surface) ── */
+  /* ── Navbar link (light surface) ── */
   .nav-link {
-    @apply px-3 py-2 text-white/90 text-base font-bold cursor-pointer
+    @apply px-3 py-2 text-foreground text-base font-bold cursor-pointer
       transition-colors duration-150;
     border-radius: 2px;
     min-height: 44px;
@@ -131,7 +131,7 @@ h1, h2, h3, h4, h5, h6 {
   }
 
   .nav-active {
-    @apply text-primary;
+    @apply bg-primary/10 text-primary;
   }
 
   /* ── Text input ── */

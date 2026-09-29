@@ -8,7 +8,7 @@
         <div class="h-32 rounded-xl bg-muted/10"></div>
       </div>
     } @else if (error()) {
-      <div class="w-full rounded-xl bg-red-50 border border-red-200 p-8 text-center text-red-700">
+      <div class="w-full border border-danger/30 bg-danger/5 p-8 text-center text-danger" style="border-radius: 2px;">
         <span class="text-6xl mb-4 block">Invalid</span>
         <h2 class="text-2xl font-bold mb-2">Verification Failed</h2>
         <p>{{ error() }}</p>
@@ -19,9 +19,9 @@
         [class.bg-primary/5]="result().valid"
         [class.border-primary/40]="result().valid"
         [class.text-success-deep]="result().valid"
-        [class.bg-red-50]="!result().valid"
-        [class.border-red-200]="!result().valid"
-        [class.text-red-900]="!result().valid"
+        [class.bg-danger/5]="!result().valid"
+        [class.border-danger/30]="!result().valid"
+        [class.text-danger]="!result().valid"
       >
         <span class="text-6xl mb-4 block">{{ result().valid ? 'Valid' : 'Invalid' }}</span>
         <h2 class="text-2xl font-bold mb-2">
@@ -54,7 +54,7 @@
             </div>
             <div>
               <p class="text-xs font-bold uppercase tracking-wide text-muted">Valid Until</p>
-              <p class="font-medium text-foreground" [class.text-red-600]="result().is_expired">{{ result().valid_until }}</p>
+              <p class="font-medium text-foreground" [class.text-danger]="result().is_expired">{{ result().valid_until }}</p>
             </div>
           </div>
           <div class="mt-4 text-center">

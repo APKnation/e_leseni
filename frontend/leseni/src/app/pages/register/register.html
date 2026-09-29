@@ -115,8 +115,8 @@
           <span class="text-sm font-semibold text-foreground">Confirm password</span>
           <input
             class="input-field"
-            [class.border-red-400]="passwordMismatch()"
-            [class.focus:ring-red-300]="passwordMismatch()"
+            [class.border-danger]="passwordMismatch()"
+            [class.focus:ring-danger]="passwordMismatch()"
             type="password"
             name="confirm_password"
             autocomplete="new-password"
@@ -127,7 +127,7 @@
             (ngModelChange)="confirmPassword.set($event)"
           />
           @if (passwordMismatch()) {
-            <span class="text-xs font-semibold text-red-600">Passwords do not match.</span>
+            <span class="text-xs font-semibold text-danger">Passwords do not match.</span>
           }
         </label>
 
@@ -152,17 +152,16 @@
   </section>
 
   <!-- Right: Brand / switch to Login -->
-  <section class="hidden lg:flex flex-col items-center justify-center bg-primary text-surface px-12 py-16">
-    <div class="max-w-sm text-center flex flex-col gap-6">
-      <div class="flex flex-col gap-2">
-        <h2 class="text-4xl font-bold leading-tight">e-Leseni Platform</h2>
-      </div>
-      <p class="text-lg opacity-90 leading-relaxed">
+  <section class="hidden lg:flex flex-col items-start justify-center bg-soft px-12 py-16">
+    <div class="max-w-sm flex flex-col gap-6">
+      <span class="inline-block h-3 w-3 bg-primary" aria-hidden="true"></span>
+      <h2 class="text-4xl font-bold leading-[1.25] text-foreground">e-Leseni Platform</h2>
+      <p class="text-lg leading-[1.75] text-muted">
         Start applying for business licences today.
       </p>
 
-      <div class="border-t border-white/20 pt-6 flex flex-col gap-4">
-        <a routerLink="/login" class="btn-primary border-none text-primary self-center px-8 bg-surface">
+      <div class="border-t border-hairline pt-6 flex flex-col gap-4">
+        <a routerLink="/login" class="btn-primary self-start">
           Log in
         </a>
       </div>

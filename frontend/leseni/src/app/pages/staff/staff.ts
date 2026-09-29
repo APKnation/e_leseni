@@ -98,6 +98,12 @@ export class Staff implements OnInit {
   protected readonly schedulingId = signal<number | null>(null);
   protected readonly scheduledFor = signal('');
 
+  /** Inspection result form state (inspectors). */
+  protected readonly recordingId = signal<number | null>(null);
+  protected readonly resultFindings = signal('');
+  /** Captured GPS per application id (nulled when capture fails). */
+  protected readonly capturedLocation = signal<Map<number, { lat: number; lng: number; accuracy: number } | null>>(new Map());
+
   protected readonly role: UserRole = this.auth.role() ?? 'ADMIN';
   protected readonly workspace = WORKSPACES[this.role] ?? WORKSPACES.ADMIN;
   protected readonly roleLabel = ROLE_LABELS[this.role] ?? this.role;
@@ -155,18 +161,104 @@ export class Staff implements OnInit {
     return this.applications().filter((a) => statuses.includes(a.status));
   }
 
+  /**
+   * Capture the inspector's GPS position for an application. Stored on the
+   * component so `recordResult` submits it with the inspection outcome.
+   */
   protected captureLocation(app: Application): void {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          this.successMessage.set(`Location captured: ${pos.coords.latitude}, ${pos.coords.longitude} for ${app.business_name}`);
-          setTimeout(() => this.successMessage.set(""), 3000);
-        },
-        (err) => this.errorMessage.set("Error capturing location: " + err.message)
-      );
-    } else {
-      this.errorMessage.set("Geolocation is not supported by this browser.");
+    if (!navigator.geolocation) {
+      this.errorMessage.set('Geolocation is not supported by this browser.');
+      return;
     }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const next = new Map(this.capturedLocation());
+        next.set(app.id, {
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+          accuracy: pos.coords.accuracy,
+        });
+        this.capturedLocation.set(next);
+        this.successMessage.set(
+          `Location captured for ${app.reference_number} (±${Math.round(pos.coords.accuracy)} m). Record the result to submit it.`,
+        );
+        setTimeout(() => this.successMessage.set(''), 4000);
+      },
+      (err) => {
+        // Permission denied / unavailable — allow recording without GPS.
+        const next = new Map(this.capturedLocation());
+        next.set(app.id, null);
+        this.capturedLocation.set(next);
+        this.errorMessage.set(`Could not capture location: ${err.message}. You can still record the result.`);
+      },
+    );
+  }
+
+  protected hasCapturedLocation(app: Application): boolean {
+    return !!this.capturedLocation().get(app.id);
+  }
+
+  /** Open the findings form for an inspection. */
+  protected openResultForm(app: Application): void {
+    this.recordingId.set(app.id);
+    this.resultFindings.set('');
+  }
+
+  protected cancelResult(): void {
+    this.recordingId.set(null);
+    this.resultFindings.set('');
+  }
+
+  /**
+   * Record the inspection outcome on the LATEST open inspection, then move
+   * the application along the state machine (INSPECTED or REJECTED).
+   */
+  protected recordResult(app: Application, passed: boolean): void {
+    const inspection = this.inspectionByApplication().get(app.id);
+    if (!inspection) {
+      this.errorMessage.set('No scheduled inspection found for this application.');
+      return;
+    }
+    if (this.processingId()) return;
+    this.processingId.set(app.id);
+    this.errorMessage.set('');
+    this.successMessage.set('');
+
+    const location = this.capturedLocation().get(app.id) ?? null;
+    this.api
+      .updateInspection(inspection.id, {
+        passed,
+        findings: this.resultFindings().trim() || (passed ? 'Premises inspected — no issues found.' : 'Inspection failed.'),
+        conducted_at: new Date().toISOString(),
+        ...(location ? { latitude: location.lat, longitude: location.lng, location_accuracy: location.accuracy } : {}),
+      })
+      .subscribe({
+        next: () => {
+          // Outcome saved — now advance the workflow status.
+          const toStatus = passed ? 'INSPECTED' : 'REJECTED';
+          this.api.transitionApplication(app.id, toStatus).subscribe({
+            next: (updated) => {
+              this.successMessage.set(
+                `${updated.reference_number}: inspection ${passed ? 'PASSED' : 'FAILED'} recorded → ${STATUS_LABELS[toStatus as ApplicationStatus] ?? toStatus}`,
+              );
+              this.recordingId.set(null);
+              this.resultFindings.set('');
+              this.load();
+            },
+            error: (err) => {
+              const detail = err?.error?.detail ?? 'Outcome saved, but the status could not be updated.';
+              this.errorMessage.set(typeof detail === 'string' ? detail : 'Status update failed.');
+              this.processingId.set(null);
+              this.load();
+            },
+          });
+        },
+        error: (err) => {
+          const detail = err?.error?.detail ?? 'Could not record the inspection result.';
+          this.errorMessage.set(typeof detail === 'string' ? detail : 'Could not record the result.');
+          this.processingId.set(null);
+        },
+      });
   }
 
   protected countFor(filter: QueueFilter): number {

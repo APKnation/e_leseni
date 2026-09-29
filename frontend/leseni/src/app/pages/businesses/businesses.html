@@ -2,7 +2,7 @@
   <div class="flex flex-wrap items-center justify-between gap-4">
     <div>
       <h1 class="text-3xl font-bold">My businesses</h1>
-      <p class="mt-1 max-w-2xl text-brand-cream/70">
+      <p class="mt-1 max-w-2xl text-muted">
         Register a business with <strong>BRELA</strong>, get a <strong>TRA TIN</strong>,
         then bring both to your council to apply for a licence.
       </p>
@@ -27,9 +27,9 @@
     <div class="mt-8 grid gap-4 md:grid-cols-4">
       @for (s of journeySteps; track s.title; let i = $index) {
         <div class="card flex flex-col gap-1 p-4">
-          <span class="text-xs font-bold text-brand-cream/50">STEP {{ i + 1 }}</span>
+          <span class="text-xs font-bold text-muted">STEP {{ i + 1 }}</span>
           <p class="font-bold">{{ s.title }}</p>
-          <p class="text-xs text-brand-cream/60">{{ s.hint }}</p>
+          <p class="text-xs text-muted">{{ s.hint }}</p>
         </div>
       }
     </div>
@@ -38,7 +38,7 @@
     <h2 class="mt-12 text-xl font-bold">Registered businesses</h2>
     @if (businesses().length === 0) {
       <div class="card mt-4 flex flex-col items-start gap-4">
-        <p class="text-brand-cream/70">
+        <p class="text-muted">
           You have no businesses yet. Register your first one — it takes about a minute and
           we will handle BRELA and TRA for you.
         </p>
@@ -53,7 +53,7 @@
             <div class="flex items-start justify-between gap-2">
               <div>
                 <p class="text-lg font-bold">{{ business.name }}</p>
-                <p class="text-sm text-brand-cream/70">{{ business.sector || 'General' }}</p>
+                <p class="text-sm text-muted">{{ business.sector || 'General' }}</p>
               </div>
               @if (business.is_verified) {
                 <span class="badge-green !px-2 !py-0.5">verified</span>
@@ -61,20 +61,20 @@
                 <span class="badge-outline !px-2 !py-0.5">unverified</span>
               }
             </div>
-            <p class="text-xs text-brand-cream/50">
+            <p class="text-xs text-muted">
               TIN: {{ business.tin_number || '—' }} · BRELA: {{ business.brela_registration_number || '—' }}
             </p>
             @if (business.documents.length > 0) {
               <div class="flex flex-wrap gap-1">
                 @for (doc of business.documents; track doc.id) {
-                  <span class="rounded bg-brand-green-soft/60 px-1.5 py-0.5 text-[10px] text-brand-cream/70">
+                  <span class="rounded bg-soft px-1.5 py-0.5 text-[10px] text-muted">
                     {{ doc.kind_display }}
                   </span>
                 }
               </div>
             }
             @if (business.locations.length > 0) {
-              <p class="text-xs text-brand-cream/50">
+              <p class="text-xs text-muted">
                 {{ business.locations[0].ward }}, {{ business.locations[0].street }} — {{ business.locations[0].lga_name }}
               </p>
             }
@@ -92,7 +92,7 @@
               </a>
             </div>
             @if (uploadForBusinessId() === business.id) {
-              <div class="rounded-xl border border-brand-cream/20 p-3">
+              <div class="border border-hairline p-3" style="border-radius: 2px;">
                 <label class="flex flex-col gap-2 text-xs font-semibold">
                   Document type
                   <select class="input-field" [ngModel]="uploadKind()" (ngModelChange)="uploadKind.set($event)">
@@ -111,7 +111,7 @@
                     {{ uploadingDoc() ? 'Uploading…' : 'Upload document' }}
                   </button>
                 }
-                <p class="mt-2 text-[10px] text-brand-cream/50">PDF only, max 10 MB.</p>
+                <p class="mt-2 text-[10px] text-muted">PDF only, max 10 MB.</p>
               </div>
             }
           </div>
@@ -127,11 +127,11 @@
           <div class="card flex items-center justify-between !py-3">
             <div>
               <p class="text-sm font-bold">{{ app.business_name }}</p>
-              <p class="text-xs text-brand-cream/50">{{ app.taxpayer_name }} · {{ app.created_at | date: 'mediumDate' }}</p>
+              <p class="text-xs text-muted">{{ app.taxpayer_name }} · {{ app.created_at | date: 'mediumDate' }}</p>
             </div>
             <div class="flex items-center gap-3">
               @if (app.tin_number) {
-                <span class="font-mono text-sm text-brand-cream">{{ app.tin_number }}</span>
+                <span class="font-mono text-sm text-foreground">{{ app.tin_number }}</span>
               }
               <span class="badge-outline">{{ app.status }}</span>
             </div>
@@ -147,12 +147,12 @@
       <div class="flex items-start justify-between gap-4">
         <div>
           <h2 class="text-xl font-bold">Register a new business</h2>
-          <p class="mt-1 text-sm text-brand-cream/70">
+          <p class="mt-1 text-sm text-muted">
             BRELA registration → TRA TIN → council licence. We handle the agencies for you.
           </p>
         </div>
         @if (!createdBusiness()) {
-          <button type="button" class="text-sm text-brand-cream/60 underline hover:text-brand-cream" (click)="closeWizard()">
+          <button type="button" class="text-sm text-muted underline hover:text-foreground" (click)="closeWizard()">
             Cancel
           </button>
         }
@@ -165,10 +165,10 @@
             class="flex items-center gap-2 px-3 py-1.5" style="border-radius: 2px;"
             [class]="
               step() === i + 1
-                ? 'bg-brand-cream text-brand-green'
+                ? 'bg-primary text-black'
                 : step() > i + 1
                   ? 'bg-primary/15 text-success-deep'
-                  : 'bg-brand-green-soft/60 text-brand-cream/40'
+                  : 'bg-soft text-muted'
             "
           >
             <span>{{ step() > i + 1 ? 'Done' : i + 1 }}</span>
@@ -181,7 +181,7 @@
       @if (createdBusiness(); as biz) {
         <div class="bg-primary/10 p-6" style="border-radius: 2px;">
           <h3 class="text-lg font-bold text-success-deep">Business registered</h3>
-          <p class="mt-2 text-sm text-brand-cream/80">
+          <p class="mt-2 text-sm text-body">
             <strong>{{ biz.name }}</strong> is now
             @if (biz.is_verified) {
               <span class="badge-green !px-2 !py-0.5">verified</span>
@@ -190,11 +190,11 @@
             }
             and ready to use for licence applications.
           </p>
-          <p class="mt-2 font-mono text-xs text-brand-cream/60">
+          <p class="mt-2 font-mono text-xs text-muted">
             TIN: {{ biz.tin_number }} · BRELA: {{ biz.brela_registration_number }}
           </p>
           @if (verificationMessage()) {
-            <p class="mt-2 text-xs text-brand-cream/60">{{ verificationMessage() }}</p>
+            <p class="mt-2 text-xs text-muted">{{ verificationMessage() }}</p>
           }
           <div class="mt-5 flex flex-wrap gap-3">
             <a routerLink="/apply" class="btn-primary">Apply for a licence →</a>
@@ -225,7 +225,7 @@
                    [ngModel]="taxpayerName()" (ngModelChange)="taxpayerName.set($event)" />
           </label>
         </div>
-        <p class="text-xs text-brand-cream/60">
+        <p class="text-xs text-muted">
           Next: we register this name with <strong>BRELA</strong> (step 2) and then apply for a
           <strong>TIN at TRA</strong> (step 3) — you do not need to visit either office.
         </p>
@@ -234,14 +234,14 @@
           @if (working()) { Please wait… } @else { Continue to BRELA → }
         </button>
         @if (fieldError('step1')) {
-          <p class="text-xs text-red-300">{{ fieldError('step1') }}</p>
+          <p class="text-xs text-danger">{{ fieldError('step1') }}</p>
         }
       }
 
       <!-- STEP 2: BRELA -->
       @else if (step() === 2) {
-        <div class="rounded-xl border border-brand-cream/20 bg-brand-green-deep/60 p-5">
-          <p class="text-sm text-brand-cream/80">
+        <div class="border border-hairline bg-soft p-5" style="border-radius: 2px;">
+          <p class="text-sm text-body">
             <strong>BRELA</strong> — Business Registrations and Licensing Agency.
             Submitting <strong>{{ name() }}</strong> for official registration.
           </p>
@@ -254,8 +254,8 @@
             <p class="font-bold text-success-deep">{{ receipt.title }}</p>
             <dl class="mt-3 grid gap-x-8 gap-y-2 sm:grid-cols-2">
               @for (line of receipt.lines; track line.label) {
-                <div class="flex justify-between gap-4 border-b border-brand-cream/10 pb-1 text-sm">
-                  <dt class="text-brand-cream/60">{{ line.label }}</dt>
+                <div class="flex justify-between gap-4 border-b border-hairline pb-1 text-sm">
+                  <dt class="text-muted">{{ line.label }}</dt>
                   <dd class="font-mono font-bold">{{ line.value }}</dd>
                 </div>
               }
@@ -266,8 +266,8 @@
 
       <!-- STEP 3: TRA TIN -->
       @else if (step() === 3) {
-        <div class="rounded-xl border border-brand-cream/20 bg-brand-green-deep/60 p-5">
-          <p class="text-sm text-brand-cream/80">
+        <div class="border border-hairline bg-soft p-5" style="border-radius: 2px;">
+          <p class="text-sm text-body">
             <strong>TRA</strong> — Tanzania Revenue Authority.
             Applying for a Taxpayer Identification Number (TIN) for <strong>{{ name() }}</strong>.
             TRA issues TINs against a national ID — the ID number and a PDF copy of the ID card
@@ -281,7 +281,7 @@
                      placeholder="e.g. 1999 1234 5678 9012 3456"
                      [ngModel]="nidaNumber()" (ngModelChange)="nidaNumber.set($event)" />
               @if (fieldError('step3')) {
-                <p class="text-xs text-red-300">{{ fieldError('step3') }}</p>
+                <p class="text-xs text-danger">{{ fieldError('step3') }}</p>
               }
             </label>
             <label class="flex flex-col gap-2 text-sm font-semibold">
@@ -302,8 +302,8 @@
             <p class="font-bold text-success-deep">{{ receipt.title }}</p>
             <dl class="mt-3 grid gap-x-8 gap-y-2 sm:grid-cols-2">
               @for (line of receipt.lines; track line.label) {
-                <div class="flex justify-between gap-4 border-b border-brand-cream/10 pb-1 text-sm">
-                  <dt class="text-brand-cream/60">{{ line.label }}</dt>
+                <div class="flex justify-between gap-4 border-b border-hairline pb-1 text-sm">
+                  <dt class="text-muted">{{ line.label }}</dt>
                   <dd class="font-mono font-bold">{{ line.value }}</dd>
                 </div>
               }
@@ -314,8 +314,8 @@
 
       <!-- STEP 4: street identification letter -->
       @else if (step() === 4) {
-        <div class="rounded-xl border border-brand-cream/20 bg-brand-green-deep/60 p-5">
-          <p class="text-sm text-brand-cream/80">
+        <div class="border border-hairline bg-soft p-5" style="border-radius: 2px;">
+          <p class="text-sm text-body">
             <strong>Street identification letter</strong> — from your mtaa/street chairman.
             The council requires it before any licence can be approved; it confirms where the
             business operates and carries your NIDA number.
@@ -328,7 +328,7 @@
             <input id="street-doc" class="sr-only" type="file" accept="application/pdf,.pdf"
                    (change)="onLetterSelected($event)" />
           </label>
-          <p class="mt-3 text-xs text-brand-cream/60">
+          <p class="mt-3 text-xs text-muted">
             All documents must be PDF scans, as a real council counter requires.
           </p>
           <button type="button" class="btn-primary mt-4" [disabled]="!streetLetterFile()" (click)="continueToLocation()">
@@ -340,8 +340,8 @@
             <p class="font-bold text-success-deep">{{ receipt.title }}</p>
             <dl class="mt-3 grid gap-x-8 gap-y-2 sm:grid-cols-2">
               @for (line of receipt.lines; track line.label) {
-                <div class="flex justify-between gap-4 border-b border-brand-cream/10 pb-1 text-sm">
-                  <dt class="text-brand-cream/60">{{ line.label }}</dt>
+                <div class="flex justify-between gap-4 border-b border-hairline pb-1 text-sm">
+                  <dt class="text-muted">{{ line.label }}</dt>
                   <dd class="font-mono font-bold">{{ line.value }}</dd>
                 </div>
               }
@@ -352,7 +352,7 @@
 
       <!-- STEP 5: location & finish -->
       @else if (step() === 5) {
-        <div class="rounded-xl bg-brand-cream/10 p-5 text-sm text-brand-cream/90">
+        <div class="bg-soft p-5 text-sm text-body" style="border-radius: 2px;">
           <p>
             BRELA no. <span class="font-mono font-bold">{{ brelaNumber() }}</span>
             · TIN <span class="font-mono font-bold">{{ tinNumber() }}</span>
@@ -361,7 +361,7 @@
               · Street letter <span class="font-mono">{{ streetLetterName() }}</span>
             }
           </p>
-          <p class="mt-1 text-xs text-brand-cream/60">
+          <p class="mt-1 text-xs text-muted">
             Now tell us where the business operates. We will verify everything with the
             agencies when we save.
           </p>

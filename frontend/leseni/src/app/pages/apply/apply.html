@@ -127,7 +127,7 @@
                       <p class="font-bold">{{ licence.name }}</p>
                       <p class="text-sm text-brand-cream/70">{{ licence.description }}</p>
                       @if (licence.requires_inspection) {
-                        <p class="mt-1 text-xs text-blue-300">Premises inspection required</p>
+                        <p class="mt-1 text-xs text-link">Premises inspection required</p>
                       }
                     </div>
                     <div class="text-right">
@@ -325,7 +325,7 @@
                   <p class="font-bold">
                     {{ row.label }}
                     @if (row.mandatory) {
-                      <span class="ml-1 text-xs font-bold text-red-300">*required</span>
+                      <span class="ml-1 text-xs font-bold text-danger">*required</span>
                     } @else {
                       <span class="ml-1 text-xs text-brand-cream/50">(optional)</span>
                     }
@@ -333,7 +333,7 @@
                   @if (row.uploaded) {
                     <p class="text-xs text-success-deep"> {{ row.fileName || 'uploaded' }}</p>
                   } @else if (row.uploading) {
-                    <p class="text-xs text-blue-300">Uploading…</p>
+                    <p class="text-xs text-link">Uploading…</p>
                   }
                 </div>
                 <label [for]="'file-upload-' + i" class="btn-secondary cursor-pointer !py-2 !px-4 text-xs" [class.opacity-50]="row.uploading" [class.pointer-events-none]="row.uploading">

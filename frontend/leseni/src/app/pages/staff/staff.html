@@ -79,7 +79,7 @@
               @if (app.business_is_verified) {
                 <span class="badge-green !px-2 !py-0.5">verified </span>
               } @else {
-                <span class="badge-outline !px-2 !py-0.5 !border-orange-400/50 !text-orange-300">unverified</span>
+                <span class="badge-outline !px-2 !py-0.5 !border-warning/50 !text-warning">unverified</span>
               }
             </p>
             <p class="text-sm text-muted">
@@ -89,7 +89,7 @@
                   <span class="badge-green !px-2 !py-0.5 !text-[10px]" title="NIDA on file">NIDA </span>
                 } @else {
                   <span
-                    class="badge-outline !px-2 !py-0.5 !border-orange-400/50 !text-orange-300 !text-[10px]"
+                    class="badge-outline !px-2 !py-0.5 !border-warning/50 !text-warning !text-[10px]"
                     title="No NIDA — cannot be approved"
                   >no NIDA </span>
                 }
@@ -99,12 +99,12 @@
               <p class="mt-2 max-w-2xl text-sm text-muted">“{{ app.purpose_statement }}”</p>
             }
             @if (app.status === 'INSPECTION_SCHEDULED' && scheduledDate(app)) {
-              <p class="mt-2 text-sm text-blue-300">
+              <p class="mt-2 text-sm text-link">
                  Inspection {{ scheduledDate(app) }} @if (inspectorName(app)) { · {{ inspectorName(app) }} }
               </p>
             }
             @if (app.status === 'REJECTED' && app.rejection_reason) {
-              <p class="mt-2 text-sm text-red-300">Reason: {{ app.rejection_reason }}</p>
+              <p class="mt-2 text-sm text-danger">Reason: {{ app.rejection_reason }}</p>
             }
             <!-- Attached documents -->
             @if (app.documents.length > 0) {
@@ -120,7 +120,7 @@
                 }
               </div>
             } @else if (app.status !== 'DRAFT') {
-              <p class="mt-3 text-xs text-orange-300/80"> No documents attached</p>
+              <p class="mt-3 text-xs text-warning/90"> No documents attached</p>
             }
           </div>
 
@@ -166,36 +166,55 @@
             }
 
                         @if (canInspect && app.status === 'INSPECTION_SCHEDULED') {
-              <button
-                type="button"
-                class="btn-secondary !py-2 !px-3 text-xs"
-                (click)="captureLocation(app)"
-              >
-                 Capture location
-              </button>
-              <button
-                type="button"
-                class="btn-secondary !py-2 !px-3 text-xs"
-                (click)="captureLocation(app)"
-              >
-                 Capture location
-              </button>
-              <button
-                type="button"
-                class="btn-primary !py-2"
-                [disabled]="processingId() === app.id"
-                (click)="advance(app, 'INSPECTED')"
-              >
-                Record result — passed
-              </button>
-              <button
-                type="button"
-                class="btn-secondary !py-2 !px-3 text-xs !border-red-400/40 !text-red-300"
-                [disabled]="processingId() === app.id"
-                (click)="advance(app, 'REJECTED')"
-              >
-                Failed — reject
-              </button>
+              @if (recordingId() === app.id) {
+                <!-- Findings form (inspectors) -->
+                <div class="w-full border border-hairline bg-soft p-4" style="border-radius: 2px;">
+                  <p class="text-[14px] font-bold uppercase tracking-wide text-foreground">Inspection result</p>
+                  <label class="mt-3 flex flex-col gap-1.5">
+                    <span class="text-sm font-semibold">Findings</span>
+                    <textarea
+                      class="input-field"
+                      rows="3"
+                      placeholder="Describe what was checked and any issues found…"
+                      [ngModel]="resultFindings()"
+                      (ngModelChange)="resultFindings.set($event)"
+                    ></textarea>
+                  </label>
+                  <p class="mt-2 text-xs text-muted">
+                    @if (hasCapturedLocation(app)) {
+                      ✓ GPS location captured — it will be saved with this result.
+                    } @else {
+                      No GPS captured yet — optional, “Capture location” adds it.
+                    }
+                  </p>
+                  <div class="mt-4 flex flex-wrap gap-2">
+                    <button type="button" class="btn-primary" [disabled]="processingId() === app.id" (click)="recordResult(app, true)">
+                      Record — passed
+                    </button>
+                    <button type="button" class="btn-secondary !border-danger !text-danger" [disabled]="processingId() === app.id" (click)="recordResult(app, false)">
+                      Record — failed
+                    </button>
+                    <button type="button" class="btn-secondary" (click)="cancelResult()">Cancel</button>
+                  </div>
+                </div>
+              } @else {
+                <button
+                  type="button"
+                  class="btn-secondary !py-2 !px-3 text-xs"
+                  [disabled]="processingId() === app.id"
+                  (click)="captureLocation(app)"
+                >
+                  @if (hasCapturedLocation(app)) { GPS ✓ — recapture } @else { Capture location }
+                </button>
+                <button
+                  type="button"
+                  class="btn-primary !py-2"
+                  [disabled]="processingId() === app.id"
+                  (click)="openResultForm(app)"
+                >
+                  Record result
+                </button>
+              }
             }
 
             @if (canApprove && app.status === 'INSPECTED') {
@@ -205,7 +224,7 @@
                 [disabled]="processingId() === app.id"
                 (click)="advance(app, 'APPROVED')"
               >
-                 Approve
+                Approve
               </button>
               <button
                 type="button"
@@ -217,7 +236,7 @@
               </button>
               <button
                 type="button"
-                class="btn-secondary !py-2 !px-3 text-xs !border-red-400/40 !text-red-300"
+                class="btn-secondary !py-2 !px-3 text-xs !border-danger/50 !text-danger"
                 [disabled]="processingId() === app.id"
                 (click)="advance(app, 'REJECTED')"
               >
