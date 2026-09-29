@@ -316,7 +316,7 @@
             submit, and your business must be verified with TRA & BRELA.
           </p>
           <div class="flex flex-col gap-3">
-            @for (row of uploadRows(); track row.label) {
+            @for (row of uploadRows(); track row.label; let i = $index) {
               <div
                 class="flex flex-col gap-2 rounded-xl border p-4 sm:flex-row sm:items-center sm:justify-between"
                 [class]="row.uploaded ? 'border-emerald-400/50 bg-emerald-500/10' : 'border-brand-cream/20'"
@@ -336,16 +336,17 @@
                     <p class="text-xs text-blue-300">Uploading…</p>
                   }
                 </div>
-                <label class="btn-secondary cursor-pointer !py-2 !px-4 text-xs">
+                <label [for]="'file-upload-' + i" class="btn-secondary cursor-pointer !py-2 !px-4 text-xs" [class.opacity-50]="row.uploading" [class.pointer-events-none]="row.uploading">
                   {{ row.uploaded ? 'Replace file' : 'Choose PDF file' }}
-                  <input
-                    class="sr-only"
-                    type="file"
-                    accept="application/pdf,.pdf"
-                    [disabled]="row.uploading"
-                    (change)="onFileSelected(row, $event)"
-                  />
                 </label>
+                <input
+                  [id]="'file-upload-' + i"
+                  class="sr-only"
+                  type="file"
+                  accept="application/pdf,.pdf"
+                  [disabled]="row.uploading"
+                  (change)="onFileSelected(row, $event)"
+                />
               </div>
             }
           </div>

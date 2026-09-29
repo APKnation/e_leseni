@@ -101,11 +101,11 @@
                     }
                   </select>
                 </label>
-                <label class="btn-secondary mt-2 inline-block cursor-pointer !py-2 !px-3 text-xs">
+                <label [for]="'bus-doc-' + business.id" class="btn-secondary mt-2 inline-block cursor-pointer !py-2 !px-3 text-xs" [class.opacity-50]="uploadingDoc()" [class.pointer-events-none]="uploadingDoc()">
                   {{ uploadingDoc() ? 'Uploading…' : 'Choose PDF file' }}
-                  <input class="sr-only" type="file" accept="application/pdf,.pdf" [disabled]="uploadingDoc()"
-                         (change)="onBusinessDocSelected(business.id, $event)" />
                 </label>
+                <input [id]="'bus-doc-' + business.id" class="sr-only" type="file" accept="application/pdf,.pdf" [disabled]="uploadingDoc()"
+                       (change)="onBusinessDocSelected(business.id, $event)" />
                 <p class="mt-2 text-[10px] text-brand-cream/50">PDF only, max 10 MB.</p>
               </div>
             }
@@ -281,11 +281,11 @@
             </label>
             <label class="flex flex-col gap-2 text-sm font-semibold">
               Copy of your national ID (NIDA) * — PDF only
-              <label class="btn-secondary cursor-pointer !py-2.5 !px-4 text-xs">
+              <label for="nida-doc" class="btn-secondary cursor-pointer !py-2.5 !px-4 text-xs">
                 {{ nidaCopyName() ? 'Done ' + nidaCopyName() : 'Choose PDF file' }}
-                <input class="sr-only" type="file" accept="application/pdf,.pdf"
-                       (change)="onNidaCopySelected($event)" />
               </label>
+              <input id="nida-doc" class="sr-only" type="file" accept="application/pdf,.pdf"
+                     (change)="onNidaCopySelected($event)" />
             </label>
           </div>            <button type="button" class="btn-primary mt-4"
                   [disabled]="working() || !nidaCopyFile()" (click)="applyForTin()">
@@ -317,11 +317,11 @@
           </p>
           <label class="mt-4 flex flex-col gap-2 text-sm font-semibold">
             Street identification letter * — PDF only
-            <label class="btn-secondary cursor-pointer !py-2.5 !px-4 text-xs">
+            <label for="street-doc" class="btn-secondary cursor-pointer !py-2.5 !px-4 text-xs">
               {{ streetLetterName() ? 'Done ' + streetLetterName() : 'Choose PDF file' }}
-              <input class="sr-only" type="file" accept="application/pdf,.pdf"
-                     (change)="onLetterSelected($event)" />
             </label>
+            <input id="street-doc" class="sr-only" type="file" accept="application/pdf,.pdf"
+                   (change)="onLetterSelected($event)" />
           </label>
           <p class="mt-3 text-xs text-brand-cream/60">
             All documents must be PDF scans, as a real council counter requires.
