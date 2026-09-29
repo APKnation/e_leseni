@@ -1,15 +1,15 @@
-@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@700&family=Roboto:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
 @import 'tailwindcss';
 
 @theme {
-  --font-sans: 'Roboto', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-heading: 'Oswald', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-heading: 'Inter', ui-sans-serif, system-ui, sans-serif;
 
-  --color-primary: #82B440;
-  --color-accent: #5C0ABE;
+  --color-primary: #EB2500;
+  --color-accent: #82B440;
   --color-surface: #FFFFFF;
   --color-foreground: #000000;
-  --color-muted: #999999;
+  --color-muted: #A7A7A7;
 
   /* Aliasing for the previously renamed classes to avoid touching HTML */
   --color-brand-cream: #FFFFFF;
@@ -19,7 +19,7 @@
   --color-brand-green-deep: #1F2937;
   --color-brand-green-soft: #4B5563;
 
-  --shadow-custom: 0px 5px 27px 0px rgba(0, 0, 0, 0.08);
+  --shadow-custom: 1px 1px 10px 0px rgba(17, 17, 17, 0.05);
 }
 
 /* Global base */
@@ -29,9 +29,9 @@ html {
 
 body {
   @apply bg-surface text-foreground font-sans antialiased;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 400;
-  line-height: 1.8;
+  line-height: 2;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -42,10 +42,10 @@ h1, h2, h3, h4, h5, h6 {
 /* Shared component classes */
 @layer components {
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 bg-surface px-6 py-3
-      text-foreground transition active:scale-[0.98]
-      disabled:opacity-50 disabled:pointer-events-none border border-muted/30 shadow-sm hover:bg-gray-50;
-    font-weight: 500;
+    @apply inline-flex items-center justify-center gap-2 bg-primary px-6 py-3
+      text-surface transition-all active:scale-[0.98] hover:shadow-lg hover:-translate-y-0.5
+      disabled:opacity-50 disabled:pointer-events-none border border-transparent hover:opacity-90;
+    font-weight: 400;
     border-radius: 8px;
   }
 
