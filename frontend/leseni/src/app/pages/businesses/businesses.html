@@ -17,14 +17,14 @@
   }
 
   @if (loading()) {
-    <div class="mt-10 animate-pulse space-y-4">
+    <div class="mt-8 animate-pulse space-y-4">
       <div class="h-4 w-1/4 rounded bg-muted/20"></div>
       <div class="h-32 rounded-xl bg-muted/10"></div>
       <div class="h-32 rounded-xl bg-muted/10"></div>
     </div>
   } @else if (!wizardOpen()) {
     <!-- Journey explainer -->
-    <div class="mt-8 grid gap-4 md:grid-cols-4">
+    <div class="mt-8 grid gap-6 md:grid-cols-4">
       @for (s of journeySteps; track s.title; let i = $index) {
         <div class="card flex flex-col gap-1 p-4">
           <span class="text-xs font-bold text-muted">STEP {{ i + 1 }}</span>

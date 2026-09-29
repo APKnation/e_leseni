@@ -34,7 +34,7 @@
         } @else {
           <a routerLink="/" routerLinkActive="nav-active" [routerLinkActiveOptions]="{ exact: true }" class="nav-link">Home</a>
           <a routerLink="/login" routerLinkActive="nav-active" class="nav-link">Log in</a>
-          <a routerLink="/register" class="btn-primary ml-3 !px-5 !py-2 !text-sm">Get Started</a>
+          <a routerLink="/register" class="btn-primary ml-3 !px-5 !py-2 !text-sm">Register now</a>
         }
       </nav>
 
@@ -88,7 +88,7 @@
           } @else {
             <a routerLink="/"        routerLinkActive="nav-active" [routerLinkActiveOptions]="{ exact: true }" class="nav-link" (click)="closeMenu()">Home</a>
             <a routerLink="/login"   routerLinkActive="nav-active" class="nav-link" (click)="closeMenu()">Log in</a>
-            <a routerLink="/register" class="btn-primary mt-2 w-full" (click)="closeMenu()">Get Started</a>
+            <a routerLink="/register" class="btn-primary mt-2 w-full" (click)="closeMenu()">Register now</a>
           }
         </div>
       </nav>

@@ -18,26 +18,26 @@
   </div>
 
   @if (successMessage()) {
-    <p class="mt-8 px-4 py-3 text-sm font-semibold text-success-deep border border-primary/40 bg-primary/5" style="border-radius: 2px;">
+    <p class="mt-6 px-4 py-3 text-sm font-semibold text-success-deep border border-primary/40 bg-primary/5" style="border-radius: 2px;">
       {{ successMessage() }}
     </p>
   }
 
   @if (errorMessage()) {
-    <p class="mt-8 px-4 py-3 text-sm font-semibold text-danger border border-danger/30 bg-danger/5" style="border-radius: 2px;">
+    <p class="mt-6 px-4 py-3 text-sm font-semibold text-danger border border-danger/30 bg-danger/5" style="border-radius: 2px;">
       {{ errorMessage() }}
     </p>
   }
 
   @if (loading()) {
-    <div class="mt-10 animate-pulse space-y-4">
+    <div class="mt-8 animate-pulse space-y-4">
       <div class="h-4 w-1/4 rounded bg-muted/20"></div>
       <div class="h-32 rounded-xl bg-muted/10"></div>
       <div class="h-32 rounded-xl bg-muted/10"></div>
     </div>
   } @else {
     <!-- Stats -->
-    <div class="mt-10 grid gap-6 md:grid-cols-3">
+    <div class="mt-8 grid gap-6 md:grid-cols-3">
       @for (stat of stats; track stat.label) {
         <div
           class="card flex flex-col gap-3"
@@ -227,7 +227,7 @@
     }
 
     <!-- My businesses / activities -->
-    <div class="mt-12 flex flex-wrap items-center justify-between gap-3">
+    <div class="mt-8 flex flex-wrap items-center justify-between gap-3">
       <h2 class="text-xl font-bold">My businesses & activities</h2>
       <div class="flex flex-wrap gap-2">
         @if (!isStaff()) {
