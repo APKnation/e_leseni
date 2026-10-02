@@ -46,9 +46,14 @@ def mock_brela_verify(request):
 @api_view(['POST'])
 @permission_classes([])
 def mock_tra_verify_tin(request):
-    """Verify a TRA TIN. Mock rule: valid if 9-12 digits."""
+    """Verify a TRA TIN.
+
+    Mock rule: 9-12 digits AND starting with '1' (same convention as the
+    mock BRELA verifier), so the demo can exercise a real rejection with a
+    reason instead of every well-formed TIN passing.
+    """
     tin = (request.data.get('tin_number') or '').strip()
-    is_valid = tin.isdigit() and 9 <= len(tin) <= 12
+    is_valid = tin.isdigit() and 9 <= len(tin) <= 12 and tin.startswith('1')
     response_data = {
         'valid': is_valid,
         'tin_number': tin,

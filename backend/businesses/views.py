@@ -220,9 +220,10 @@ class BusinessViewSet(viewsets.ModelViewSet):
             kind=TINApplicationDocument.Kinds.NIDA_COPY,
             file=nida_copy,
         )
-        # Simulate TRA processing the request asynchronously.
+        # Simulate TRA processing the request asynchronously. TINs start
+        # with '1' so the mock TRA verifier accepts them.
         application.status = TINApplication.Status.APPROVED
-        application.tin_number = f'{secrets.randbelow(10**9):09d}'
+        application.tin_number = f'1{secrets.randbelow(10**8):08d}'
         application.processed_at = timezone.now()
         application.save(update_fields=['status', 'tin_number', 'processed_at'])
 
