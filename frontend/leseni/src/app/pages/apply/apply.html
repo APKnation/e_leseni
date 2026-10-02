@@ -210,9 +210,9 @@
           </label>
 
           @if (businessId()) {
-            @if (locations().length > 0) {
+            @if (matchingLocations.length > 0) {
               <label class="flex flex-col gap-2 text-sm font-semibold">
-                Business location (premises)
+                Business location (premises in {{ selectedLga?.name }})
                 <select
                   class="input-field"
                   name="location"
@@ -221,7 +221,7 @@
                   required
                 >
                   <option [ngValue]="null" disabled>— choose a location —</option>
-                  @for (location of locations(); track location.id) {
+                  @for (location of matchingLocations; track location.id) {
                     <option [ngValue]="location.id">
                       {{ location.ward }}, {{ location.street }}{{ location.is_primary ? ' (main)' : '' }}
                     </option>
@@ -230,10 +230,11 @@
               </label>
             } @else {
               <p class="px-4 py-3 text-xs text-warning bg-warning/10" style="border-radius: 2px;">
-                This business has no premises saved yet — add one below to continue.
+                This business has no premises in {{ selectedLga?.name }} yet — the licence is
+                issued by that council, so add the premises below to continue.
               </p>
               <button type="button" class="btn-secondary self-start !py-2" (click)="toggleAddLocation()">
-                + Add premises
+                + Add premises in {{ selectedLga?.name }}
               </button>
             }
             @if (addingLocation()) {

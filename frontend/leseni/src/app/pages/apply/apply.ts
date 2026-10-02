@@ -282,13 +282,24 @@ export class Apply {
     return blockers;
   }
 
+  /** Premises of the selected business that sit in the council chosen in step 1.
+   * Council licences are local — a Mufindi licence needs Mufindi premises. */
+  protected get matchingLocations(): BusinessLocation[] {
+    const council = this.lgaId();
+    const locs = this.locations();
+    if (!council) return locs;
+    return locs.filter((l) => l.lga === council);
+  }
+
   protected selectBusiness(id: number | null): void {
     this.businessId.set(id);
     const business = this.businesses().find((b) => b.id === id);
+    const council = this.lgaId();
     const locs = business?.locations ?? [];
     this.locations.set(locs);
-    // Auto-select the primary (or first) location; clear if none exist.
-    const primary = locs.find((l) => l.is_primary) ?? locs[0] ?? null;
+    // Auto-select the primary (or first) premises IN the chosen council.
+    const matching = locs.filter((l) => !council || l.lga === council);
+    const primary = matching.find((l) => l.is_primary) ?? matching[0] ?? null;
     this.locationId.set(primary?.id ?? null);
   }
 
