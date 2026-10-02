@@ -88,6 +88,17 @@ export class Businesses {
   protected readonly verificationMessage = signal('');
   protected readonly createdBusiness = signal<Business | null>(null);
 
+  // Add-premises form — register the same business in another council/region.
+  protected readonly premisesForBusinessId = signal<number | null>(null);
+  protected readonly premisesRegion = signal<string | null>(null);
+  protected readonly premisesLgaId = signal<number | null>(null);
+  protected readonly premisesLgas = signal<LGA[]>([]);
+  protected readonly premisesWards = signal<string[]>([]);
+  protected readonly premisesWard = signal('');
+  protected readonly premisesStreet = signal('');
+  protected readonly premisesPlot = signal('');
+  protected readonly savingPremises = signal(false);
+
   /** Get a field-level error message for a step. */
   protected fieldError(step: string): string {
     return this.fieldErrors()[step] ?? '';
@@ -522,6 +533,76 @@ export class Businesses {
         );
       },
     });
+  }
+
+  // ---- Add premises (possibly in another region) ----------------------------
+
+  protected togglePremises(business: Business): void {
+    const opening = this.premisesForBusinessId() !== business.id;
+    this.premisesForBusinessId.set(opening ? business.id : null);
+    this.premisesRegion.set(null);
+    this.premisesLgaId.set(null);
+    this.premisesLgas.set([]);
+    this.premisesWards.set([]);
+    this.premisesWard.set('');
+    this.premisesStreet.set('');
+    this.premisesPlot.set('');
+    this.errorMessage.set('');
+  }
+
+  protected onPremisesRegion(region: string | null): void {
+    this.premisesRegion.set(region);
+    this.premisesLgaId.set(null);
+    this.premisesWards.set([]);
+    this.premisesWard.set('');
+    if (region) {
+      this.api.lgas({ region }).subscribe((page) => this.premisesLgas.set(page.results));
+    } else {
+      this.premisesLgas.set([]);
+    }
+  }
+
+  protected onPremisesLga(lgaId: number | null): void {
+    this.premisesLgaId.set(lgaId);
+    this.premisesWards.set([]);
+    this.premisesWard.set('');
+    if (lgaId) {
+      this.api.wards(lgaId).subscribe({
+        next: (list) => this.premisesWards.set(list.map((w) => w.name)),
+        error: () => this.premisesWards.set([]),
+      });
+    }
+  }
+
+  protected savePremises(business: Business): void {
+    const lga = this.premisesLgaId();
+    const ward = this.premisesWard().trim();
+    const street = this.premisesStreet().trim();
+    if (!lga || !ward || !street || this.savingPremises()) return;
+    this.savingPremises.set(true);
+    this.errorMessage.set('');
+    this.api
+      .createLocation(business.id, {
+        lga,
+        ward,
+        street,
+        plot_number: this.premisesPlot().trim(),
+        is_primary: business.locations.length === 0,
+      })
+      .subscribe({
+        next: () => {
+          this.savingPremises.set(false);
+          this.togglePremises(business);
+          this.successMessage.set(
+            `Premises added to ${business.name} — you can now apply for that council's licence.`,
+          );
+          this.loadAll();
+        },
+        error: () => {
+          this.savingPremises.set(false);
+          this.errorMessage.set('Could not save the premises. Please try again.');
+        },
+      });
   }
 
   // ---- Supporting documents on existing businesses ------------------------

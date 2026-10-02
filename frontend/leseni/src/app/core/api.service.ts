@@ -17,6 +17,7 @@ import {
   NewBusinessPayload,
   Paginated,
   RegionInfo,
+  Requirement,
   TINApplication,
 } from './models';
 
@@ -89,6 +90,58 @@ export class ApiService {
   /** Delete a business activity (officers/admins only). */
   deleteBusinessActivity(id: number): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/business-activities/${id}/`);
+  }
+
+  /** Create a licence type in the council catalogue (officers/admins). */
+  createLicenceType(
+    payload: {
+      name: string;
+      code: string;
+      category?: string;
+      activity?: number | null;
+      description?: string;
+      fee?: string | number;
+      validity_months?: number;
+      requires_inspection?: boolean;
+      bylaw_reference?: string;
+      lga?: number;
+    },
+  ): Observable<LicenceType> {
+    return this.http.post<LicenceType>(`${this.baseUrl}/licence-types/`, payload);
+  }
+
+  /** Update a licence type — officers are scoped to their own council server-side. */
+  updateLicenceType(
+    id: number,
+    changes: Partial<{
+      name: string;
+      code: string;
+      category: string;
+      activity: number | null;
+      description: string;
+      fee: string | number;
+      validity_months: number;
+      requires_inspection: boolean;
+      bylaw_reference: string;
+    }>,
+  ): Observable<LicenceType> {
+    return this.http.patch<LicenceType>(`${this.baseUrl}/licence-types/${id}/`, changes);
+  }
+
+  /** Add a requirement to a licence type (officers/admins). */
+  createRequirement(payload: {
+    licence_type: number;
+    name: string;
+    kind: 'DOCUMENT' | 'INSPECTION' | 'CLEARANCE';
+    is_mandatory?: boolean;
+    order?: number;
+  }): Observable<Requirement> {
+    return this.http.post<Requirement>(`${this.baseUrl}/requirements/`, payload);
+  }
+
+  /** Remove a requirement from a licence type (officers/admins). */
+  deleteRequirement(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/requirements/${id}/`);
   }
 
   // -- Businesses ----------------------------------------------------------
