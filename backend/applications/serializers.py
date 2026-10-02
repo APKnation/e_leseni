@@ -43,6 +43,8 @@ class ApplicationSerializer(serializers.ModelSerializer):
     # no activity linked). Powers the staff queue's activity filter/badges.
     activity = serializers.SerializerMethodField()
     activity_name = serializers.SerializerMethodField()
+    # Issued-licence tracking: the licence number once one has been issued.
+    licence_number = serializers.SerializerMethodField()
     allowed_next_statuses = serializers.SerializerMethodField()
     documents = ApplicationDocumentSerializer(many=True, read_only=True)
     history = StatusHistorySerializer(many=True, read_only=True)
@@ -52,7 +54,7 @@ class ApplicationSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'reference_number', 'applicant', 'applicant_name', 'applicant_has_nida',
             'business', 'business_name', 'business_is_verified', 'licence_type', 'licence_type_name',
-            'activity', 'activity_name', 'lga_name',
+            'activity', 'activity_name', 'lga_name', 'licence_number',
             'location', 'status', 'priority', 'purpose_statement', 'rejection_reason',
             'assigned_officer', 'submitted_at', 'decided_at', 'created_at', 'updated_at',
             'allowed_next_statuses', 'documents', 'history',
@@ -71,6 +73,11 @@ class ApplicationSerializer(serializers.ModelSerializer):
     def get_activity_name(self, obj):
         activity = obj.licence_type.activity
         return activity.name if activity else None
+
+    def get_licence_number(self, obj):
+        """Licence number once issued (None until the licence exists)."""
+        licence = getattr(obj, 'licence', None)  # reverse OneToOne, may not exist
+        return licence.licence_number if licence else None
 
     def get_allowed_next_statuses(self, obj):
         """Transitions valid for the state machine AND permitted for the
@@ -94,6 +101,15 @@ class ApplicationTransitionSerializer(serializers.Serializer):
                 f'Invalid transition {application.status} -> {value}. Allowed: {allowed}'
             )
         return value
+
+    def validate(self, attrs):
+        # A rejection must always carry an explicit reason: it is stored on
+        # the application, shown to the applicant and kept in the audit trail.
+        note = (attrs.get('note') or '').strip()
+        if attrs.get('to_status') == Application.Status.REJECTED and not note:
+            raise serializers.ValidationError({'note': 'A rejection reason is required.'})
+        attrs['note'] = note
+        return attrs
 
 
 class InspectionSerializer(serializers.ModelSerializer):

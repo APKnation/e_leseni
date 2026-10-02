@@ -73,7 +73,7 @@ class ApplicationViewSet(viewsets.ModelViewSet):
         user = self.request.user
         base = Application.objects.select_related(
             'business', 'licence_type', 'licence_type__lga', 'licence_type__activity',
-            'location', 'applicant', 'assigned_officer',
+            'location', 'applicant', 'assigned_officer', 'licence',
         ).prefetch_related('documents', 'history')
         if user.is_authenticated and user.is_lga_staff:
             return base.filter(staff_lga_filter(user))

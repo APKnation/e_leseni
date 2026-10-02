@@ -136,7 +136,12 @@ export class Dashboard {
   }
 
   protected timelineNoteFor(app: Application): string {
-    if (app.status === 'RETURNED_FOR_CORRECTION' && app.rejection_reason) return app.rejection_reason;
+    if (
+      (app.status === 'RETURNED_FOR_CORRECTION' || app.status === 'REJECTED') &&
+      app.rejection_reason
+    ) {
+      return app.rejection_reason;
+    }
     const last = (app.history ?? []).at(-1);
     return last?.note ?? '';
   }

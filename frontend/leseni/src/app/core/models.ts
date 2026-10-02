@@ -191,6 +191,8 @@ export interface Application {
   allowed_next_statuses: ApplicationStatus[];
   documents: ApplicationDocument[];
   history: StatusHistoryEntry[];
+  /** Licence number once a licence has been issued (tracking). */
+  licence_number?: string | null;
   created_at: string;
   submitted_at: string | null;
   decided_at: string | null;

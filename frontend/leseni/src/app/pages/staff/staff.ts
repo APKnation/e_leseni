@@ -120,6 +120,10 @@ export class Staff implements OnInit {
   /** Inspection result form state (inspectors). */
   protected readonly recordingId = signal<number | null>(null);
   protected readonly resultFindings = signal('');
+
+  /** Rejection form state — a reason is mandatory for every rejection. */
+  protected readonly rejectingId = signal<number | null>(null);
+  protected readonly rejectReason = signal('');
   /** Captured GPS per application id (nulled when capture fails). */
   protected readonly capturedLocation = signal<Map<number, { lat: number; lng: number; accuracy: number } | null>>(new Map());
 
@@ -384,7 +388,8 @@ export class Staff implements OnInit {
 
   /**
    * Record the inspection outcome on the LATEST open inspection, then move
-   * the application along the state machine (INSPECTED or REJECTED).
+   * the application along the state machine (INSPECTED or REJECTED). A
+   * failed inspection rejects with the findings as the mandatory reason.
    */
   protected recordResult(app: Application, passed: boolean): void {
     const inspection = this.inspectionByApplication().get(app.id);
@@ -407,9 +412,11 @@ export class Staff implements OnInit {
       })
       .subscribe({
         next: () => {
-          // Outcome saved — now advance the workflow status.
+          // Outcome saved — now advance the workflow status. A failed
+          // inspection carries the findings as the rejection reason.
           const toStatus = passed ? 'INSPECTED' : 'REJECTED';
-          this.api.transitionApplication(app.id, toStatus).subscribe({
+          const note = passed ? '' : this.resultFindings().trim() || 'Inspection failed.';
+          this.api.transitionApplication(app.id, toStatus, note).subscribe({
             next: (updated) => {
               this.successMessage.set(
                 `${updated.reference_number}: inspection ${passed ? 'PASSED' : 'FAILED'} recorded → ${STATUS_LABELS[toStatus as ApplicationStatus] ?? toStatus}`,
@@ -439,6 +446,49 @@ export class Staff implements OnInit {
     return this.applications().filter((a) => filter.statuses!.includes(a.status)).length;
   }
 
+  // -- Rejection (mandatory reason) -----------------------------------------
+
+  /** Open the reason form instead of rejecting silently. */
+  protected openRejectForm(app: Application): void {
+    this.rejectingId.set(app.id);
+    this.rejectReason.set('');
+  }
+
+  protected cancelReject(): void {
+    this.rejectingId.set(null);
+    this.rejectReason.set('');
+  }
+
+  protected confirmReject(app: Application): void {
+    const reason = this.rejectReason().trim();
+    if (!reason) {
+      this.errorMessage.set('A rejection reason is required.');
+      return;
+    }
+    if (this.processingId()) return;
+    this.processingId.set(app.id);
+    this.errorMessage.set('');
+    this.successMessage.set('');
+    this.api.transitionApplication(app.id, 'REJECTED', reason).subscribe({
+      next: (updated) => {
+        this.successMessage.set(
+          `${updated.reference_number} → ${STATUS_LABELS.REJECTED} (reason sent to the applicant)`,
+        );
+        this.processingId.set(null);
+        this.cancelReject();
+        this.load();
+      },
+      error: (err) => {
+        const detail =
+          err?.error?.detail ??
+          (err?.error?.note ? String(err.error.note) : null) ??
+          'Could not reject the application.';
+        this.errorMessage.set(typeof detail === 'string' ? detail : 'Could not reject the application.');
+        this.processingId.set(null);
+      },
+    });
+  }
+
   /** Advance an application along its allowed next statuses (staff action). */
   protected advance(app: Application, toStatus: string): void {
     if (this.processingId()) return;
@@ -450,6 +500,7 @@ export class Staff implements OnInit {
         this.successMessage.set(
           `${updated.reference_number} → ${STATUS_LABELS[toStatus as ApplicationStatus] ?? toStatus}`,
         );
+        this.processingId.set(null);
         this.load();
       },
       error: (err) => {

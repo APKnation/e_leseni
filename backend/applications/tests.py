@@ -307,6 +307,65 @@ class RoleWorkflowAPITests(APITestCase):
         response = self._transition(self.admin, app, 'UNDER_REVIEW')
         self.assertEqual(response.status_code, 200)
 
+    def test_rejection_requires_a_reason(self):
+        """Staff cannot reject without stating why — the API returns 400."""
+        app = self._application(self.licence_a, self.location_a)
+        app.transition_to('UNDER_REVIEW', by=self.officer)
+
+        response = self._transition(self.officer, app, 'REJECTED')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+        # Whitespace-only reasons are refused too.
+        self.client.force_authenticate(user=self.officer)
+        response = self.client.post(
+            f'/api/applications/{app.id}/transition/',
+            {'to_status': 'REJECTED', 'note': '   '}, format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+        app.refresh_from_db()
+        self.assertEqual(app.status, 'UNDER_REVIEW')
+
+    def test_rejection_records_reason_on_application_and_history(self):
+        app = self._application(self.licence_a, self.location_a)
+        app.transition_to('UNDER_REVIEW', by=self.officer)
+
+        self.client.force_authenticate(user=self.officer)
+        response = self.client.post(
+            f'/api/applications/{app.id}/transition/',
+            {'to_status': 'REJECTED', 'note': 'Premises not suitable for food handling.'},
+            format='json',
+        )
+        self.assertEqual(response.status_code, 200, response.data)
+
+        app.refresh_from_db()
+        self.assertEqual(app.status, 'REJECTED')
+        self.assertEqual(app.rejection_reason, 'Premises not suitable for food handling.')
+        self.assertIsNotNone(app.decided_at)
+        self.assertTrue(
+            app.history.filter(to_status='REJECTED', note='Premises not suitable for food handling.').exists()
+        )
+
+    def test_issued_application_exposes_licence_number(self):
+        """Once PAID issues a licence, the queue shows its number."""
+        from licences.services import issue_licence_for_application
+
+        app = self._application(self.licence_a, self.location_a)
+        app.transition_to('UNDER_REVIEW', by=self.officer)
+        app.transition_to('INSPECTION_SCHEDULED', by=self.officer)
+        app.transition_to('INSPECTED', by=self.inspector)
+        app.transition_to('APPROVED', by=self.approver)
+        app.transition_to('PAYMENT_PENDING', by=self.approver)
+        app.transition_to('PAID', by=None)
+
+        licence, _created = issue_licence_for_application(app)
+        self.assertIsNotNone(licence)
+
+        self.client.force_authenticate(user=self.officer)
+        response = self.client.get('/api/applications/')
+        row = next(r for r in response.data['results'] if r['id'] == app.id)
+        self.assertEqual(row['licence_number'], licence.licence_number)
+
     def test_officer_cannot_transition_other_lga_application(self):
         app = self._application(self.licence_b, self.location_b)
         response = self._transition(self.officer, app, 'UNDER_REVIEW')

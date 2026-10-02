@@ -105,6 +105,9 @@
                 <span
                   class="badge-green"
                 >{{ STATUS_LABELS[app.status] }}</span>
+                @if (app.licence_number) {
+                  <p class="font-mono text-xs font-bold text-success-deep">{{ app.licence_number }}</p>
+                }
                 <button
                   type="button"
                   class="text-xs font-bold text-muted underline transition hover:text-foreground"
@@ -117,6 +120,11 @@
 
             @if (app.status === 'RETURNED_FOR_CORRECTION' && app.rejection_reason) {
               <p class="max-w-xl text-xs text-warning">{{ app.rejection_reason }}</p>
+            }
+            @if (app.status === 'REJECTED' && app.rejection_reason) {
+              <p class="max-w-xl text-xs font-semibold text-danger">
+                Reason for rejection: {{ app.rejection_reason }}
+              </p>
             }
 
             <!-- Status timeline -->
