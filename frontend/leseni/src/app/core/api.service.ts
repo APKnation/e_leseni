@@ -1,4 +1,4 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpParams, HttpResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
@@ -220,6 +220,21 @@ export class ApiService {
     });
   }
 
+  /** Record an inspection outcome (pass/fail, findings, GPS, timing). */
+  updateInspection(
+    inspectionId: number,
+    data: {
+      passed?: boolean;
+      findings?: string;
+      conducted_at?: string;
+      latitude?: number;
+      longitude?: number;
+      location_accuracy?: number;
+    },
+  ): Observable<Inspection> {
+    return this.http.patch<Inspection>(`${this.baseUrl}/inspections/${inspectionId}/`, data);
+  }
+
   // -- Invoices ------------------------------------------------------------
 
   invoices(filters?: ListOptions['filters']): Observable<Paginated<Invoice>> {
@@ -244,5 +259,24 @@ export class ApiService {
 
   licences(filters?: ListOptions['filters']): Observable<Paginated<Licence>> {
     return this.list<Licence>('licences', { filters });
+  }
+
+  verifyLicence(token: string): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/licences/verify/${token}/`);
+  }
+
+  /** Download the printable PDF certificate for a licence. */
+  downloadLicencePdf(licenceId: number): Observable<HttpResponse<Blob>> {
+    return this.http.get(`${this.baseUrl}/licences/${licenceId}/download/`, {
+      responseType: 'blob',
+      observe: 'response',
+    });
+  }
+
+  changePassword(currentPassword: string, newPassword: string): Observable<{ detail: string }> {
+    return this.http.post<{ detail: string }>(`${this.baseUrl}/auth/me/change-password/`, {
+      current_password: currentPassword,
+      new_password: newPassword,
+    });
   }
 }

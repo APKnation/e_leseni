@@ -61,6 +61,29 @@ class ProfileUpdateSerializer(serializers.ModelSerializer):
         return value
 
 
+class ChangePasswordSerializer(serializers.Serializer):
+    """Allows the logged-in user to change their own password (POST /api/auth/me/change-password/)."""
+
+    current_password = serializers.CharField(write_only=True)
+    new_password = serializers.CharField(write_only=True, min_length=8)
+
+    def validate_current_password(self, value):
+        user = self.context['request'].user
+        if not user.check_password(value):
+            raise serializers.ValidationError('Current password is incorrect.')
+        return value
+
+    def validate_new_password(self, value):
+        validate_password(value)
+        return value
+
+    def save(self):
+        user = self.context['request'].user
+        user.set_password(self.validated_data['new_password'])
+        user.save(update_fields=['password'])
+        return user
+
+
 class LoginSerializer(TokenObtainPairSerializer):
     @classmethod
     def get_token(cls, user):

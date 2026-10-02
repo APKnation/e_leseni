@@ -94,10 +94,10 @@ export class Apply {
   protected readonly uploadRows = signal<UploadRow[]>([]);
   protected readonly draftApplication = signal<Application | null>(null);
 
-  protected readonly categories: { value: LicenceCategory; label: string; icon: string; hint: string }[] = [
-    { value: 'BUSINESS', label: 'Business', icon: '🏪', hint: 'Shops, food vendors, services' },
-    { value: 'DRIVING', label: 'Driving', icon: '🚗', hint: 'New licences & renewals' },
-    { value: 'GENERAL', label: 'Other', icon: '📋', hint: 'Anything else' },
+  protected readonly categories: { value: LicenceCategory; label: string; hint: string }[] = [
+    { value: 'BUSINESS', label: 'Business', hint: 'Shops, food vendors, services' },
+    { value: 'DRIVING', label: 'Driving', hint: 'New licences & renewals' },
+    { value: 'GENERAL', label: 'Other', hint: 'Anything else' },
   ];
 
   constructor() {

@@ -1,3 +1,5 @@
+import io
+from django.http import FileResponse
 from django.utils import timezone
 from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
@@ -34,6 +36,22 @@ class LicenceViewSet(viewsets.ReadOnlyModelViewSet):
         from .services import build_qr_payload
 
         return Response({'licence_number': licence.licence_number, 'qr_payload': build_qr_payload(licence)})
+
+    @action(detail=True, methods=['get'])
+    def download(self, request, pk=None):
+        """GET /api/licences/{id}/download/ - printable PDF certificate."""
+        licence = self.get_object()
+        from .pdf import licence_pdf
+
+        pdf_bytes = licence_pdf(licence)
+        response = FileResponse(
+            io.BytesIO(pdf_bytes),
+            content_type='application/pdf',
+        )
+        response['Content-Disposition'] = (
+            f'attachment; filename="licence-{licence.licence_number}.pdf"'
+        )
+        return response
 
     @action(detail=True, methods=['post'])
     def renew(self, request, pk=None):

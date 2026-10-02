@@ -1,23 +1,28 @@
 <!-- Login page: branding left, form right -->
 <div class="min-h-[calc(100dvh-5rem)] grid lg:grid-cols-2">
 
-  <!-- Left: Brand / switch to Register -->
-  <section class="hidden lg:flex flex-col items-center justify-center bg-accent text-surface px-12 py-16">
-    <div class="max-w-sm text-center flex flex-col gap-6">
-      <div class="flex flex-col gap-2">
-        <p class="text-sm font-bold uppercase tracking-widest opacity-70">e-Leseni Platform</p>
-        <h2 class="text-5xl font-black leading-tight">Business licensing, simplified.</h2>
-      </div>
-      <p class="text-lg opacity-80 leading-relaxed">
-        Apply online, get inspected, pay via control number, and receive a QR-verifiable licence — all from one place.
+  <!-- Left: Brand chapter — login.jpg background with white overlay, green accents -->
+  <section class="relative hidden overflow-hidden bg-soft px-12 py-16 lg:flex lg:flex-col lg:items-start lg:justify-center">
+    <img
+      src="assets/people.jpg"
+      alt=""
+      aria-hidden="true"
+      class="absolute inset-0 h-full w-full object-cover"
+    />
+    <!-- Light overlay keeps text readable and the palette bright -->
+    <div class="absolute inset-0 bg-white/80" aria-hidden="true"></div>
+
+    <div class="relative max-w-sm flex flex-col gap-6">
+      <span class="inline-block h-3 w-3 bg-primary" aria-hidden="true"></span>
+      <h2 class="text-4xl font-bold leading-[1.25] text-foreground">e-Leseni Platform</h2>
+      <p class="text-lg leading-[1.75] text-body">
+        Business licensing, simplified.
       </p>
 
-      <div class="border-t border-white/20 pt-6 flex flex-col gap-4">
-        <p class="text-base font-semibold">Don't have an account yet?</p>
-        <a routerLink="/register" class="btn-primary border-none text-accent self-center px-8 bg-surface">
-          Create a free account
+      <div class="border-t border-hairline-strong/40 pt-6 flex flex-col gap-4">
+        <a routerLink="/register" class="btn-primary self-start">
+          Create account
         </a>
-        <p class="text-sm opacity-50">Free · No paperwork · SMS updates</p>
       </div>
     </div>
   </section>
@@ -27,9 +32,8 @@
     <div class="mx-auto w-full max-w-md">
 
       <div class="mb-8">
-        <p class="text-sm font-bold uppercase tracking-widest text-primary mb-2">Welcome back</p>
-        <h1 class="text-4xl font-black text-foreground">Log in</h1>
-        <p class="mt-3 text-muted">Enter your credentials to manage your licence applications.</p>
+        <h1 class="text-3xl font-bold text-foreground">Log in</h1>
+        <p class="mt-2 text-muted">Welcome back to e-Leseni.</p>
       </div>
 
       <form class="flex flex-col gap-5" (ngSubmit)="submit()">
@@ -65,7 +69,7 @@
         </label>
 
         @if (errorMessage()) {
-          <p class="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm font-semibold text-red-700">
+          <p class="px-4 py-3 text-sm font-semibold text-danger border border-danger/30 bg-danger/5" style="border-radius: 2px;">
             {{ errorMessage() }}
           </p>
         }

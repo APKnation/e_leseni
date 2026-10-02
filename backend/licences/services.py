@@ -2,6 +2,7 @@
 import logging
 
 from dateutil.relativedelta import relativedelta
+from django.conf import settings
 from django.utils import timezone
 
 from applications.models import Application
@@ -9,6 +10,10 @@ from applications.models import Application
 from .models import Licence
 
 logger = logging.getLogger(__name__)
+
+# Frontend base URL used in QR codes. Set FRONTEND_URL in .env for a real
+# deployment (e.g. https://leseni.go.tz); defaults to the Angular dev server.
+FRONTEND_URL = getattr(settings, 'FRONTEND_URL', 'http://localhost:4200')
 
 
 def issue_licence_for_application(application):
@@ -40,7 +45,8 @@ def issue_licence_for_application(application):
 def build_qr_payload(licence):
     """The payload encoded in the licence QR code.
 
-    Verification hits /api/licences/verify/{token}/ - officers scan this
-    with any QR reader that opens URLs.
+    Opens the public verification page (Angular) which then calls
+    /api/licences/verify/{token}/. Officers and anyone else can scan the QR
+    with any phone and see a human-readable verification result.
     """
-    return f'/api/licences/verify/{licence.qr_token}/'
+    return f'{FRONTEND_URL}/verify/{licence.qr_token}'

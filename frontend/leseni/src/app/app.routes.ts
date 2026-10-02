@@ -29,6 +29,15 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/forgot-password/forgot-password').then((m) => m.ForgotPassword),
   },
   {
+    // Public licence verification (QR landing page, no auth needed).
+    path: 'verify',
+    loadComponent: () => import('./pages/verify/verify').then((m) => m.Verify),
+  },
+  {
+    path: 'verify/:token',
+    loadComponent: () => import('./pages/verify/verify').then((m) => m.Verify),
+  },
+  {
     path: 'dashboard',
     loadComponent: () => import('./pages/dashboard/dashboard').then((m) => m.Dashboard),
     canActivate: [authGuard],
@@ -41,6 +50,11 @@ export const routes: Routes = [
   {
     path: 'apply',
     loadComponent: () => import('./pages/apply/apply').then((m) => m.Apply),
+    canActivate: [authGuard],
+  },
+  {
+    path: 'profile',
+    loadComponent: () => import('./pages/profile/profile').then((m) => m.Profile),
     canActivate: [authGuard],
   },
   {

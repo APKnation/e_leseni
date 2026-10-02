@@ -38,6 +38,7 @@ export class Businesses {
 
   protected readonly loading = signal(true);
   protected readonly errorMessage = signal('');
+  protected readonly successMessage = signal('');
 
   // Wizard state
   protected readonly wizardOpen = signal(false);
@@ -54,6 +55,13 @@ export class Businesses {
   protected readonly ward = signal('');
   protected readonly street = signal('');
   protected readonly plotNumber = signal('');
+  protected readonly stepLabels = ['Details', 'BRELA', 'NIDA', 'Location', 'Submit'];
+  protected readonly uploadKind = signal('BRELA_CERTIFICATE');
+  protected readonly uploadForBusinessId = signal<number | null>(null);
+  protected readonly uploadingDoc = signal(false);
+  protected readonly pendingDocFile = signal<File | null>(null);
+  protected readonly pendingDocBusinessId = signal<number | null>(null);
+
 
   // Street identification letter (from the mtaa/street chairman) — PDF only.
   protected readonly streetLetterFile = signal<File | null>(null);
@@ -221,32 +229,7 @@ export class Businesses {
     return true;
   }
 
-  // ---- Step 2: BRELA ------------------------------------------------------
-  protected registerWithBrela(): void {
-    if (!this.detailsValid || this.working()) return;
-    this.working.set(true);
-    this.errorMessage.set('');
-    this.api.brelaRegister(this.name().trim()).subscribe({
-      next: (res) => {
-        this.brelaNumber.set(res.registration_number);
-        this.brelaReceipt.set({
-          title: 'BRELA — Registration confirmed',
-          lines: [
-            { label: 'Registration no.', value: res.registration_number },
-            { label: 'Entity name', value: res.entity_name },
-            { label: 'Status', value: res.status },
-            { label: 'Issued by', value: res.source },
-          ],
-        });
-        this.working.set(false);
-        this.goToStep(3);
-      },
-      error: () => {
-        this.errorMessage.set('BRELA registration failed. Please try again.');
-        this.working.set(false);
-      },
-    });
-  }
+
 
   protected get hasNidaOnProfile(): boolean {
     return this.auth.currentUser()?.has_nida ?? false;
@@ -370,7 +353,7 @@ export class Businesses {
               { label: 'Taxpayer', value: app.taxpayer_name },
               { label: 'Business', value: app.business_name },
               { label: 'NIDA no.', value: nida },
-              { label: 'ID copy', value: 'Attached ✓' },
+              { label: 'ID copy', value: 'Attached' },
               { label: 'Status', value: app.status },
             ],
           });
@@ -381,7 +364,7 @@ export class Businesses {
                 title: 'NIDA — Identity recorded',
                 lines: [
                   { label: 'NIDA no.', value: nida },
-                  { label: 'ID copy', value: 'Attached ✓' },
+                  { label: 'ID copy', value: 'Attached' },
                   { label: 'Verified with', value: 'TRA (with TIN application)' },
                 ],
               });
@@ -500,9 +483,26 @@ export class Businesses {
   // ---- Existing businesses ------------------------------------------------
 
   protected verifyNow(business: Business): void {
+    this.errorMessage.set('');
+    this.successMessage.set('');
     this.api.verifyBusiness(business.id).subscribe({
-      next: () => this.loadAll(),
-      error: () => this.errorMessage.set('Verification failed. Please try again.'),
+      next: (res: any) => {
+        this.successMessage.set(
+          res?.is_verified
+            ? `${business.name} verified with TRA & BRELA.`
+            : 'Verification did not pass — check the TIN and BRELA numbers.',
+        );
+        this.loadAll();
+      },
+      error: (err) => {
+        // Surface the backend's real reason (missing street letter, no NIDA, etc.)
+        const detail = err?.error?.detail ?? err?.error?.non_field_errors?.[0];
+        this.errorMessage.set(
+          typeof detail === 'string' && detail
+            ? detail
+            : 'Verification failed. Please try again.',
+        );
+      },
     });
   }
 
@@ -510,6 +510,8 @@ export class Businesses {
 
   protected toggleDocUpload(businessId: number): void {
     this.errorMessage.set('');
+    this.pendingDocFile.set(null);
+    this.uploadForBusinessId.update((current) => (current === businessId ? null : businessId));
   }
 
   protected onBusinessDocSelected(businessId: number, event: Event): void {
@@ -527,11 +529,25 @@ export class Businesses {
       return;
     }
     this.errorMessage.set('');
-    this.api.uploadBusinessDocument(businessId, file, 'STREET_ID_LETTER').subscribe({
+    this.pendingDocFile.set(file);
+    this.pendingDocBusinessId.set(businessId);
+  }
+
+  protected submitBusinessDoc(businessId: number): void {
+    const file = this.pendingDocFile();
+    if (!file || this.pendingDocBusinessId() !== businessId) return;
+
+    this.errorMessage.set('');
+    this.uploadingDoc.set(true);
+    const kind = this.uploadKind();
+    this.api.uploadBusinessDocument(businessId, file, kind).subscribe({
       next: () => {
+        this.uploadingDoc.set(false);
+        this.pendingDocFile.set(null);
         this.loadAll();
       },
       error: () => {
+        this.uploadingDoc.set(false);
         this.errorMessage.set('Upload failed — make sure the file is a PDF under 10 MB and try again.');
       },
     });

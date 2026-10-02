@@ -18,6 +18,7 @@ urlpatterns = [
     path('auth/verify/', TokenVerifyView.as_view(), name='auth-verify'),
     path('auth/me/', views.MeView.as_view(), name='auth-me'),
     path('auth/me/update/', views.MeUpdateView.as_view(), name='auth-me-update'),
+    path('auth/me/change-password/', views.ChangePasswordView.as_view(), name='auth-me-change-password'),
     path('auth/verify-nida/', views.mock_nida_verify, name='auth-verify-nida'),
     path('auth/password-reset/', views.PasswordResetRequestView.as_view(), name='auth-password-reset-request'),
     path('auth/password-reset/confirm/', views.PasswordResetConfirmView.as_view(), name='auth-password-reset-confirm'),

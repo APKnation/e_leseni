@@ -24,6 +24,14 @@ export class Home {
     .regions()
     .reduce((sum, region) => sum + this.geo.districts(region).length, 0);
 
+  protected get stats() {
+    return [
+      { label: 'Regions', value: this.regionCount },
+      { label: 'Councils', value: this.councilCount },
+      { label: 'Wards', value: '2900+' },
+    ];
+  }
+
   protected readonly steps = [
     { title: 'Apply online', body: 'Register your business and submit your licence application — no queueing at the council office.' },
     { title: 'Get inspected', body: 'Your LGA officer reviews the application and schedules a premises inspection.' },
@@ -68,20 +76,14 @@ export class Home {
     {
       title: 'Licensing officers',
       body: 'Review submitted applications, schedule inspections, return or reject incomplete ones.',
-      cta: 'Officer log in',
-      link: '/login',
     },
     {
       title: 'Inspectors',
       body: 'See scheduled inspections, record pass/fail results with findings on site.',
-      cta: 'Inspector log in',
-      link: '/login',
     },
     {
       title: 'Approvers',
       body: 'Give final approval on inspected applications and trigger invoicing.',
-      cta: 'Approver log in',
-      link: '/login',
     },
   ];
 

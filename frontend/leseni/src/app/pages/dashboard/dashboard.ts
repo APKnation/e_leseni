@@ -22,7 +22,6 @@ import {
 interface TimelineStep {
   status: ApplicationStatus;
   label: string;
-  icon: string;
   /** 'done' | 'current' | 'upcoming' for main-line steps; 'event' for extras. */
   state: 'done' | 'current' | 'upcoming' | 'event';
   when: string | null;
@@ -45,6 +44,7 @@ export class Dashboard {
 
   protected readonly loading = signal(true);
   protected readonly errorMessage = signal('');
+  protected readonly successMessage = signal('');
 
   protected readonly applications = signal<Application[]>([]);
   protected readonly licences = signal<Licence[]>([]);
@@ -61,14 +61,14 @@ export class Dashboard {
   }
 
   /** The main-line journey every application walks through. */
-  private static readonly MAIN_LINE: { status: ApplicationStatus; label: string; icon: string }[] = [
-    { status: 'DRAFT', label: 'Draft', icon: '📝' },
-    { status: 'SUBMITTED', label: 'Submitted', icon: '📤' },
-    { status: 'UNDER_REVIEW', label: 'Under review', icon: '👀' },
-    { status: 'INSPECTED', label: 'Inspected', icon: '🔍' },
-    { status: 'APPROVED', label: 'Approved', icon: '✅' },
-    { status: 'PAID', label: 'Paid', icon: '💳' },
-    { status: 'ISSUED', label: 'Issued', icon: '🎫' },
+  private static readonly MAIN_LINE: { status: ApplicationStatus; label: string }[] = [
+    { status: 'DRAFT', label: 'Draft' },
+    { status: 'SUBMITTED', label: 'Submitted' },
+    { status: 'UNDER_REVIEW', label: 'Under review' },
+    { status: 'INSPECTED', label: 'Inspected' },
+    { status: 'APPROVED', label: 'Approved' },
+    { status: 'PAID', label: 'Paid' },
+    { status: 'ISSUED', label: 'Issued' },
   ];
 
   /**
@@ -114,7 +114,6 @@ export class Dashboard {
       .map((h) => ({
         status: h.to_status,
         label: STATUS_LABELS[h.to_status] ?? h.to_status,
-        icon: h.to_status === 'REJECTED' ? '⛔' : h.to_status === 'RETURNED_FOR_CORRECTION' ? '↩️' : '🔔',
         state: 'event' as const,
         when: fmt(h.changed_at),
         actor: h.changed_by_name,
@@ -277,7 +276,12 @@ export class Dashboard {
         reference: 'WEB-DEMO',
       })
       .subscribe({
-        next: () => this.loadAll(),
+        next: () => {
+          this.successMessage.set(`Payment of ${invoice.amount} successful!`);
+          setTimeout(() => this.successMessage.set(''), 5000);
+          this.payingInvoiceId.set(null);
+          this.loadAll();
+        },
         error: () => this.payingInvoiceId.set(null),
       });
   }
@@ -287,4 +291,37 @@ export class Dashboard {
   /** Staff see admin actions instead of the applicant CTA. */
   protected readonly isStaff = this.auth.isStaff;
   protected readonly roleLabel = ROLE_LABELS;
+
+  protected downloadPdf(licence: any): void {
+    this.successMessage.set(`Preparing PDF for licence ${licence.licence_number}...`);
+    this.api.downloadLicencePdf(licence.id).subscribe({
+      next: (response) => {
+        const blob = response.body;
+        if (!blob) {
+          this.successMessage.set('');
+          this.errorMessage.set('The PDF file was empty. Please try again.');
+          return;
+        }
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `licence-${licence.licence_number}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        this.successMessage.set('PDF downloaded successfully!');
+        setTimeout(() => this.successMessage.set(''), 3000);
+      },
+      error: () => {
+        this.successMessage.set('');
+        this.errorMessage.set('Could not download the licence PDF. Please try again.');
+      },
+    });
+  }
+
+  protected printLicence(licence: any): void {
+    // Triggers the browser's native print dialog
+    window.print();
+  }
 }
