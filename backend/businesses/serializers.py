@@ -3,7 +3,23 @@ from rest_framework import serializers
 
 from core_docs.validation import validate_pdf_document
 
-from .models import Business, BusinessDocument, BusinessLocation, TINApplication, TINApplicationDocument
+from .models import (
+    Business,
+    BusinessDocument,
+    BusinessLocation,
+    TINApplication,
+    TINApplicationDocument,
+    VerificationAttempt,
+)
+
+
+class VerificationAttemptSerializer(serializers.ModelSerializer):
+    """One TRA + BRELA verification run — keeps the rejection reasons."""
+
+    class Meta:
+        model = VerificationAttempt
+        fields = ['id', 'verified', 'tra_valid', 'tra_reason', 'brela_registered', 'brela_reason', 'created_at']
+        read_only_fields = fields
 
 
 class BusinessDocumentSerializer(serializers.ModelSerializer):
@@ -68,6 +84,9 @@ class BusinessSerializer(serializers.ModelSerializer):
     locations = BusinessLocationSerializer(many=True, read_only=True)
     documents = BusinessDocumentSerializer(many=True, read_only=True)
     has_street_id_letter = serializers.SerializerMethodField()
+    # Why TRA/BRELA rejected the last verification attempt (null when none).
+    verification_note = serializers.SerializerMethodField()
+    verification_attempts = VerificationAttemptSerializer(many=True, read_only=True)
 
     class Meta:
         model = Business
@@ -75,9 +94,20 @@ class BusinessSerializer(serializers.ModelSerializer):
             'id', 'name', 'owner', 'owner_name', 'owner_nida', 'nida_number',
             'tin_number', 'brela_registration_number',
             'sector', 'activity', 'activity_name', 'is_verified', 'has_street_id_letter',
+            'verification_note', 'verification_attempts',
             'created_at', 'updated_at', 'locations', 'documents',
         ]
         read_only_fields = ['owner', 'nida_number', 'is_verified', 'created_at', 'updated_at']
+
+    def get_verification_note(self, obj):
+        """Human-readable outcome of the latest verification attempt."""
+        attempt = obj.verification_attempts.first()
+        if attempt is None:
+            return None
+        if attempt.verified:
+            return 'Verified with TRA and BRELA.'
+        reasons = [r for r in (attempt.tra_reason, attempt.brela_reason) if r]
+        return ' '.join(reasons) or 'Verification did not pass.'
 
     def get_has_street_id_letter(self, obj):
         return obj.documents.filter(kind=BusinessDocument.Kinds.STREET_ID_LETTER).exists()

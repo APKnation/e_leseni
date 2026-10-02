@@ -46,10 +46,11 @@ class Business(models.Model):
 
         Prerequisites (real-council rules): a TRA TIN, a BRELA registration
         number, the owner's NIDA, and the street identification letter on
-        file. Marks the business verified only if everything passes; returns
-        whether the business ends up verified.
+        file. Marks the business verified only if everything passes; every
+        run (pass or fail) is recorded as a VerificationAttempt so the
+        rejection reasons survive for the applicant and officers.
         """
-        from integrations.adapters import BRELAdapter, TRAAdapter
+        from .verification import run_verification
 
         if self.is_verified:
             return True
@@ -60,18 +61,42 @@ class Business(models.Model):
             or not self.documents.filter(kind=BusinessDocument.Kinds.STREET_ID_LETTER).exists()
         ):
             return False
-        tin_result = TRAAdapter().verify_tin(self.tin_number, self.name)
-        brela_result = BRELAdapter().verify_registration(
-            self.brela_registration_number, self.name
+        result = run_verification(self)
+        self.verification_attempts.create(
+            verified=result['verified'],
+            tra_valid=result['tra_valid'],
+            tra_reason=result['tra_reason'],
+            brela_registered=result['brela_registered'],
+            brela_reason=result['brela_reason'],
         )
-        verified = (
-            tin_result.success and tin_result.data.get('valid') is True
-            and brela_result.success and brela_result.data.get('registered') is True
-        )
-        if verified:
+        if result['verified']:
             self.is_verified = True
             self.save(update_fields=['is_verified', 'updated_at'])
-        return verified
+        return result['verified']
+
+
+class VerificationAttempt(models.Model):
+    """One TRA + BRELA verification run — rejections keep their reasons."""
+
+    business = models.ForeignKey(
+        Business, on_delete=models.CASCADE, related_name='verification_attempts'
+    )
+    verified = models.BooleanField(default=False)
+    tra_valid = models.BooleanField(null=True, help_text='Null means TRA was unreachable.')
+    tra_reason = models.CharField(max_length=255, blank=True)
+    brela_registered = models.BooleanField(
+        null=True, help_text='Null means BRELA was unreachable.'
+    )
+    brela_reason = models.CharField(max_length=255, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name_plural = 'verification attempts'
+
+    def __str__(self):
+        outcome = 'verified' if self.verified else 'rejected'
+        return f'{self.business.name}: {outcome} ({self.created_at:%Y-%m-%d %H:%M})'
 
 
 class TINApplication(models.Model):

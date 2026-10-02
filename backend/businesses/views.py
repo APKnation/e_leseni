@@ -30,7 +30,7 @@ class BusinessViewSet(viewsets.ModelViewSet):
     search_fields = ['name', 'tin_number', 'brela_registration_number']
 
     def get_queryset(self):
-        qs = Business.objects.prefetch_related('locations', 'documents')
+        qs = Business.objects.prefetch_related('locations', 'documents', 'verification_attempts')
         user = self.request.user
         if user.is_authenticated and user.is_lga_staff:
             return qs
@@ -83,21 +83,32 @@ class BusinessViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        from integrations.adapters import BRELAdapter, TRAAdapter
+        from .verification import run_verification
 
-        tin_result = TRAAdapter().verify_tin(business.tin_number, business.name)
-        brela_result = BRELAdapter().verify_registration(
-            business.brela_registration_number, business.name
+        result = run_verification(business)
+        business.verification_attempts.create(
+            verified=result['verified'],
+            tra_valid=result['tra_valid'],
+            tra_reason=result['tra_reason'],
+            brela_registered=result['brela_registered'],
+            brela_reason=result['brela_reason'],
         )
-        verified = tin_result.success and tin_result.data.get('valid') is True and \
-            brela_result.success and brela_result.data.get('registered') is True
-        business.is_verified = verified
+        business.is_verified = result['verified']
         business.save(update_fields=['is_verified', 'updated_at'])
 
         return Response({
-            'is_verified': verified,
-            'tra': {'success': tin_result.success, 'valid': tin_result.data.get('valid', False)},
-            'brela': {'success': brela_result.success, 'registered': brela_result.data.get('registered', False)},
+            'is_verified': result['verified'],
+            'verification_note': BusinessSerializer(business, context={'request': request}).data.get('verification_note'),
+            'tra': {
+                'success': result['tra_valid'] or not result['tra_reason'].startswith('TRA service'),
+                'valid': result['tra_valid'],
+                'reason': result['tra_reason'],
+            },
+            'brela': {
+                'success': result['brela_registered'] or not result['brela_reason'].startswith('BRELA service'),
+                'registered': result['brela_registered'],
+                'reason': result['brela_reason'],
+            },
         })
 
     @action(detail=True, methods=['post'], parser_classes=[MultiPartParser, FormParser])
