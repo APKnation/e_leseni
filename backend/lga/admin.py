@@ -1,6 +1,15 @@
 from django.contrib import admin
 
-from .models import LGA, LicenceType, OfficerAssignment, Requirement
+from .models import LGA, LicenceType, BusinessActivity, OfficerAssignment, Requirement
+
+
+@admin.register(BusinessActivity)
+class BusinessActivityAdmin(admin.ModelAdmin):
+    list_display = ('name', 'code', 'order', 'is_active')
+    list_editable = ('order', 'is_active')
+    list_filter = ('is_active',)
+    search_fields = ('name', 'code', 'description')
+    prepopulated_fields = {'code': ('name',)}
 
 
 class RequirementInline(admin.TabularInline):
@@ -16,8 +25,8 @@ class LGAAdmin(admin.ModelAdmin):
 
 @admin.register(LicenceType)
 class LicenceTypeAdmin(admin.ModelAdmin):
-    list_display = ('name', 'code', 'lga', 'fee', 'validity_months', 'requires_inspection')
-    list_filter = ('lga', 'requires_inspection')
+    list_display = ('name', 'code', 'lga', 'category', 'activity', 'fee', 'validity_months', 'requires_inspection')
+    list_filter = ('lga', 'category', 'activity', 'requires_inspection')
     search_fields = ('name', 'code')
     inlines = [RequirementInline]
 

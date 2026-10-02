@@ -19,7 +19,15 @@ class Business(models.Model):
         blank=True,
         help_text='Owner NIDA captured with the registration (snapshot of the owner\'s NIDA).',
     )
-    sector = models.CharField(max_length=100, blank=True)
+    sector = models.CharField(max_length=100, blank=True, help_text='Free-text fallback; prefer activity.')
+    activity = models.ForeignKey(
+        'lga.BusinessActivity',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='businesses',
+        help_text='Kind of business — the council activity taxonomy shown at registration.',
+    )
     is_verified = models.BooleanField(default=False, help_text='Set once BRELA/TRA verification passes.')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

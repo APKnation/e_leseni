@@ -16,7 +16,7 @@ from django.utils import timezone
 
 from businesses.models import Business, BusinessLocation
 from applications.models import Application
-from lga.models import LGA, LicenceType, Requirement, Ward
+from lga.models import LGA, BusinessActivity, LicenceType, Requirement, Ward
 from licences.models import Licence
 
 User = get_user_model()
@@ -99,12 +99,30 @@ class Command(BaseCommand):
         )
 
         # ── 3. Licence Types ──────────────────────────────────────────────────
+        food_activity, _ = BusinessActivity.objects.get_or_create(
+            code="FOOD",
+            defaults={
+                "name": "Food & Beverages",
+                "description": "Restaurants, food stalls, butcheries, bakeries, catering and food processing.",
+                "order": 0,
+            },
+        )
+        trade_activity, _ = BusinessActivity.objects.get_or_create(
+            code="GENERAL_TRADE",
+            defaults={
+                "name": "General Trade & Shops",
+                "description": "Retail shops, wholesalers, hardware stores, stationary and general merchandise.",
+                "order": 1,
+            },
+        )
+
         food_handler, _ = LicenceType.objects.get_or_create(
             lga=lga,
             code="FH01",
             defaults={
                 "name": "Food Handler",
                 "category": LicenceType.Category.BUSINESS,
+                "activity": food_activity,
                 "description": "Licence required for all food handling and preparation businesses.",
                 "fee": 50000.00,
                 "validity_months": 12,
@@ -118,6 +136,7 @@ class Command(BaseCommand):
             defaults={
                 "name": "General Trade",
                 "category": LicenceType.Category.BUSINESS,
+                "activity": trade_activity,
                 "description": "General business trading licence.",
                 "fee": 30000.00,
                 "validity_months": 12,
@@ -146,6 +165,8 @@ class Command(BaseCommand):
                 "brela_registration_number": "BRELA-DEMO-9999",
                 "nida_number": applicant.nida_number,
                 "sector": "Food & Beverage",
+                "activity": food_activity,
+                "activity": food_activity,
                 "is_verified": True,
             },
         )

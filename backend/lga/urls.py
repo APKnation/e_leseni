@@ -11,6 +11,7 @@ router.register(r'officer-assignments', views.OfficerAssignmentViewSet, basename
 
 urlpatterns = [
     path('regions/', views.regions, name='regions'),
+    path('business-activities/', views.business_activities, name='business-activities'),
     path('lgas/<int:lga_id>/wards/', views.wards, name='lga-wards'),
     path('', include(router.urls)),
 ]

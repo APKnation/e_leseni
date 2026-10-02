@@ -74,11 +74,24 @@ export interface Requirement {
 
 export type LicenceCategory = 'BUSINESS' | 'DRIVING' | 'GENERAL';
 
+/** A council-controlled business activity (the "kind of business" taxonomy). */
+export interface BusinessActivity {
+  id: number;
+  code: string;
+  name: string;
+  description: string;
+  icon: string;
+  order: number;
+  licence_type_count?: number;
+}
+
 export interface LicenceType {
   id: number;
   name: string;
   code: string;
   category: LicenceCategory;
+  activity: number | null;
+  activity_name: string | null;
   description: string;
   fee: string;
   validity_months: number;
@@ -118,6 +131,8 @@ export interface Business {
   tin_number: string;
   brela_registration_number: string;
   sector: string;
+  activity: number | null;
+  activity_name: string | null;
   is_verified: boolean;
   has_street_id_letter: boolean;
   locations: BusinessLocation[];
@@ -219,6 +234,7 @@ export interface NewBusinessPayload {
   tin_number: string;
   brela_registration_number: string;
   sector: string;
+  activity: number | null;
   location: {
     lga: number;
     ward: string;

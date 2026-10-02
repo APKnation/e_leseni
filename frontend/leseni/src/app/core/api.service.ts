@@ -7,6 +7,7 @@ import { User } from './auth.service';
 import {
   Application,
   Business,
+  BusinessActivity,
   Inspection,
   Invoice,
   Licence,
@@ -54,6 +55,17 @@ export class ApiService {
 
   licenceTypes(filters?: ListOptions['filters']): Observable<Paginated<LicenceType>> {
     return this.list<LicenceType>('licence-types', { filters, pageSize: 250 });
+  }
+
+  /** Council business activities ("kind of business" taxonomy). */
+  businessActivities(filters?: ListOptions['filters']): Observable<BusinessActivity[]> {
+    let params = new HttpParams();
+    for (const [key, value] of Object.entries(filters ?? {})) {
+      if (value !== null && value !== undefined && value !== '') {
+        params = params.set(key, String(value));
+      }
+    }
+    return this.http.get<BusinessActivity[]>(`${this.baseUrl}/business-activities/`, { params });
   }
 
   wards(lgaId: number): Observable<{ id: number; name: string }[]> {

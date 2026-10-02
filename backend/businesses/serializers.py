@@ -64,6 +64,7 @@ class TINApplicationSerializer(serializers.ModelSerializer):
 class BusinessSerializer(serializers.ModelSerializer):
     owner_name = serializers.CharField(source='owner.get_full_name', read_only=True)
     owner_nida = serializers.CharField(source='owner.nida_number', read_only=True, default='')
+    activity_name = serializers.CharField(source='activity.name', read_only=True, default=None)
     locations = BusinessLocationSerializer(many=True, read_only=True)
     documents = BusinessDocumentSerializer(many=True, read_only=True)
     has_street_id_letter = serializers.SerializerMethodField()
@@ -73,7 +74,7 @@ class BusinessSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'name', 'owner', 'owner_name', 'owner_nida', 'nida_number',
             'tin_number', 'brela_registration_number',
-            'sector', 'is_verified', 'has_street_id_letter',
+            'sector', 'activity', 'activity_name', 'is_verified', 'has_street_id_letter',
             'created_at', 'updated_at', 'locations', 'documents',
         ]
         read_only_fields = ['owner', 'nida_number', 'is_verified', 'created_at', 'updated_at']

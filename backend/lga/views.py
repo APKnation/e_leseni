@@ -1,13 +1,14 @@
-from django.db.models import Count
+from django.db.models import Count, Prefetch, Q
 from rest_framework import permissions, viewsets
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAdminUser
 from rest_framework.response import Response
 
-from .models import LGA, LicenceType, OfficerAssignment, Requirement, Ward
+from .models import LGA, LicenceType, BusinessActivity, OfficerAssignment, Requirement, Ward
 from .serializers import (
     LGASerializer,
     LicenceTypeSerializer,
+    BusinessActivitySerializer,
     OfficerAssignmentSerializer,
     RequirementSerializer,
 )
@@ -38,6 +39,34 @@ def regions(request):
     return Response(list(regions_))
 
 
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def business_activities(request):
+    """Public list of business activities (the "kind of business" taxonomy).
+
+    GET /api/business-activities/?lga=<id>
+
+    With ?lga= the response only includes activities that have at least one
+    licence type in that council and carries the per-council licence count;
+    without it every active activity is listed.
+    """
+    lga_id = request.query_params.get('lga')
+    qs = BusinessActivity.objects.filter(is_active=True)
+    if lga_id:
+        qs = (
+            qs.filter(licence_types__lga_id=lga_id, licence_types__category=LicenceType.Category.BUSINESS)
+            .annotate(licence_type_count=Count('licence_types', filter=Q(
+                licence_types__lga_id=lga_id,
+                licence_types__category=LicenceType.Category.BUSINESS,
+            )))
+        )
+    else:
+        qs = qs.annotate(licence_type_count=Count('licence_types'))
+    qs = qs.order_by('order', 'name')
+    serializer = BusinessActivitySerializer(qs, many=True)
+    return Response(serializer.data)
+
+
 class PublicReadStaffWriteMixin:
     """AllowAnyone for GET/list; admin-only for writes."""
 
@@ -58,14 +87,14 @@ class LGAViewSet(PublicReadStaffWriteMixin, viewsets.ReadOnlyModelViewSet):
 
 
 class LicenceTypeViewSet(PublicReadStaffWriteMixin, viewsets.ReadOnlyModelViewSet):
-    """Licence types, filterable by area and category:
+    """Licence types, filterable by area, category and activity:
 
-    GET /api/licence-types/?lga=<id>&category=BUSINESS|DRIVING|GENERAL
+    GET /api/licence-types/?lga=<id>&category=BUSINESS&activity=<id>
     """
 
-    queryset = LicenceType.objects.select_related('lga').prefetch_related('requirements')
+    queryset = LicenceType.objects.select_related('lga', 'activity').prefetch_related('requirements')
     serializer_class = LicenceTypeSerializer
-    filterset_fields = ['lga', 'category', 'requires_inspection']
+    filterset_fields = ['lga', 'category', 'activity', 'requires_inspection']
     search_fields = ['name', 'code', 'description']
     ordering = ['name']
 

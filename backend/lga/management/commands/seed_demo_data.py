@@ -20,8 +20,9 @@ from django.utils import timezone as tz
 
 from applications.models import Application, Inspection
 from businesses.models import Business, BusinessLocation
+from lga.business_activities import BUSINESS_ACTIVITIES
 from lga.management.commands.geo_data import region_lga_wards
-from lga.models import LGA, LicenceType, OfficerAssignment, Requirement, Ward
+from lga.models import LGA, BusinessActivity, LicenceType, OfficerAssignment, Requirement, Ward
 
 User = get_user_model()
 
@@ -231,7 +232,9 @@ class Command(BaseCommand):
         self._seed_lgas()
         if not options['skip_wards']:
             self._seed_wards()
+        self._seed_activities()
         self._seed_standard_licences()
+        self._seed_activity_licences()
         self._seed_demo_licences()
         self._seed_users()
         self._seed_assignments()
@@ -331,6 +334,49 @@ class Command(BaseCommand):
         slug = '_'.join(slug.split())[:20]
         return f'{region_code}-{slug}'
 
+    def _seed_activities(self):
+        """Create the council business-activity taxonomy ("kind of business")."""
+        for order, (code, name, description, _fee, _inspection, _reqs) in enumerate(BUSINESS_ACTIVITIES):
+            BusinessActivity.objects.update_or_create(
+                code=code,
+                defaults={
+                    'name': name,
+                    'description': description,
+                    'order': order,
+                    'is_active': True,
+                },
+            )
+        self._stdout(f'  + Business activities: {BusinessActivity.objects.count()} total.')
+
+    def _seed_activity_licences(self):
+        """Give every council one licence per business activity so area +
+        activity selection always shows the correct licences."""
+        created_count = 0
+        activities = {a.code: a for a in BusinessActivity.objects.all()}
+        for lga in LGA.objects.all():
+            for order, (code, name, _desc, fee, inspection, reqs) in enumerate(BUSINESS_ACTIVITIES):
+                activity = activities.get(code)
+                if activity is None:
+                    continue
+                lt_code = f'{lga.code}-ACT-{code}'[:60]
+                spec = {
+                    'name': f'{name} Licence',
+                    'category': LicenceType.Category.BUSINESS,
+                    'fee': fee,
+                    'validity_months': 12,
+                    'requires_inspection': inspection,
+                    'description': f'{name} licence issued by {lga.name}. ' + _desc,
+                    'activity': activity,
+                }
+                lt, created = self._upsert_licence(lga, lt_code, spec)
+                for req_order, (req_name, req_kind) in enumerate(reqs, start=1):
+                    Requirement.objects.update_or_create(
+                        licence_type=lt, name=req_name,
+                        defaults={'kind': req_kind, 'is_mandatory': True, 'order': req_order},
+                    )
+                created_count += 1 if created else 0
+        self._stdout(f'  + Activity licences: {created_count} created.')
+
     def _seed_standard_licences(self):
         """Create the standard licences for every LGA (area-based selection)."""
         created_count = 0
@@ -363,6 +409,7 @@ class Command(BaseCommand):
             defaults={
                 'name': spec['name'],
                 'category': spec.get('category', LicenceType.Category.BUSINESS),
+                'activity': spec.get('activity'),
                 'fee': spec['fee'],
                 'validity_months': spec['validity_months'],
                 'requires_inspection': spec['requires_inspection'],

@@ -15,8 +15,8 @@ class BusinessDocumentInline(admin.TabularInline):
 
 @admin.register(Business)
 class BusinessAdmin(admin.ModelAdmin):
-    list_display = ('name', 'owner', 'tin_number', 'brela_registration_number', 'is_verified', 'created_at')
-    list_filter = ('is_verified',)
+    list_display = ('name', 'owner', 'activity', 'sector', 'tin_number', 'brela_registration_number', 'is_verified', 'created_at')
+    list_filter = ('is_verified', 'activity')
     search_fields = ('name', 'tin_number', 'brela_registration_number', 'owner__username')
     inlines = [BusinessLocationInline, BusinessDocumentInline]
 

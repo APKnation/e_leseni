@@ -1,6 +1,34 @@
 from django.db import models
 
 
+class BusinessActivity(models.Model):
+    """A business activity that LGAs licence and control.
+
+    This is the council taxonomy shown as "kind of business" cards on the
+    apply page: food & beverages, liquor & bars, transport, markets, mining,
+    etc. Admins can add or edit activities from Django admin without a code
+    change; licence types are tagged with an activity so applicants see the
+    correct licences after picking a card.
+    """
+
+    code = models.CharField(max_length=40, unique=True)
+    name = models.CharField(max_length=100)
+    description = models.TextField(
+        blank=True, help_text='Short hint shown under the activity name (examples of businesses).'
+    )
+    icon = models.CharField(
+        max_length=30, blank=True, help_text='Optional UI icon identifier.'
+    )
+    order = models.PositiveIntegerField(default=0, help_text='Display order on selection screens.')
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['order', 'name']
+
+    def __str__(self):
+        return self.name
+
+
 class LGA(models.Model):
     """Local Government Authority."""
 
@@ -25,7 +53,12 @@ class LGA(models.Model):
 
 
 class LicenceType(models.Model):
-    """A licence issued by an LGA, grouped by category (business, driving, ...)."""
+    """A licence issued by an LGA, grouped by category (business, driving, ...).
+
+    Business-category licences are additionally tagged with a BusinessActivity
+    (the council "kind of business" taxonomy) so the apply wizard can show the
+    right licences after an applicant picks e.g. "Food & beverages".
+    """
 
     class Category(models.TextChoices):
         BUSINESS = 'BUSINESS', 'Business'
@@ -36,6 +69,14 @@ class LicenceType(models.Model):
     code = models.CharField(max_length=60, unique=True)
     category = models.CharField(
         max_length=20, choices=Category.choices, default=Category.BUSINESS, db_index=True
+    )
+    activity = models.ForeignKey(
+        BusinessActivity,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='licence_types',
+        help_text='Business activity this licence covers (BUSINESS-category licences).',
     )
     description = models.TextField(blank=True)
     fee = models.DecimalField(max_digits=12, decimal_places=2)

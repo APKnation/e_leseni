@@ -219,10 +219,15 @@
                    [ngModel]="name()" (ngModelChange)="name.set($event)" />
           </label>
           <label class="flex flex-col gap-2 text-sm font-semibold">
-            Sector (optional)
-            <input class="input-field" type="text" name="bz_sector"
-                   placeholder="e.g. Food, Retail, Services"
-                   [ngModel]="sector()" (ngModelChange)="sector.set($event)" />
+            Kind of business
+            <select class="input-field" name="bz_activity"
+                    [ngModel]="activityId()"
+                    (ngModelChange)="onActivitySelect($event)">
+              <option [ngValue]="null">— choose the kind of business —</option>
+              @for (activity of allActivities(); track activity.id) {
+                <option [ngValue]="activity.id">{{ activity.name }}</option>
+              }
+            </select>
           </label>
           <label class="flex flex-col gap-2 text-sm font-semibold sm:col-span-2">
             Owner / taxpayer full name *

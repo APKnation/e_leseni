@@ -8,6 +8,7 @@ import { AuthService } from '../../core/auth.service';
 import { TanzaniaGeoService } from '../../core/tanzania-geo.service';
 import {
   Business,
+  BusinessActivity,
   LGA,
   RegionInfo,
   TINApplication,
@@ -48,6 +49,8 @@ export class Businesses {
   // Wizard form fields
   protected readonly name = signal('');
   protected readonly sector = signal('');
+  protected readonly activityId = signal<number | null>(null);
+  protected readonly allActivities = signal<BusinessActivity[]>([]);
   protected readonly taxpayerName = signal('');
   protected readonly nidaNumber = signal('');
   protected readonly regionName = signal<string | null>(null);
@@ -137,6 +140,10 @@ export class Businesses {
   constructor() {
     this.loadAll();
     this.api.regions().subscribe((regions) => this.regions.set(regions));
+    this.api.businessActivities().subscribe({
+      next: (list) => this.allActivities.set(list),
+      error: () => this.allActivities.set([]),
+    });
   }
 
   protected loadAll(): void {
@@ -180,6 +187,7 @@ export class Businesses {
     this.step.set(1);
     this.name.set('');
     this.sector.set('');
+    this.activityId.set(null);
     this.taxpayerName.set('');
     this.nidaNumber.set(this.auth.currentUser()?.nida_number ?? '');
     this.regionName.set(null);
@@ -203,6 +211,14 @@ export class Businesses {
 
   protected goToStep(n: number): void {
     this.step.set(n);
+  }
+
+  /** Keep the free-text sector in sync with the chosen activity. */
+  protected onActivitySelect(value: number | null): void {
+    const id = value === null || value === undefined || (value as unknown) === '' ? null : Number(value);
+    this.activityId.set(id);
+    const activity = this.allActivities().find((a) => a.id === id);
+    this.sector.set(activity?.name ?? '');
   }
 
   /** Validate the business details from step 1. */
@@ -416,12 +432,14 @@ export class Businesses {
     this.errorMessage.set('');
 
     const lga = this.lgaId()!;
+    const selectedActivity = this.allActivities().find((a) => a.id === this.activityId());
     this.api
       .createBusiness({
         name: this.name().trim(),
         tin_number: this.tinNumber(),
         brela_registration_number: this.brelaNumber(),
-        sector: this.sector().trim(),
+        sector: selectedActivity?.name ?? this.sector().trim(),
+        activity: this.activityId(),
         location: {
           lga,
           ward: this.ward(),

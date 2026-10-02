@@ -1,6 +1,16 @@
 from rest_framework import serializers
 
-from .models import LGA, LicenceType, OfficerAssignment, Requirement, InspectionChecklistItem
+from .models import LGA, LicenceType, BusinessActivity, OfficerAssignment, Requirement, InspectionChecklistItem
+
+
+class BusinessActivitySerializer(serializers.ModelSerializer):
+    """Public taxonomy of council-controlled business activities."""
+
+    licence_type_count = serializers.IntegerField(read_only=True, default=0)
+
+    class Meta:
+        model = BusinessActivity
+        fields = ['id', 'code', 'name', 'description', 'icon', 'order', 'licence_type_count']
 
 
 class LGASerializer(serializers.ModelSerializer):
@@ -27,13 +37,15 @@ class InspectionChecklistItemSerializer(serializers.ModelSerializer):
 
 class LicenceTypeSerializer(serializers.ModelSerializer):
     lga_name = serializers.CharField(source='lga.name', read_only=True)
+    activity_name = serializers.CharField(source='activity.name', read_only=True, default=None)
     requirements = RequirementSerializer(many=True, read_only=True)
     inspection_items = InspectionChecklistItemSerializer(many=True, read_only=True)
 
     class Meta:
         model = LicenceType
         fields = [
-            'id', 'name', 'code', 'category', 'description', 'fee', 'validity_months',
+            'id', 'name', 'code', 'category', 'activity', 'activity_name', 'description',
+            'fee', 'validity_months',
             'requires_inspection', 'bylaw_reference', 'lga', 'lga_name', 'requirements', 'inspection_items',
         ]
 

@@ -71,40 +71,46 @@
         </label>
       </div>
 
-      <!-- Step 2: Category & licence -->
+      <!-- Step 2: Kind of business & licence -->
       <div class="card flex flex-col gap-4">
-        <h2 class="text-lg font-bold">2. Select the kind of licence</h2>
+        <h2 class="text-lg font-bold">2. Select the kind of business</h2>
         @if (!lgaId()) {
           <p class="text-sm text-brand-cream/60">Choose a council first.</p>
         } @else {
           <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            @for (category of categories; track category.value) {
+            @for (activity of activities(); track activity.id) {
               <button
                 type="button"
                 class="rounded-xl border-2 p-4 text-left transition"
                 [class]="
-                  categoryId() === category.value
+                  activityId() === activity.id
                     ? 'border-brand-cream bg-brand-cream text-brand-green'
                     : 'border-brand-cream/30 hover:border-brand-cream/60'
                 "
-                (click)="onCategoryChange(category.value)"
+                (click)="onActivityChange(activity.id)"
               >
 
-                <p class="mt-1 font-bold">{{ category.label }}</p>
-                <p class="text-xs" [class.text-brand-green/70]="categoryId() === category.value"
-                   [class.text-brand-cream/60]="categoryId() !== category.value">
-                  {{ category.hint }}
+                <p class="mt-1 font-bold">{{ activity.name }}</p>
+                <p class="text-xs" [class.text-brand-green/70]="activityId() === activity.id"
+                   [class.text-brand-cream/60]="activityId() !== activity.id">
+                  {{ activity.description }}
                 </p>
               </button>
             }
           </div>
 
-          @if (categoryId()) {
-            @if (licencesForCategory.length === 0) {
+          @if (activities().length === 0) {
+            <p class="text-sm text-brand-cream/60">
+              No business activities registered for this council yet.
+            </p>
+          }
+
+          @if (activityId()) {
+            @if (licencesForActivity.length === 0) {
               <p class="text-sm text-brand-cream/60">No licences in this category for the selected council.</p>
             } @else {
               <div class="flex flex-col gap-2">
-                @for (licence of licencesForCategory; track licence.id) {
+                @for (licence of licencesForActivity; track licence.id) {
                   <label
                     class="flex cursor-pointer items-start gap-4 rounded-xl border p-4 transition"
                     [class]="
@@ -138,6 +144,44 @@
                 }
               </div>
             }
+          }
+
+          @if (otherLicences.length > 0) {
+            <p class="mt-2 text-sm font-bold text-brand-cream/80">Other licences</p>
+            <div class="flex flex-col gap-2">
+              @for (licence of otherLicences; track licence.id) {
+                <label
+                  class="flex cursor-pointer items-start gap-4 rounded-xl border p-4 transition"
+                  [class]="
+                    licenceTypeId() === licence.id
+                      ? 'border-brand-cream bg-brand-cream/10 ring-2 ring-brand-cream ring-inset'
+                      : 'border-brand-cream/20 hover:border-brand-cream/50'
+                  "
+                >
+                  <div class="pt-1">
+                    <input
+                      class="h-5 w-5 cursor-pointer accent-brand-cream"
+                      type="radio"
+                      name="licence_type"
+                      [value]="licence.id"
+                      [checked]="licenceTypeId() === licence.id"
+                      (change)="selectLicence(licence.id)"
+                    />
+                  </div>
+                  <div class="flex-1">
+                    <p class="font-bold">{{ licence.name }}</p>
+                    <p class="text-sm text-brand-cream/70">{{ licence.description }}</p>
+                    @if (licence.requires_inspection) {
+                      <p class="mt-1 text-xs text-link">Premises inspection required</p>
+                    }
+                  </div>
+                  <div class="text-right">
+                    <p class="font-bold">{{ licence.fee }} TZS</p>
+                    <p class="text-xs text-brand-cream/60">{{ licence.validity_months }} months</p>
+                  </div>
+                </label>
+              }
+            </div>
           }
         }
       </div>
@@ -245,10 +289,15 @@
                      (ngModelChange)="newBusiness.update(v => ({ ...v, name: $event }))" />
             </label>
             <label class="flex flex-col gap-2 text-sm font-semibold">
-              Sector (optional)
-              <input class="input-field" type="text" name="nb_sector"
-                     [ngModel]="newBusiness().sector"
-                     (ngModelChange)="newBusiness.update(v => ({ ...v, sector: $event }))" />
+              Kind of business
+              <select class="input-field" name="nb_activity"
+                      [ngModel]="newBusiness().activity"
+                      (ngModelChange)="onNewBusinessActivity($event)">
+                <option [ngValue]="null">— choose the kind of business —</option>
+                @for (activity of allActivities(); track activity.id) {
+                  <option [ngValue]="activity.id">{{ activity.name }}</option>
+                }
+              </select>
             </label>
             <label class="flex flex-col gap-2 text-sm font-semibold">
               TRA TIN

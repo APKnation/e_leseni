@@ -8,9 +8,9 @@ import { TanzaniaGeoService } from '../../core/tanzania-geo.service';
 import {
   Application,
   Business,
+  BusinessActivity,
   BusinessLocation,
   LGA,
-  LicenceCategory,
   LicenceType,
   RegionInfo,
   Requirement,
@@ -21,6 +21,7 @@ interface NewBusinessForm {
   tin_number: string;
   brela_registration_number: string;
   sector: string;
+  activity: number | null;
   lga: number | null;
   ward: string;
   street: string;
@@ -64,7 +65,7 @@ export class Apply {
   // Cascade selections
   protected readonly regionName = signal<string | null>(null);
   protected readonly lgaId = signal<number | null>(null);
-  protected readonly categoryId = signal<LicenceCategory | null>(null);
+  protected readonly activityId = signal<number | null>(null);
   protected readonly licenceTypeId = signal<number | null>(null);
 
   // Business selection
@@ -76,7 +77,7 @@ export class Apply {
   protected readonly verifying = signal(false);
   protected readonly newBusiness = signal<NewBusinessForm>({
     name: '', tin_number: '', brela_registration_number: '',
-    sector: '', lga: null, ward: '', street: '', plot_number: '',
+    sector: '', activity: null, lga: null, ward: '', street: '', plot_number: '',
   });
 
   protected readonly purpose = signal('');
@@ -94,14 +95,17 @@ export class Apply {
   protected readonly uploadRows = signal<UploadRow[]>([]);
   protected readonly draftApplication = signal<Application | null>(null);
 
-  protected readonly categories: { value: LicenceCategory; label: string; hint: string }[] = [
-    { value: 'BUSINESS', label: 'Business', hint: 'Shops, food vendors, services' },
-    { value: 'DRIVING', label: 'Driving', hint: 'New licences & renewals' },
-    { value: 'GENERAL', label: 'Other', hint: 'Anything else' },
-  ];
+  /** Activities ("kind of business" cards) for the chosen council, from the API. */
+  protected readonly activities = signal<BusinessActivity[]>([]);
+  /** Full activity taxonomy (for the business "sector" dropdown in step 3). */
+  protected readonly allActivities = signal<BusinessActivity[]>([]);
 
   constructor() {
     this.api.regions().subscribe((regions) => this.regions.set(regions));
+    this.api.businessActivities().subscribe({
+      next: (list) => this.allActivities.set(list),
+      error: () => this.allActivities.set([]),
+    });
     this.api.businesses().subscribe((page) => {
       this.businesses.set(page.results);
       if (page.results.length === 0) this.creatingNewBusiness.set(true);
@@ -112,9 +116,10 @@ export class Apply {
   protected onRegionChange(region: string | null): void {
     this.regionName.set(region);
     this.lgaId.set(null);
-    this.categoryId.set(null);
+    this.activityId.set(null);
     this.licenceTypeId.set(null);
     this.licenceTypes.set([]);
+    this.activities.set([]);
     if (region) {
       this.api.lgas({ region }).subscribe((page) => this.lgas.set(page.results));
     } else {
@@ -122,23 +127,24 @@ export class Apply {
     }
   }
 
-  // Step 2: LGA chosen -> load its licences and derive available categories
+  // Step 2: LGA chosen -> load its licences and its activity cards
   protected onLgaChange(lgaId: number | null): void {
     this.lgaId.set(lgaId);
-    this.categoryId.set(null);
+    this.activityId.set(null);
     this.licenceTypeId.set(null);
     this.licenceTypes.set([]);
+    this.activities.set([]);
     this.wards.set([]);
     this.newBusiness.update((nb) => ({ ...nb, ward: '' }));
     this.syncNewBusinessLga();
     if (lgaId) {
-      this.api.licenceTypes({ lga: lgaId }).subscribe((page) => {
-        const all = page.results;
-        this.licenceTypes.set(all);
-        const available = new Set<LicenceCategory>(all.map((t) => t.category));
-        if (available.size === 1) {
-          this.categoryId.set([...available][0]);
-        }
+      this.api.licenceTypes({ lga: lgaId }).subscribe((page) => this.licenceTypes.set(page.results));
+      this.api.businessActivities({ lga: lgaId }).subscribe({
+        next: (list) => {
+          this.activities.set(list);
+          if (list.length === 1) this.activityId.set(list[0].id);
+        },
+        error: () => this.activities.set([]),
       });
       // Wards come from the backend DB (seeded from tanzaniageodata);
       // fall back to the bundled geo dataset if the API has none yet.
@@ -175,10 +181,17 @@ export class Apply {
     return [];
   }
 
-  // Step 3: category chosen -> filter licences; licence chosen -> build checklist
-  protected onCategoryChange(category: LicenceCategory | null): void {
-    this.categoryId.set(category);
+  // Step 2: activity chosen -> reset the licence pick
+  protected onActivityChange(activityId: number | null): void {
+    this.activityId.set(activityId);
     this.selectLicence(null);
+  }
+
+  /** Keep sector text in sync with the chosen kind of business (step 3). */
+  protected onNewBusinessActivity(value: number | string | null): void {
+    const id = value === null || value === undefined || value === '' ? null : Number(value);
+    const activity = this.allActivities().find((a) => a.id === id);
+    this.newBusiness.update((nb) => ({ ...nb, activity: id, sector: activity?.name ?? '' }));
   }
 
   protected selectLicence(id: number | null): void {
@@ -201,10 +214,17 @@ export class Apply {
     }
   }
 
-  protected get licencesForCategory(): LicenceType[] {
-    const category = this.categoryId();
-    if (!category) return [];
-    return this.licenceTypes().filter((t) => t.category === category);
+  /** Licences tagged with the selected activity (fall back to all business licences). */
+  protected get licencesForActivity(): LicenceType[] {
+    const activityId = this.activityId();
+    const business = this.licenceTypes().filter((t) => t.category === 'BUSINESS');
+    if (!activityId) return business;
+    return business.filter((t) => t.activity === activityId);
+  }
+
+  /** Non-business licences (e.g. driving) shown when no activity is picked. */
+  protected get otherLicences(): LicenceType[] {
+    return this.licenceTypes().filter((t) => t.category !== 'BUSINESS');
   }
 
   protected get selectedLicenceType(): LicenceType | null {
@@ -508,6 +528,7 @@ export class Apply {
           tin_number: nb.tin_number,
           brela_registration_number: nb.brela_registration_number,
           sector: nb.sector,
+          activity: nb.activity,
           location: { lga: nb.lga!, ward: nb.ward, street: nb.street, plot_number: nb.plot_number },
         })
         .subscribe({
