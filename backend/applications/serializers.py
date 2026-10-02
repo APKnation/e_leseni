@@ -79,6 +79,27 @@ class ApplicationSerializer(serializers.ModelSerializer):
         licence = getattr(obj, 'licence', None)  # reverse OneToOne, may not exist
         return licence.licence_number if licence else None
 
+    def validate(self, attrs):
+        """Council licences are local: the premises must sit in the same LGA
+        as the licence type applied for (Mufindi premises need a Mufindi
+        council licence, not one from Dodoma)."""
+        licence_type = attrs.get('licence_type') or getattr(self.instance, 'licence_type', None)
+        location = attrs.get('location') or getattr(self.instance, 'location', None)
+        if (
+            licence_type is not None
+            and location is not None
+            and location.lga_id != licence_type.lga_id
+        ):
+            raise serializers.ValidationError({
+                'location': (
+                    f'The premises are in {location.lga.name}, but this licence '
+                    f'is issued by {licence_type.lga.name}. Choose premises in '
+                    'the same council as the licence (or add a premises there '
+                    'from your Businesses page).'
+                )
+            })
+        return attrs
+
     def get_allowed_next_statuses(self, obj):
         """Transitions valid for the state machine AND permitted for the
         requesting user's role (drives the per-role action buttons)."""

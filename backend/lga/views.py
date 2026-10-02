@@ -1,5 +1,6 @@
+from django.core.exceptions import ProtectedError
 from django.db.models import Count, Prefetch, Q
-from rest_framework import permissions, viewsets
+from rest_framework import exceptions, permissions, status, viewsets
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAdminUser
 from rest_framework.response import Response
@@ -104,6 +105,36 @@ class BusinessActivityViewSet(viewsets.ModelViewSet):
         return qs.order_by('order', 'name')
 
 
+class CouncilCatalogPermission(permissions.BasePermission):
+    """Writes on the council catalogue: OFFICER/ADMIN staff only, and
+    officers may only touch licence types (and their requirements) that
+    belong to their own LGA. Reads stay public."""
+
+    message = 'Only licensing officers and admins can manage the council catalogue.'
+
+    def has_permission(self, request, view):
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        user = request.user
+        return bool(
+            user
+            and user.is_authenticated
+            and (user.is_superuser or user.role in {'OFFICER', 'ADMIN'})
+        )
+
+    def has_object_permission(self, request, view, obj):
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        user = request.user
+        if user.is_superuser or user.role == 'ADMIN':
+            return True
+        # LicenceType has lga directly; Requirement reaches it via licence_type.
+        lga_id = getattr(obj, 'lga_id', None)
+        if lga_id is None:
+            lga_id = getattr(getattr(obj, 'licence_type', None), 'lga_id', None)
+        return lga_id is not None and lga_id == user.lga_id
+
+
 class PublicReadStaffWriteMixin:
     """AllowAnyone for GET/list; admin-only for writes."""
 
@@ -123,25 +154,80 @@ class LGAViewSet(PublicReadStaffWriteMixin, viewsets.ReadOnlyModelViewSet):
     ordering = ['name']
 
 
-class LicenceTypeViewSet(PublicReadStaffWriteMixin, viewsets.ReadOnlyModelViewSet):
+class LicenceTypeViewSet(viewsets.ModelViewSet):
     """Licence types, filterable by area, category and activity:
 
     GET /api/licence-types/?lga=<id>&category=BUSINESS&activity=<id>
+
+    Reads are public; writes are limited to OFFICER/ADMIN
+    (CouncilCatalogPermission) and officers may only manage their own
+    council's catalogue — their LGA is enforced server-side.
     """
 
     queryset = LicenceType.objects.select_related('lga', 'activity').prefetch_related('requirements')
     serializer_class = LicenceTypeSerializer
+    permission_classes = [CouncilCatalogPermission]
     filterset_fields = ['lga', 'category', 'activity', 'requires_inspection']
     search_fields = ['name', 'code', 'description']
     ordering = ['name']
 
+    def _user_is_council_scoped(self):
+        user = self.request.user
+        return not (user.is_superuser or user.role == 'ADMIN')
 
-class RequirementViewSet(PublicReadStaffWriteMixin, viewsets.ModelViewSet):
-    """Requirements per licence type."""
+    def perform_create(self, serializer):
+        user = self.request.user
+        if self._user_is_council_scoped():
+            if user.lga_id is None:
+                raise exceptions.ValidationError(
+                    {'detail': 'Your account has no LGA assigned; ask an admin to set it.'}
+                )
+            # Officers create licence types for their own council only.
+            serializer.save(lga=user.lga)
+        else:
+            serializer.save()
+
+    def perform_update(self, serializer):
+        if self._user_is_council_scoped():
+            # Pin the licence type to the officer's council (no moving it).
+            serializer.save(lga=self.request.user.lga)
+        else:
+            serializer.save()
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        try:
+            instance.delete()
+        except ProtectedError:
+            return Response(
+                {'detail': 'This licence type already has applications or issued '
+                           'licences and cannot be deleted.'},
+                status=status.HTTP_409_CONFLICT,
+            )
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class RequirementViewSet(viewsets.ModelViewSet):
+    """Requirements per licence type (public read; council-scoped writes)."""
 
     queryset = Requirement.objects.select_related('licence_type')
     serializer_class = RequirementSerializer
+    permission_classes = [CouncilCatalogPermission]
     filterset_fields = ['licence_type', 'kind', 'is_mandatory']
+
+    def perform_create(self, serializer):
+        user = self.request.user
+        licence_type = serializer.validated_data.get('licence_type')
+        if (
+            not (user.is_superuser or user.role == 'ADMIN')
+            and (
+                user.lga_id is None
+                or licence_type is None
+                or licence_type.lga_id != user.lga_id
+            )
+        ):
+            self.permission_denied(self.request)
+        serializer.save()
 
 
 class OfficerAssignmentViewSet(viewsets.ModelViewSet):
