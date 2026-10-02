@@ -41,6 +41,7 @@ STANDARD_LICENCES = [
     {
         'name': 'Business Licence',
         'category': LicenceType.Category.BUSINESS,
+        'activity': 'GENERAL_TRADE',
         'fee': Decimal('50000'),
         'validity_months': 12,
         'requires_inspection': True,
@@ -54,6 +55,7 @@ STANDARD_LICENCES = [
     {
         'name': 'Food Vendor Licence',
         'category': LicenceType.Category.BUSINESS,
+        'activity': 'FOOD',
         'fee': Decimal('30000'),
         'validity_months': 12,
         'requires_inspection': True,
@@ -94,6 +96,7 @@ LICENCE_TYPES = [
         'lga_code': 'DS-ILALA',
         'name': 'Food Vendor Licence',
         'code': 'FOOD-ILALA',
+        'activity': 'FOOD',
         'fee': Decimal('50000'),
         'validity_months': 12,
         'requires_inspection': True,
@@ -108,6 +111,7 @@ LICENCE_TYPES = [
         'lga_code': 'DS-ILALA',
         'name': 'Retail Shop Licence',
         'code': 'RETAIL-ILALA',
+        'activity': 'GENERAL_TRADE',
         'fee': Decimal('120000'),
         'validity_months': 12,
         'requires_inspection': True,
@@ -121,6 +125,7 @@ LICENCE_TYPES = [
         'lga_code': 'DS-KINONDONI',
         'name': 'Hardware Shop Licence',
         'code': 'HW-KINONDONI',
+        'activity': 'GENERAL_TRADE',
         'fee': Decimal('80000'),
         'validity_months': 12,
         'requires_inspection': False,
@@ -133,6 +138,7 @@ LICENCE_TYPES = [
         'lga_code': 'KI-MOSHI_MUNICIPAL',
         'name': 'Kiosk Licence',
         'code': 'KIOSK-MOSHI',
+        'activity': 'GENERAL_TRADE',
         'fee': Decimal('30000'),
         'validity_months': 12,
         'requires_inspection': False,
@@ -403,13 +409,19 @@ class Command(BaseCommand):
             lt, created = self._upsert_licence(lga, spec['code'], spec)
             self._log(lt, created)
 
+    def _resolve_activity(self, activity):
+        """Specs may reference an activity by code ("FOOD") or instance."""
+        if activity is None or isinstance(activity, BusinessActivity):
+            return activity
+        return BusinessActivity.objects.filter(code=activity).first()
+
     def _upsert_licence(self, lga, code, spec):
         lt, created = LicenceType.objects.update_or_create(
             code=code,
             defaults={
                 'name': spec['name'],
                 'category': spec.get('category', LicenceType.Category.BUSINESS),
-                'activity': spec.get('activity'),
+                'activity': self._resolve_activity(spec.get('activity')),
                 'fee': spec['fee'],
                 'validity_months': spec['validity_months'],
                 'requires_inspection': spec['requires_inspection'],

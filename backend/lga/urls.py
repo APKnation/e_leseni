@@ -9,9 +9,10 @@ router.register(r'licence-types', views.LicenceTypeViewSet, basename='licence-ty
 router.register(r'requirements', views.RequirementViewSet, basename='requirement')
 router.register(r'officer-assignments', views.OfficerAssignmentViewSet, basename='officer-assignment')
 
+router.register(r'business-activities', views.BusinessActivityViewSet, basename='business-activity')
+
 urlpatterns = [
     path('regions/', views.regions, name='regions'),
-    path('business-activities/', views.business_activities, name='business-activities'),
     path('lgas/<int:lga_id>/wards/', views.wards, name='lga-wards'),
     path('', include(router.urls)),
 ]

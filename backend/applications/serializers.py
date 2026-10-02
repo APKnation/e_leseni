@@ -39,6 +39,10 @@ class ApplicationSerializer(serializers.ModelSerializer):
     business_is_verified = serializers.BooleanField(source='business.is_verified', read_only=True)
     licence_type_name = serializers.CharField(source='licence_type.name', read_only=True)
     lga_name = serializers.CharField(source='licence_type.lga.name', read_only=True)
+    # The licence type's business activity (null when the licence type has
+    # no activity linked). Powers the staff queue's activity filter/badges.
+    activity = serializers.SerializerMethodField()
+    activity_name = serializers.SerializerMethodField()
     allowed_next_statuses = serializers.SerializerMethodField()
     documents = ApplicationDocumentSerializer(many=True, read_only=True)
     history = StatusHistorySerializer(many=True, read_only=True)
@@ -47,7 +51,8 @@ class ApplicationSerializer(serializers.ModelSerializer):
         model = Application
         fields = [
             'id', 'reference_number', 'applicant', 'applicant_name', 'applicant_has_nida',
-            'business', 'business_name', 'business_is_verified', 'licence_type', 'licence_type_name', 'lga_name',
+            'business', 'business_name', 'business_is_verified', 'licence_type', 'licence_type_name',
+            'activity', 'activity_name', 'lga_name',
             'location', 'status', 'priority', 'purpose_statement', 'rejection_reason',
             'assigned_officer', 'submitted_at', 'decided_at', 'created_at', 'updated_at',
             'allowed_next_statuses', 'documents', 'history',
@@ -59,6 +64,13 @@ class ApplicationSerializer(serializers.ModelSerializer):
 
     def get_applicant_has_nida(self, obj):
         return bool(obj.applicant.nida_number)
+
+    def get_activity(self, obj):
+        return obj.licence_type.activity_id
+
+    def get_activity_name(self, obj):
+        activity = obj.licence_type.activity
+        return activity.name if activity else None
 
     def get_allowed_next_statuses(self, obj):
         """Transitions valid for the state machine AND permitted for the

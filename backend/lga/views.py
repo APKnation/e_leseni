@@ -39,32 +39,69 @@ def regions(request):
     return Response(list(regions_))
 
 
-@api_view(['GET'])
-@permission_classes([AllowAny])
-def business_activities(request):
-    """Public list of business activities (the "kind of business" taxonomy).
+class ActivityManagePermission(permissions.BasePermission):
+    """Public read for the taxonomy; OFFICER/ADMIN staff may write."""
 
-    GET /api/business-activities/?lga=<id>
+    message = 'Only licensing officers and system admins can manage business activities.'
 
-    With ?lga= the response only includes activities that have at least one
-    licence type in that council and carries the per-council licence count;
-    without it every active activity is listed.
-    """
-    lga_id = request.query_params.get('lga')
-    qs = BusinessActivity.objects.filter(is_active=True)
-    if lga_id:
-        qs = (
-            qs.filter(licence_types__lga_id=lga_id, licence_types__category=LicenceType.Category.BUSINESS)
-            .annotate(licence_type_count=Count('licence_types', filter=Q(
-                licence_types__lga_id=lga_id,
-                licence_types__category=LicenceType.Category.BUSINESS,
-            )))
+    def has_permission(self, request, view):
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        user = request.user
+        return bool(
+            user
+            and user.is_authenticated
+            and (user.is_superuser or getattr(user, 'role', None) in {'OFFICER', 'ADMIN'})
         )
-    else:
-        qs = qs.annotate(licence_type_count=Count('licence_types'))
-    qs = qs.order_by('order', 'name')
-    serializer = BusinessActivitySerializer(qs, many=True)
-    return Response(serializer.data)
+
+
+class BusinessActivityViewSet(viewsets.ModelViewSet):
+    """Business activities (the "kind of business" taxonomy).
+
+    GET /api/business-activities/?lga=<id>[&include_inactive=1]
+
+    Public read (the applicant wizard uses it); writes are limited to
+    licensing officers and admins (ActivityManagePermission).
+
+    With ?lga= the list only includes activities that have at least one
+    licence type in that council and carries the per-council licence count.
+    Staff may pass ?include_inactive=1 to also see disabled activities
+    (the management UI); the public list always stays active-only.
+    """
+
+    serializer_class = BusinessActivitySerializer
+    permission_classes = [ActivityManagePermission]
+    # The public frontend expects a plain array (contract of the old FBV).
+    pagination_class = None
+
+    def get_queryset(self):
+        qs = BusinessActivity.objects.all()
+        if self.action != 'list':
+            # Detail routes (retrieve/update/destroy) must reach inactive
+            # activities too, otherwise editing a disabled one would 404.
+            return qs.order_by('order', 'name')
+
+        user = self.request.user
+        include_inactive = (
+            self.request.query_params.get('include_inactive') in {'1', 'true'}
+            and user.is_authenticated
+            and getattr(user, 'is_lga_staff', False)
+        )
+        if not include_inactive:
+            qs = qs.filter(is_active=True)
+
+        lga_id = self.request.query_params.get('lga')
+        if lga_id:
+            qs = (
+                qs.filter(licence_types__lga_id=lga_id, licence_types__category=LicenceType.Category.BUSINESS)
+                .annotate(licence_type_count=Count('licence_types', filter=Q(
+                    licence_types__lga_id=lga_id,
+                    licence_types__category=LicenceType.Category.BUSINESS,
+                )))
+            )
+        else:
+            qs = qs.annotate(licence_type_count=Count('licence_types'))
+        return qs.order_by('order', 'name')
 
 
 class PublicReadStaffWriteMixin:

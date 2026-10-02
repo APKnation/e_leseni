@@ -10,7 +10,7 @@ class BusinessActivitySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = BusinessActivity
-        fields = ['id', 'code', 'name', 'description', 'icon', 'order', 'licence_type_count']
+        fields = ['id', 'code', 'name', 'description', 'icon', 'order', 'is_active', 'licence_type_count']
 
 
 class LGASerializer(serializers.ModelSerializer):

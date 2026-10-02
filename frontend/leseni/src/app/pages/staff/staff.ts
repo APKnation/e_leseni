@@ -6,12 +6,31 @@ import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { AuthService, ROLE_LABELS, UserRole } from '../../core/auth.service';
 import { RealtimeService } from '../../core/realtime.service';
-import { Application, ApplicationStatus, Inspection, STATUS_LABELS, STATUS_STYLES } from '../../core/models';
+import { Application, ApplicationStatus, BusinessActivity, Inspection, STATUS_LABELS, STATUS_STYLES } from '../../core/models';
 
 interface QueueFilter {
   label: string;
   statuses: ApplicationStatus[] | null;
 }
+
+/** Editable form state for the business-activity manager (officers/admins). */
+interface ActivityForm {
+  code: string;
+  name: string;
+  description: string;
+  icon: string;
+  order: number;
+  is_active: boolean;
+}
+
+const BLANK_ACTIVITY: ActivityForm = {
+  code: '',
+  name: '',
+  description: '',
+  icon: '',
+  order: 0,
+  is_active: true,
+};
 
 /** Workspace config per staff role: which applications they see and why. */
 interface RoleWorkspace {
@@ -111,8 +130,21 @@ export class Staff implements OnInit {
   protected readonly canReview = this.role === 'OFFICER' || this.isAdmin;
   protected readonly canInspect = this.role === 'INSPECTOR' || this.isAdmin;
   protected readonly canApprove = this.role === 'APPROVER' || this.isAdmin;
+  /** Officers run the licensing taxonomy; admins oversee it. */
+  protected readonly canManageActivities = this.role === 'OFFICER' || this.isAdmin;
 
   protected readonly activeFilter = signal<QueueFilter>(this.workspace.queueFilters[0]);
+
+  /** Activity taxonomy — drives the queue filter and the manager panel. */
+  protected readonly activities = signal<BusinessActivity[]>([]);
+  /** Server-side activity filter for the queue (null = all activities). */
+  protected readonly activeActivityId = signal<number | null>(null);
+
+  /** Business-activity manager panel state (role-gated). */
+  protected readonly showActivities = signal(false);
+  protected readonly editingActivityId = signal<number | 'new' | null>(null);
+  protected readonly savingActivity = signal(false);
+  protected readonly activityForm = signal<ActivityForm>({ ...BLANK_ACTIVITY });
 
   /** Latest open inspection per application id. */
   private readonly inspectionByApplication = computed(() => {
@@ -127,6 +159,7 @@ export class Staff implements OnInit {
 
   ngOnInit(): void {
     this.load();
+    this.loadActivities();
 
     // Live queue: refresh when any application/inspection event arrives
     // (e.g. an applicant submits while the officer has the page open).
@@ -139,7 +172,7 @@ export class Staff implements OnInit {
     this.loading.set(true);
     this.errorMessage.set('');
     this.successMessage.set('');
-    this.api.applications().subscribe({
+    this.api.applications(this.activityFilterParams()).subscribe({
       next: (page) => {
         this.applications.set(page.results);
         this.loading.set(false);
@@ -159,6 +192,146 @@ export class Staff implements OnInit {
     const statuses = this.activeFilter().statuses;
     if (!statuses) return this.applications();
     return this.applications().filter((a) => statuses.includes(a.status));
+  }
+
+  // -- Activity taxonomy: queue filter + management (officers/admins) ------
+
+  /** Load the taxonomy; staff also see disabled activities. */
+  private loadActivities(): void {
+    this.api.businessActivities({ include_inactive: '1' }).subscribe({
+      next: (list) => this.activities.set(list),
+      error: () => this.activities.set([]),
+    });
+  }
+
+  private activityFilterParams(): Record<string, number> {
+    const activity = this.activeActivityId();
+    return activity === null ? {} : { activity };
+  }
+
+  /** Queue filter select changed — refetch applications for the activity. */
+  protected onActivityFilterChange(value: string): void {
+    this.activeActivityId.set(value === '' ? null : Number(value));
+    this.load();
+  }
+
+  protected toggleActivities(): void {
+    this.showActivities.update((visible) => !visible);
+    if (!this.showActivities()) this.cancelActivityEdit();
+  }
+
+  protected startNewActivity(): void {
+    this.editingActivityId.set('new');
+    this.activityForm.set({
+      ...BLANK_ACTIVITY,
+      order: Math.max(0, ...this.activities().map((activity) => activity.order ?? 0)) + 1,
+    });
+  }
+
+  protected editActivity(activity: BusinessActivity): void {
+    this.editingActivityId.set(activity.id);
+    this.activityForm.set({
+      code: activity.code,
+      name: activity.name,
+      description: activity.description ?? '',
+      icon: activity.icon ?? '',
+      order: activity.order ?? 0,
+      is_active: activity.is_active !== false,
+    });
+  }
+
+  protected cancelActivityEdit(): void {
+    this.editingActivityId.set(null);
+    this.activityForm.set({ ...BLANK_ACTIVITY });
+  }
+
+  protected updateActivityForm(patch: Partial<ActivityForm>): void {
+    this.activityForm.update((form) => ({ ...form, ...patch }));
+  }
+
+  /** number inputs emit strings — coerce before storing. */
+  protected setActivityOrder(value: string | number): void {
+    const order = typeof value === 'number' ? value : Number(value);
+    this.updateActivityForm({ order: Number.isFinite(order) ? order : 0 });
+  }
+
+  protected isActivityActive(activity: BusinessActivity): boolean {
+    return activity.is_active !== false;
+  }
+
+  protected saveActivity(): void {
+    const form = this.activityForm();
+    const code = form.code.trim().toUpperCase();
+    const name = form.name.trim();
+    if (!code || !name) {
+      this.errorMessage.set('An activity needs both a code and a name.');
+      return;
+    }
+    if (this.savingActivity()) return;
+    this.savingActivity.set(true);
+    this.errorMessage.set('');
+
+    const payload = {
+      code,
+      name,
+      description: form.description.trim(),
+      icon: form.icon.trim(),
+      order: form.order,
+      is_active: form.is_active,
+    };
+    const editingId = this.editingActivityId();
+    const request$ =
+      editingId === 'new'
+        ? this.api.createBusinessActivity(payload)
+        : this.api.updateBusinessActivity(editingId as number, payload);
+
+    request$.subscribe({
+      next: (activity) => {
+        this.savingActivity.set(false);
+        this.cancelActivityEdit();
+        this.loadActivities();
+        this.successMessage.set(`Activity “${activity.name}” saved.`);
+      },
+      error: (err) => {
+        this.savingActivity.set(false);
+        this.errorMessage.set(this.firstError(err, 'Could not save the activity.'));
+      },
+    });
+  }
+
+  protected deleteActivity(activity: BusinessActivity): void {
+    if (
+      !window.confirm(
+        `Delete “${activity.name}”? Licence types linked to it stay, but lose their activity.`,
+      )
+    ) {
+      return;
+    }
+    this.errorMessage.set('');
+    this.api.deleteBusinessActivity(activity.id).subscribe({
+      next: () => {
+        // If the queue was filtered by the deleted activity, reset it.
+        if (this.activeActivityId() === activity.id) {
+          this.activeActivityId.set(null);
+          this.load();
+        }
+        this.loadActivities();
+        this.successMessage.set(`Activity “${activity.name}” deleted.`);
+      },
+      error: (err) => this.errorMessage.set(this.firstError(err, 'Could not delete the activity.')),
+    });
+  }
+
+  private firstError(err: unknown, fallback: string): string {
+    const error = (err as { error?: unknown } | null)?.error;
+    if (typeof error === 'string') return error;
+    if (error && typeof error === 'object') {
+      const first = Object.values(error as Record<string, unknown>)
+        .flat()
+        .find((value) => typeof value === 'string');
+      if (typeof first === 'string') return first;
+    }
+    return fallback;
   }
 
   /**

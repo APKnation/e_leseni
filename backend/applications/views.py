@@ -1,3 +1,4 @@
+import django_filters
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db.models import Q
 from rest_framework import generics, permissions, status, viewsets
@@ -7,7 +8,7 @@ from rest_framework.response import Response
 
 from core_docs.validation import validate_pdf_document
 
-from lga.models import Requirement
+from lga.models import BusinessActivity, Requirement
 
 from .models import Application, ApplicationDocument, Inspection, InspectionPhoto
 from .permissions import allowed_statuses_for
@@ -39,6 +40,23 @@ def serialize_application(application, request):
     return ApplicationSerializer(application, context={'request': request}).data
 
 
+class ApplicationFilterSet(django_filters.FilterSet):
+    """Filterset for the application queue.
+
+    Adds `activity` so staff can narrow the queue to one business activity
+    (the application's licence type's activity).
+    """
+
+    activity = django_filters.ModelChoiceFilter(
+        field_name='licence_type__activity',
+        queryset=BusinessActivity.objects.all(),
+    )
+
+    class Meta:
+        model = Application
+        fields = ['status', 'priority', 'licence_type', 'business', 'activity']
+
+
 class ApplicationViewSet(viewsets.ModelViewSet):
     """CRUD for licence applications.
 
@@ -47,14 +65,15 @@ class ApplicationViewSet(viewsets.ModelViewSet):
     """
 
     serializer_class = ApplicationSerializer
-    filterset_fields = ['status', 'priority', 'licence_type', 'business']
+    filterset_class = ApplicationFilterSet
     search_fields = ['reference_number', 'business__name', 'applicant__username']
     ordering_fields = ['created_at', 'submitted_at', 'status']
 
     def get_queryset(self):
         user = self.request.user
         base = Application.objects.select_related(
-            'business', 'licence_type', 'licence_type__lga', 'location', 'applicant', 'assigned_officer'
+            'business', 'licence_type', 'licence_type__lga', 'licence_type__activity',
+            'location', 'applicant', 'assigned_officer',
         ).prefetch_related('documents', 'history')
         if user.is_authenticated and user.is_lga_staff:
             return base.filter(staff_lga_filter(user))

@@ -44,23 +44,38 @@
       <div class="h-32 rounded-xl bg-muted/10"></div>
       <div class="h-32 rounded-xl bg-muted/10"></div>
     </div>
-  } @else {
-    <!-- Filter tabs -->
-    <div class="mt-8 flex flex-wrap gap-2">
-      @for (filter of workspace.queueFilters; track filter.label) {
-        <button
-          type="button"
-          class="px-4 py-2 text-sm font-bold transition" style="border-radius: 2px;"
-          [class]="
-            activeFilter().label === filter.label
-              ? 'bg-surface text-foreground'
-              : 'border border-muted/40 text-foreground hover:bg-muted/10'
-          "
-          (click)="activeFilter.set(filter)"
+  } @else {    <!-- Queue filters: workflow status (client-side) + activity (server-side) -->
+    <div class="mt-8 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex flex-wrap gap-2">
+        @for (filter of workspace.queueFilters; track filter.label) {
+          <button
+            type="button"
+            class="px-4 py-2 text-sm font-bold transition"
+            style="border-radius: 2px;"
+            [class]="
+              activeFilter().label === filter.label
+                ? 'bg-surface text-foreground'
+                : 'border border-muted/40 text-foreground hover:bg-muted/10'
+            "
+            (click)="activeFilter.set(filter)"
+          >
+            {{ filter.label }} ({{ countFor(filter) }})
+          </button>
+        }
+      </div>
+      <label class="flex items-center gap-2 text-sm text-muted">
+        <span class="font-semibold">Activity</span>
+        <select
+          class="rounded bg-surface border border-muted/20 px-2 py-1 text-sm text-foreground"
+          [ngModel]="activeActivityId() ?? ''"
+          (ngModelChange)="onActivityFilterChange($event)"
         >
-          {{ filter.label }} ({{ countFor(filter) }})
-        </button>
-      }
+          <option value="">All activities</option>
+          @for (activity of activities(); track activity.id) {
+            <option [value]="activity.id">{{ activity.name }}</option>
+          }
+        </select>
+      </label>
     </div>
 
     <!-- Queue -->
@@ -73,6 +88,9 @@
               <span class="px-3 py-1 text-xs font-bold" [class]="STATUS_STYLES[app.status]">
                 {{ STATUS_LABELS[app.status] }}
               </span>
+              @if (app.activity_name) {
+                <span class="badge-outline !px-2 !py-0.5 !text-[10px]">{{ app.activity_name }}</span>
+              }
             </div>
             <p class="mt-1 flex flex-wrap items-center gap-2 text-lg font-bold">
               {{ app.business_name }}
@@ -282,5 +300,139 @@
         <p class="text-muted">Nothing in this queue.</p>
       }
     </div>
+
+    <!-- Business-activity taxonomy (officers/admins only) -->
+    @if (canManageActivities) {
+      <div class="mt-10 border border-hairline bg-soft p-5" style="border-radius: 2px;">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 class="text-lg font-bold">Business activities</h2>
+            <p class="mt-1 text-sm text-muted">
+              The council's “kind of business” taxonomy — what this queue is filtered by and what applicants pick.
+            </p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button type="button" class="btn-secondary !py-2 !px-3 text-xs" (click)="toggleActivities()">
+              {{ showActivities() ? 'Hide activities' : 'Manage activities' }}
+            </button>
+            @if (showActivities()) {
+              <button type="button" class="btn-primary !py-2 !px-3 text-xs" (click)="startNewActivity()">
+                New activity
+              </button>
+            }
+          </div>
+        </div>
+
+        @if (showActivities()) {
+          @if (editingActivityId()) {
+            <!-- Create/edit form -->
+            <div class="mt-5 border border-hairline bg-surface p-4" style="border-radius: 2px;">
+              <p class="text-[14px] font-bold uppercase tracking-wide">
+                {{ editingActivityId() === 'new' ? 'New activity' : 'Edit activity' }}
+              </p>
+              <div class="mt-3 grid gap-3 sm:grid-cols-2">
+                <label class="flex flex-col gap-1.5">
+                  <span class="text-sm font-semibold">Code</span>
+                  <input
+                    class="input-field"
+                    placeholder="FOOD"
+                    [ngModel]="activityForm().code"
+                    (ngModelChange)="updateActivityForm({ code: $event })"
+                  />
+                </label>
+                <label class="flex flex-col gap-1.5">
+                  <span class="text-sm font-semibold">Name</span>
+                  <input
+                    class="input-field"
+                    placeholder="Food & Beverages"
+                    [ngModel]="activityForm().name"
+                    (ngModelChange)="updateActivityForm({ name: $event })"
+                  />
+                </label>
+                <label class="flex flex-col gap-1.5 sm:col-span-2">
+                  <span class="text-sm font-semibold">Description</span>
+                  <textarea
+                    class="input-field"
+                    rows="2"
+                    [ngModel]="activityForm().description"
+                    (ngModelChange)="updateActivityForm({ description: $event })"
+                  ></textarea>
+                </label>
+                <label class="flex flex-col gap-1.5">
+                  <span class="text-sm font-semibold">Icon</span>
+                  <input
+                    class="input-field"
+                    placeholder="optional"
+                    [ngModel]="activityForm().icon"
+                    (ngModelChange)="updateActivityForm({ icon: $event })"
+                  />
+                </label>
+                <label class="flex flex-col gap-1.5">
+                  <span class="text-sm font-semibold">Order</span>
+                  <input
+                    type="number"
+                    class="input-field"
+                    [ngModel]="activityForm().order"
+                    (ngModelChange)="setActivityOrder($event)"
+                  />
+                </label>
+              </div>
+              <label class="mt-3 flex items-center gap-2 text-sm font-semibold">
+                <input
+                  type="checkbox"
+                  [ngModel]="activityForm().is_active"
+                  (ngModelChange)="updateActivityForm({ is_active: $event })"
+                />
+                Active (selectable by applicants)
+              </label>
+              <div class="mt-4 flex flex-wrap gap-2">
+                <button type="button" class="btn-primary !py-2" [disabled]="savingActivity()" (click)="saveActivity()">
+                  Save
+                </button>
+                <button type="button" class="btn-secondary !py-2" (click)="cancelActivityEdit()">Cancel</button>
+              </div>
+            </div>
+          }
+
+          <!-- Activity list -->
+          <div class="mt-5 grid gap-2">
+            @for (activity of activities(); track activity.id) {
+              <div
+                class="flex flex-wrap items-center justify-between gap-3 border border-hairline bg-surface px-4 py-3"
+                style="border-radius: 2px;"
+              >
+                <div class="min-w-0">
+                  <p class="flex flex-wrap items-center gap-2 font-bold">
+                    {{ activity.name }}
+                    <span class="font-mono text-xs text-muted">{{ activity.code }}</span>
+                    @if (!isActivityActive(activity)) {
+                      <span class="badge-outline !px-2 !py-0.5 !text-[10px] !border-warning/50 !text-warning">inactive</span>
+                    }
+                  </p>
+                  @if (activity.description) {
+                    <p class="text-sm text-muted">{{ activity.description }}</p>
+                  }
+                </div>
+                <div class="flex shrink-0 items-center gap-2">
+                  <span class="text-xs text-muted">{{ activity.licence_type_count ?? 0 }} licence types</span>
+                  <button type="button" class="btn-secondary !py-1.5 !px-3 text-xs" (click)="editActivity(activity)">
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    class="btn-secondary !py-1.5 !px-3 text-xs !border-danger/50 !text-danger"
+                    (click)="deleteActivity(activity)"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            } @empty {
+              <p class="text-sm text-muted">No activities yet — create the first one.</p>
+            }
+          </div>
+        }
+      </div>
+    }
   }
 </section>

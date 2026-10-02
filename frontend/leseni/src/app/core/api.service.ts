@@ -8,6 +8,7 @@ import {
   Application,
   Business,
   BusinessActivity,
+  BusinessActivityPayload,
   Inspection,
   Invoice,
   Licence,
@@ -70,6 +71,24 @@ export class ApiService {
 
   wards(lgaId: number): Observable<{ id: number; name: string }[]> {
     return this.http.get<{ id: number; name: string }[]>(`${this.baseUrl}/lgas/${lgaId}/wards/`);
+  }
+
+  /** Create a business activity (officers/admins only). */
+  createBusinessActivity(payload: BusinessActivityPayload): Observable<BusinessActivity> {
+    return this.http.post<BusinessActivity>(`${this.baseUrl}/business-activities/`, payload);
+  }
+
+  /** Update a business activity (officers/admins only). */
+  updateBusinessActivity(
+    id: number,
+    changes: Partial<BusinessActivityPayload>,
+  ): Observable<BusinessActivity> {
+    return this.http.patch<BusinessActivity>(`${this.baseUrl}/business-activities/${id}/`, changes);
+  }
+
+  /** Delete a business activity (officers/admins only). */
+  deleteBusinessActivity(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/business-activities/${id}/`);
   }
 
   // -- Businesses ----------------------------------------------------------

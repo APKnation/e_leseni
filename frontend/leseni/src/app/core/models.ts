@@ -82,7 +82,18 @@ export interface BusinessActivity {
   description: string;
   icon: string;
   order: number;
+  is_active?: boolean;
   licence_type_count?: number;
+}
+
+/** Writable fields of a business activity (staff management UI). */
+export interface BusinessActivityPayload {
+  code: string;
+  name: string;
+  description?: string;
+  icon?: string;
+  order?: number;
+  is_active?: boolean;
 }
 
 export interface LicenceType {
@@ -169,6 +180,8 @@ export interface Application {
   business_is_verified: boolean;
   licence_type: number;
   licence_type_name: string;
+  activity?: number | null;
+  activity_name?: string | null;
   lga_name: string;
   location: number;
   status: ApplicationStatus;
