@@ -551,8 +551,8 @@
                   <textarea class="input-field" rows="2" [ngModel]="licenceForm().description" (ngModelChange)="updateLicenceForm({ description: $event })"></textarea>
                 </label>
                 <label class="flex flex-col gap-1.5">
-                  <span class="text-sm font-semibold">Bylaw reference</span>
-                  <input class="input-field" placeholder="e.g. By-Law 2014 §6" [ngModel]="licenceForm().bylaw_reference" (ngModelChange)="updateLicenceForm({ bylaw_reference: $event })" />
+                  <span class="text-sm font-semibold">Bylaw link (URL)</span>
+                  <input class="input-field" placeholder="https://council.example.go.tz/bylaw" [ngModel]="licenceForm().bylaw_reference" (ngModelChange)="updateLicenceForm({ bylaw_reference: $event })" />
                 </label>
                 <label class="mt-6 flex items-center gap-2 text-sm font-semibold">
                   <input type="checkbox" [ngModel]="licenceForm().requires_inspection" (ngModelChange)="updateLicenceForm({ requires_inspection: $event })" />
