@@ -194,11 +194,15 @@ export class ApiService {
     return this.http.get<TINApplication[]>(`${this.baseUrl}/businesses/tin-applications/`);
   }
 
+  /** Add a premises to a business, possibly in another council/region. */
   createLocation(
     businessId: number,
-    data: Omit<NewBusinessPayload['location'], 'lga'> & { lga: number; is_primary?: boolean },
-  ) {
-    return this.http.post(`${this.baseUrl}/business-locations/`, { business: businessId, ...data });
+    data: { lga: number; ward: string; street: string; plot_number?: string; is_primary?: boolean },
+  ): Observable<BusinessLocation> {
+    return this.http.post<BusinessLocation>(`${this.baseUrl}/business-locations/`, {
+      business: businessId,
+      ...data,
+    });
   }
 
   // -- Applications --------------------------------------------------------

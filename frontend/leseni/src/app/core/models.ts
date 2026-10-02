@@ -121,6 +121,17 @@ export interface BusinessDocument {
   uploaded_at: string;
 }
 
+/** One TRA + BRELA verification run — rejections keep their reasons. */
+export interface VerificationAttempt {
+  id: number;
+  verified: boolean;
+  tra_valid: boolean | null;
+  tra_reason: string;
+  brela_registered: boolean | null;
+  brela_reason: string;
+  created_at: string;
+}
+
 export interface BusinessLocation {
   id: number;
   business: number;
@@ -146,6 +157,9 @@ export interface Business {
   activity_name: string | null;
   is_verified: boolean;
   has_street_id_letter: boolean;
+  /** Why TRA/BRELA rejected the last verification (null when none/passed). */
+  verification_note?: string | null;
+  verification_attempts?: VerificationAttempt[];
   locations: BusinessLocation[];
   documents: BusinessDocument[];
 }
