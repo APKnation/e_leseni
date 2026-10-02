@@ -107,6 +107,7 @@ export interface LicenceType {
   fee: string;
   validity_months: number;
   requires_inspection: boolean;
+  bylaw_reference?: string | null;
   lga: number;
   lga_name: string;
   requirements: Requirement[];

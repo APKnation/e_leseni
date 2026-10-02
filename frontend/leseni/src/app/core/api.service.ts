@@ -9,6 +9,7 @@ import {
   Business,
   BusinessActivity,
   BusinessActivityPayload,
+  BusinessLocation,
   Inspection,
   Invoice,
   Licence,

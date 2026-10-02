@@ -468,6 +468,192 @@
           </div>
         }
       </div>
-    }
+
+      <!-- Council catalogue: this council's licence types, fees and requirements -->
+      <div class="mt-6 border border-hairline bg-soft p-5" style="border-radius: 2px;">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 class="text-lg font-bold">Council catalogue</h2>
+            <p class="mt-1 text-sm text-muted">
+              Your council's licences — the fees, validity and requirements applicants see.
+              Each council keeps its own rules here.
+            </p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <label class="flex items-center gap-2 text-sm text-muted">
+              <span class="font-semibold">Council</span>
+              <select
+                class="rounded bg-surface border border-muted/20 px-2 py-1 text-sm text-foreground"
+                [disabled]="!isAdmin"
+                [ngModel]="officerLgaId() ?? ''"
+                (ngModelChange)="onCatalogCouncilChange($event)"
+              >
+                <option value="" disabled>— choose a council —</option>
+                @for (lga of allLgas(); track lga.id) {
+                  <option [value]="lga.id">{{ lga.name }}</option>
+                }
+              </select>
+            </label>
+            <button type="button" class="btn-secondary !py-2 !px-3 text-xs" (click)="toggleCatalog()">
+              {{ showCatalog() ? 'Hide catalogue' : 'Manage catalogue' }}
+            </button>
+            @if (showCatalog()) {
+              <button type="button" class="btn-primary !py-2 !px-3 text-xs" (click)="startNewLicence()">
+                New licence type
+              </button>
+            }
+          </div>
+        </div>
+
+        @if (showCatalog()) {
+          @if (editingLicenceId()) {
+            <!-- Create/edit licence type -->
+            <div class="mt-4 border border-hairline bg-surface p-4" style="border-radius: 2px;">
+              <p class="text-[14px] font-bold uppercase tracking-wide">
+                {{ editingLicenceId() === 'new' ? 'New licence type' : 'Edit licence type' }}
+              </p>
+              <div class="mt-3 grid gap-3 sm:grid-cols-2">
+                <label class="flex flex-col gap-1.5">
+                  <span class="text-sm font-semibold">Name</span>
+                  <input class="input-field" placeholder="Food Vendor Licence" [ngModel]="licenceForm().name" (ngModelChange)="updateLicenceForm({ name: $event })" />
+                </label>
+                <label class="flex flex-col gap-1.5">
+                  <span class="text-sm font-semibold">Code</span>
+                  <input class="input-field font-mono" placeholder="DS-ILALA-FOOD" [ngModel]="licenceForm().code" (ngModelChange)="updateLicenceForm({ code: $event })" />
+                </label>
+                <label class="flex flex-col gap-1.5">
+                  <span class="text-sm font-semibold">Category</span>
+                  <select class="input-field" [ngModel]="licenceForm().category" (ngModelChange)="updateLicenceForm({ category: $event })">
+                    <option value="BUSINESS">Business</option>
+                    <option value="DRIVING">Driving</option>
+                    <option value="GENERAL">General</option>
+                  </select>
+                </label>
+                <label class="flex flex-col gap-1.5">
+                  <span class="text-sm font-semibold">Business activity</span>
+                  <select class="input-field" [ngModel]="licenceForm().activity_id ?? ''" (ngModelChange)="setLicenceActivity($event)">
+                    <option value="">— none —</option>
+                    @for (activity of activities(); track activity.id) {
+                      <option [value]="activity.id">{{ activity.name }}</option>
+                    }
+                  </select>
+                </label>
+                <label class="flex flex-col gap-1.5">
+                  <span class="text-sm font-semibold">Fee (TZS)</span>
+                  <input class="input-field" type="number" min="0" [ngModel]="licenceForm().fee" (ngModelChange)="updateLicenceForm({ fee: $event })" />
+                </label>
+                <label class="flex flex-col gap-1.5">
+                  <span class="text-sm font-semibold">Validity (months)</span>
+                  <input class="input-field" type="number" min="1" [ngModel]="licenceForm().validity_months" (ngModelChange)="setLicenceMonths($event)" />
+                </label>
+                <label class="flex flex-col gap-1.5 sm:col-span-2">
+                  <span class="text-sm font-semibold">Description</span>
+                  <textarea class="input-field" rows="2" [ngModel]="licenceForm().description" (ngModelChange)="updateLicenceForm({ description: $event })"></textarea>
+                </label>
+                <label class="flex flex-col gap-1.5">
+                  <span class="text-sm font-semibold">Bylaw reference</span>
+                  <input class="input-field" placeholder="e.g. By-Law 2014 §6" [ngModel]="licenceForm().bylaw_reference" (ngModelChange)="updateLicenceForm({ bylaw_reference: $event })" />
+                </label>
+                <label class="mt-6 flex items-center gap-2 text-sm font-semibold">
+                  <input type="checkbox" [ngModel]="licenceForm().requires_inspection" (ngModelChange)="updateLicenceForm({ requires_inspection: $event })" />
+                  Requires inspection
+                </label>
+              </div>
+              <div class="mt-4 flex flex-wrap gap-2">
+                <button type="button" class="btn-primary !py-2" [disabled]="savingLicence()" (click)="saveLicence()">Save</button>
+                <button type="button" class="btn-secondary !py-2" (click)="cancelLicenceEdit()">Cancel</button>
+              </div>
+            </div>
+          }
+
+          @if (loadingCatalog()) {
+            <p class="mt-4 text-sm text-muted">Loading catalogue…</p>
+          }
+          <div class="mt-4 grid gap-2">
+            @for (licenceType of catalogue(); track licenceType.id) {
+              <div class="border border-hairline bg-surface px-4 py-3" style="border-radius: 2px;">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                  <div class="min-w-0">
+                    <p class="flex flex-wrap items-center gap-2 font-bold">
+                      {{ licenceType.name }}
+                      <span class="font-mono text-xs text-muted">{{ licenceType.code }}</span>
+                      <span class="badge-outline !px-2 !py-0.5 !text-[10px]">{{ licenceType.category }}</span>
+                    </p>
+                    <p class="text-sm text-muted">
+                      Fee TZS {{ licenceType.fee }} · {{ licenceType.validity_months }} months
+                      @if (licenceType.requires_inspection) { · inspection required }
+                      @if (licenceType.activity_name) { · {{ licenceType.activity_name }} }
+                    </p>
+                    @if (licenceType.bylaw_reference) {
+                      <p class="text-xs text-muted">Bylaw: {{ licenceType.bylaw_reference }}</p>
+                    }
+                  </div>
+                  <div class="flex shrink-0 items-center gap-2">
+                    <button type="button" class="btn-secondary !py-1.5 !px-3 text-xs" (click)="toggleRequirements(licenceType)">
+                      {{
+                        expandedRequirementsFor() === licenceType.id
+                          ? 'Hide requirements'
+                          : 'Requirements (' + licenceType.requirements.length + ')'
+                      }}
+                    </button>
+                    <button type="button" class="btn-secondary !py-1.5 !px-3 text-xs" (click)="startEditLicence(licenceType)">
+                      Edit
+                    </button>
+                  </div>
+                </div>
+
+                @if (expandedRequirementsFor() === licenceType.id) {
+                  <div class="mt-3 border-t border-hairline pt-3">
+                    @for (req of licenceType.requirements; track req.id) {
+                      <div class="flex items-center justify-between gap-2 py-1">
+                        <p class="text-sm">
+                          {{ req.name }}
+                          <span class="text-xs text-muted">{{ req.kind_display }}@if (req.is_mandatory) { · mandatory }@if (!req.is_mandatory) { · optional }</span>
+                        </p>
+                        <button
+                          type="button"
+                          class="btn-secondary !py-1 !px-2 text-[10px] !border-danger/50 !text-danger"
+                          (click)="removeRequirement(licenceType, req.id)"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    } @empty {
+                      <p class="text-xs text-muted">No requirements yet.</p>
+                    }
+                    <div class="mt-2 flex flex-wrap items-end gap-2">
+                      <input
+                        class="input-field max-w-xs !py-1.5 text-sm"
+                        placeholder="New requirement name"
+                        [ngModel]="reqName()"
+                        (ngModelChange)="reqName.set($event)"
+                      />
+                      <select class="rounded bg-surface border border-muted/20 px-2 py-1.5 text-sm" [ngModel]="reqKind()" (ngModelChange)="reqKind.set($event)">
+                        <option value="DOCUMENT">Document</option>
+                        <option value="CLEARANCE">Clearance</option>
+                        <option value="INSPECTION">Inspection</option>
+                      </select>
+                      <label class="flex items-center gap-1 text-xs font-semibold">
+                        <input type="checkbox" [ngModel]="reqMandatory()" (ngModelChange)="reqMandatory.set($event)" />
+                        mandatory
+                      </label>
+                      <button
+                        type="button"
+                        class="btn-secondary !py-1.5 !px-3 text-xs"
+                        [disabled]="!reqName()"
+                        (click)="addRequirement(licenceType)"
+                      >
+                        Add requirement
+                      </button>
+                    </div>
+                  </div>
+                }
+              </div>
+            } @empty {
+              <p class="text-sm text-muted">No licence types for this council yet — create the first one.</p>
+            }
+          </div>
+        }
+      </div>
   }
 </section>

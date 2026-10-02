@@ -6,7 +6,7 @@ import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { AuthService, ROLE_LABELS, UserRole } from '../../core/auth.service';
 import { RealtimeService } from '../../core/realtime.service';
-import { Application, ApplicationStatus, BusinessActivity, Inspection, STATUS_LABELS, STATUS_STYLES } from '../../core/models';
+import { Application, ApplicationStatus, BusinessActivity, Inspection, LGA, LicenceType, STATUS_LABELS, STATUS_STYLES } from '../../core/models';
 
 interface QueueFilter {
   label: string;
@@ -30,6 +30,31 @@ const BLANK_ACTIVITY: ActivityForm = {
   icon: '',
   order: 0,
   is_active: true,
+};
+
+/** Editable form state for the council-catalogue licence editor. */
+interface LicenceForm {
+  name: string;
+  code: string;
+  category: 'BUSINESS' | 'DRIVING' | 'GENERAL';
+  fee: string;
+  validity_months: number;
+  requires_inspection: boolean;
+  description: string;
+  bylaw_reference: string;
+  activity_id: number | null;
+}
+
+const BLANK_LICENCE: LicenceForm = {
+  name: '',
+  code: '',
+  category: 'BUSINESS',
+  fee: '0',
+  validity_months: 12,
+  requires_inspection: true,
+  description: '',
+  bylaw_reference: '',
+  activity_id: null,
 };
 
 /** Workspace config per staff role: which applications they see and why. */
@@ -149,6 +174,20 @@ export class Staff implements OnInit {
   protected readonly editingActivityId = signal<number | 'new' | null>(null);
   protected readonly savingActivity = signal(false);
   protected readonly activityForm = signal<ActivityForm>({ ...BLANK_ACTIVITY });
+
+  /** Council-catalogue editor state (officers manage their own council only). */
+  protected readonly showCatalog = signal(false);
+  protected readonly officerLgaId = signal<number | null>(this.auth.currentUser()?.lga ?? null);
+  protected readonly allLgas = signal<LGA[]>([]);
+  protected readonly catalogue = signal<LicenceType[]>([]);
+  protected readonly loadingCatalog = signal(false);
+  protected readonly editingLicenceId = signal<number | 'new' | null>(null);
+  protected readonly savingLicence = signal(false);
+  protected readonly licenceForm = signal<LicenceForm>({ ...BLANK_LICENCE });
+  protected readonly expandedRequirementsFor = signal<number | null>(null);
+  protected readonly reqName = signal('');
+  protected readonly reqKind = signal<'DOCUMENT' | 'INSPECTION' | 'CLEARANCE'>('DOCUMENT');
+  protected readonly reqMandatory = signal(true);
 
   /** Latest open inspection per application id. */
   private readonly inspectionByApplication = computed(() => {
@@ -336,6 +375,170 @@ export class Staff implements OnInit {
       if (typeof first === 'string') return first;
     }
     return fallback;
+  }
+
+  // -- Council catalogue: per-LGA licence types, fees and requirements ------
+
+  protected toggleCatalog(): void {
+    this.showCatalog.update((visible) => !visible);
+    if (this.showCatalog()) {
+      if (this.allLgas().length === 0) {
+        this.api.lgas().subscribe({
+          next: (page) => this.allLgas.set(page.results),
+          error: () => {},
+        });
+      }
+      this.loadCatalog();
+    } else {
+      this.cancelLicenceEdit();
+    }
+  }
+
+  /** Admins may browse any council; officers are pinned to their own. */
+  protected onCatalogCouncilChange(value: string): void {
+    this.officerLgaId.set(value === '' ? null : Number(value));
+    this.loadCatalog();
+  }
+
+  private loadCatalog(): void {
+    const lgaId = this.officerLgaId();
+    if (!lgaId) {
+      this.catalogue.set([]);
+      return;
+    }
+    this.loadingCatalog.set(true);
+    this.api.licenceTypes({ lga: lgaId }).subscribe({
+      next: (page) => {
+        this.catalogue.set(page.results);
+        this.loadingCatalog.set(false);
+      },
+      error: () => {
+        this.catalogue.set([]);
+        this.loadingCatalog.set(false);
+      },
+    });
+  }
+
+  protected startNewLicence(): void {
+    this.editingLicenceId.set('new');
+    this.licenceForm.set({ ...BLANK_LICENCE });
+    this.expandedRequirementsFor.set(null);
+  }
+
+  protected startEditLicence(licenceType: LicenceType): void {
+    this.editingLicenceId.set(licenceType.id);
+    this.licenceForm.set({
+      name: licenceType.name,
+      code: licenceType.code,
+      category: licenceType.category,
+      fee: String(licenceType.fee ?? '0'),
+      validity_months: licenceType.validity_months,
+      requires_inspection: licenceType.requires_inspection,
+      description: licenceType.description ?? '',
+      bylaw_reference: licenceType.bylaw_reference ?? '',
+      activity_id: licenceType.activity ?? null,
+    });
+    this.expandedRequirementsFor.set(null);
+  }
+
+  protected cancelLicenceEdit(): void {
+    this.editingLicenceId.set(null);
+    this.licenceForm.set({ ...BLANK_LICENCE });
+  }
+
+  protected updateLicenceForm(patch: Partial<LicenceForm>): void {
+    this.licenceForm.update((form) => ({ ...form, ...patch }));
+  }
+
+  protected setLicenceMonths(value: string | number): void {
+    const months = typeof value === 'number' ? value : Number(value);
+    this.updateLicenceForm({ validity_months: Number.isFinite(months) ? months : 12 });
+  }
+
+  protected setLicenceActivity(value: string): void {
+    this.updateLicenceForm({ activity_id: value === '' ? null : Number(value) });
+  }
+
+  protected saveLicence(): void {
+    const form = this.licenceForm();
+    const name = form.name.trim();
+    const code = form.code.trim().toUpperCase();
+    if (!name || !code) {
+      this.errorMessage.set('A licence type needs both a name and a code.');
+      return;
+    }
+    if (!this.officerLgaId()) {
+      this.errorMessage.set('Choose a council first.');
+      return;
+    }
+    if (this.savingLicence()) return;
+    this.savingLicence.set(true);
+    this.errorMessage.set('');
+
+    const payload = {
+      name,
+      code,
+      category: form.category,
+      activity: form.activity_id,
+      description: form.description.trim(),
+      fee: form.fee || '0',
+      validity_months: form.validity_months,
+      requires_inspection: form.requires_inspection,
+      bylaw_reference: form.bylaw_reference.trim(),
+      lga: this.officerLgaId()!,
+    };
+    const editingId = this.editingLicenceId();
+    const request$ =
+      editingId === 'new'
+        ? this.api.createLicenceType(payload)
+        : this.api.updateLicenceType(editingId as number, payload);
+
+    request$.subscribe({
+      next: (licenceType) => {
+        this.savingLicence.set(false);
+        this.cancelLicenceEdit();
+        this.loadCatalog();
+        this.successMessage.set(`Licence type “${licenceType.name}” saved.`);
+      },
+      error: (err) => {
+        this.savingLicence.set(false);
+        this.errorMessage.set(this.firstError(err, 'Could not save the licence type.'));
+      },
+    });
+  }
+
+  protected toggleRequirements(licenceType: LicenceType): void {
+    this.expandedRequirementsFor.update((current) =>
+      current === licenceType.id ? null : licenceType.id,
+    );
+  }
+
+  protected addRequirement(licenceType: LicenceType): void {
+    const name = this.reqName().trim();
+    if (!name) return;
+    this.api
+      .createRequirement({
+        licence_type: licenceType.id,
+        name,
+        kind: this.reqKind(),
+        is_mandatory: this.reqMandatory(),
+        order: licenceType.requirements.length + 1,
+      })
+      .subscribe({
+        next: () => {
+          this.reqName.set('');
+          this.loadCatalog();
+        },
+        error: (err) => this.errorMessage.set(this.firstError(err, 'Could not add the requirement.')),
+      });
+  }
+
+  protected removeRequirement(licenceType: LicenceType, requirementId: number): void {
+    this.errorMessage.set('');
+    this.api.deleteRequirement(requirementId).subscribe({
+      next: () => this.loadCatalog(),
+      error: () => this.errorMessage.set('Could not remove the requirement.'),
+    });
   }
 
   /**
