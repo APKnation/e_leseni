@@ -219,3 +219,57 @@ class FullRegistrationJourneyTests(TestCase):
             'location': {'lga': self.lga.id, 'ward': 'Ward A', 'street': 'S', 'plot_number': ''},
         }, format='json')
         self.assertEqual(res.status_code, 400)
+
+
+class VerificationRejectionReasonTests(TestCase):
+    """TRA/BRELA rejections persist a human-readable reason on the business."""
+
+    def setUp(self):
+        self.client = APIClient()
+        self.user = User.objects.create_user(
+            username='rejectme', password='pass-12345678', nida_number='1' + '2' * 19,
+        )
+        self.client.force_authenticate(self.user)
+        self.lga = LGA.objects.first() or LGA.objects.create(
+            region='Dar es Salaam', name='Ilala Municipal', code='IL'
+        )
+
+    def _business(self, tin, brela):
+        res = self.client.post('/api/businesses/', {
+            'name': 'Reason Cafe', 'tin_number': tin, 'brela_registration_number': brela,
+            'sector': 'Food',
+            'location': {'lga': self.lga.id, 'ward': 'W', 'street': 'S', 'plot_number': ''},
+        }, format='json')
+        self.assertEqual(res.status_code, 201, res.content)
+        business_id = res.data['id']
+        self.client.post(
+            f'/api/businesses/{business_id}/street-id-letter/',
+            {'file': SimpleUploadedFile('letter.pdf', b'%PDF-1.4 letter', content_type='application/pdf')},
+            format='multipart',
+        )
+        return business_id
+
+    def test_rejected_verification_persists_reasons(self):
+        """A business the agencies refuse keeps both rejection reasons."""
+        business_id = self._business(tin='223456789', brela='20001234')
+        res = self.client.post(f'/api/businesses/{business_id}/verify/', {})
+        self.assertEqual(res.status_code, 200)
+        self.assertFalse(res.data['is_verified'])
+        self.assertIn('TRA rejected', res.data['tra']['reason'])
+        self.assertIn('BRELA rejected', res.data['brela']['reason'])
+
+        detail = self.client.get(f'/api/businesses/{business_id}/').data
+        self.assertIn('TRA rejected', detail['verification_note'])
+        self.assertIn('BRELA rejected', detail['verification_note'])
+        self.assertEqual(len(detail['verification_attempts']), 1)
+        self.assertFalse(detail['verification_attempts'][0]['verified'])
+
+    def test_corrected_numbers_verify_and_note_updates(self):
+        """Fixing the TIN/BRELA numbers passes verification and updates the note."""
+        business_id = self._business(tin='123456789', brela='10001234')
+        res = self.client.post(f'/api/businesses/{business_id}/verify/', {})
+        self.assertTrue(res.data['is_verified'], res.content)
+
+        detail = self.client.get(f'/api/businesses/{business_id}/').data
+        self.assertEqual(detail['verification_note'], 'Verified with TRA and BRELA.')
+        self.assertTrue(detail['verification_attempts'][0]['verified'])

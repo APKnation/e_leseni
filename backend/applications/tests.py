@@ -376,6 +376,29 @@ class RoleWorkflowAPITests(APITestCase):
         response = self._transition(self.admin, app, 'UNDER_REVIEW')
         self.assertEqual(response.status_code, 200)
 
+    def test_cross_council_application_rejected(self):
+        """The premises must sit in the same council as the licence type —
+        a Mufindi licence cannot be applied to on Dar es Salaam premises."""
+        self.client.force_authenticate(self.applicant)
+        res = self.client.post('/api/applications/', {
+            'business': self.business.id,
+            'licence_type': self.licence_b.id,   # licence of lga_b
+            'location': self.location_a.id,      # premises in lga_a
+            'purpose_statement': 'wrong council',
+        }, format='json')
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('same council', str(res.data['location']))
+
+    def test_same_council_application_accepted(self):
+        self.client.force_authenticate(self.applicant)
+        res = self.client.post('/api/applications/', {
+            'business': self.business.id,
+            'licence_type': self.licence_a.id,
+            'location': self.location_a.id,
+            'purpose_statement': 'matching council',
+        }, format='json')
+        self.assertEqual(res.status_code, 201, res.data)
+
     def test_staff_queryset_scoped_to_own_lga(self):
         self._application(self.licence_a, self.location_a)
         self._application(self.licence_b, self.location_b)
