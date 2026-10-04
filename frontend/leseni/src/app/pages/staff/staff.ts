@@ -6,6 +6,7 @@ import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { AuthService, ROLE_LABELS, UserRole } from '../../core/auth.service';
 import { RealtimeService } from '../../core/realtime.service';
+import { ProfileLink } from '../../shared/profile-link';
 import { Application, ApplicationStatus, BusinessActivity, Inspection, LGA, LicenceType, RegionInfo, STATUS_LABELS, STATUS_STYLES } from '../../core/models';
 
 interface QueueFilter {
@@ -118,7 +119,7 @@ const WORKSPACES: Record<UserRole, RoleWorkspace> = {
 };
 
 @Component({
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, RouterLink, ProfileLink],
   selector: 'app-staff',
   templateUrl: './staff.html',
 })

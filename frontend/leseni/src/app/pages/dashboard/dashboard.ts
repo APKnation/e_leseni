@@ -5,6 +5,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 
 import { ApiService } from '../../core/api.service';
+import { ProfileLink } from '../../shared/profile-link';
 import { AuthService, ROLE_LABELS } from '../../core/auth.service';
 import { RealtimeService } from '../../core/realtime.service';
 import {
@@ -30,7 +31,7 @@ interface TimelineStep {
 }
 
 @Component({
-  imports: [CommonModule, QRCodeComponent, RouterLink],
+  imports: [CommonModule, QRCodeComponent, RouterLink, ProfileLink],
   selector: 'app-dashboard',
   templateUrl: './dashboard.html',
 })
