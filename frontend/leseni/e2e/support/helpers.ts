@@ -55,7 +55,7 @@ export async function resetApplicantNida(
   if (check.ok()) {
     const me = (await check.json()) as { nida_number: string };
     if ((me.nida_number || '') !== nida) {
-      throw new Error(`NIDA reset did not stick: expected ${nida!r}, got ${me.nida_number!r}`);
+      throw new Error(`NIDA reset did not stick: expected '${nida}', got '${me.nida_number}'`);
     }
   }
 }
