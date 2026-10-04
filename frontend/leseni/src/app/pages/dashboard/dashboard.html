@@ -196,43 +196,90 @@
     }
 
     <!-- Invoices -->
-    <h2 class="mt-12 text-xl font-bold">Invoices</h2>
+    <h2 class="mt-12 text-xl font-bold">Invoices & Payments</h2>
     @if (invoices().length === 0) {
       <p class="mt-4 text-muted">No invoices yet.</p>
     } @else {
       <div class="mt-4 grid gap-4">
         @for (invoice of invoices(); track invoice.id) {
-          <div class="card flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p class="font-mono text-sm text-muted">{{ invoice.control_number || 'control number pending' }}</p>
-              <p class="text-lg font-bold">
-                {{ invoice.amount }} {{ invoice.currency }}
-              </p>
-              <p class="text-sm text-muted">
-                {{ invoice.application_reference }} — {{ invoice.licence_type_name }}
-              </p>
-            </div>
-            <div class="flex flex-col items-start gap-2 sm:items-end">
-              <span class="badge-outline">{{ invoice.status }}</span>
-              @if (invoice.status === 'WAITING_PAYMENT' || invoice.status === 'PENDING') {
-                <button
-                  type="button"
-                  class="btn-primary !py-2"
-                  [disabled]="payingInvoiceId() === invoice.id"
-                  (click)="payInvoice(invoice)"
+          <div class="card flex flex-col gap-3">
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <p class="text-sm text-muted">
+                  {{ invoice.application_reference }} — {{ invoice.licence_type_name }}
+                </p>
+                <p class="text-2xl font-bold mt-1">
+                  {{ invoice.amount }} <span class="text-base font-normal text-muted">{{ invoice.currency }}</span>
+                </p>
+                @if (invoice.control_number) {
+                  <p class="mt-1 font-mono text-sm font-bold text-foreground">
+                    Control no.: <span class="text-primary">{{ invoice.control_number }}</span>
+                  </p>
+                  <p class="text-xs text-muted mt-0.5">Pay via mobile money, bank, or agent using this control number.</p>
+                } @else if (invoice.status === 'PENDING') {
+                  <p class="mt-1 text-xs text-muted">A GePG control number has not been issued yet.</p>
+                }
+              </div>
+              <div class="flex flex-col items-start gap-2 sm:items-end">
+                <span
+                  class="px-3 py-1 text-xs font-bold uppercase"
+                  style="border-radius: 2px;"
+                  [class]="
+                    invoice.status === 'PAID' ? 'bg-primary/15 text-success-deep border border-primary/40' :
+                    invoice.status === 'WAITING_PAYMENT' ? 'bg-warning/10 text-warning border border-warning/40' :
+                    invoice.status === 'PENDING' ? 'bg-soft text-muted border border-hairline' :
+                    invoice.status === 'CANCELLED' ? 'bg-danger/10 text-danger border border-danger/40' :
+                    'bg-soft text-muted border border-hairline'
+                  "
                 >
-                  @if (payingInvoiceId() === invoice.id) {
-                    Paying…
-                  } @else {
-                    Pay {{ invoice.amount }} {{ invoice.currency }}
-                  }
-                </button>
-              }
+                  {{
+                    invoice.status === 'PAID' ? 'Paid' :
+                    invoice.status === 'WAITING_PAYMENT' ? 'Awaiting payment' :
+                    invoice.status === 'PENDING' ? 'Pending' :
+                    invoice.status === 'CANCELLED' ? 'Cancelled' :
+                    invoice.status === 'EXPIRED' ? 'Expired' :
+                    invoice.status
+                  }}
+                </span>
+
+                <!-- Step 1: Request control number if not yet issued -->
+                @if (invoice.status === 'PENDING' && !invoice.control_number) {
+                  <button
+                    type="button"
+                    class="btn-secondary !py-2 text-sm"
+                    [disabled]="requestingControlId() === invoice.id"
+                    (click)="requestControlNumber(invoice)"
+                  >
+                    @if (requestingControlId() === invoice.id) {
+                      Requesting…
+                    } @else {
+                      Request control number
+                    }
+                  </button>
+                }
+
+                <!-- Step 2: Pay once control number available -->
+                @if (invoice.status === 'WAITING_PAYMENT' || (invoice.status === 'PENDING' && invoice.control_number)) {
+                  <button
+                    type="button"
+                    class="btn-primary !py-2 text-sm"
+                    [disabled]="payingInvoiceId() === invoice.id"
+                    (click)="payInvoice(invoice)"
+                  >
+                    @if (payingInvoiceId() === invoice.id) {
+                      Processing payment…
+                    } @else {
+                      Pay {{ invoice.amount }} {{ invoice.currency }}
+                    }
+                  </button>
+                }
+              </div>
             </div>
           </div>
         }
       </div>
     }
+
 
     <!-- My businesses / activities -->
     <div class="mt-8 flex flex-wrap items-center justify-between gap-3">

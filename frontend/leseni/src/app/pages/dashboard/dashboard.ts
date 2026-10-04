@@ -52,6 +52,7 @@ export class Dashboard {
   protected readonly businesses = signal<Business[]>([]);
 
   protected readonly payingInvoiceId = signal<number | null>(null);
+  protected readonly requestingControlId = signal<number | null>(null);
 
   /** Per-application visibility of the expanded status timeline. */
   protected readonly expandedTimeline = signal<number | null>(null);
@@ -289,6 +290,25 @@ export class Dashboard {
         },
         error: () => this.payingInvoiceId.set(null),
       });
+  }
+
+  protected requestControlNumber(invoice: Invoice): void {
+    if (this.requestingControlId()) return;
+    this.requestingControlId.set(invoice.id);
+    this.successMessage.set('Requesting control number from GePG…');
+    this.api.requestControlNumber(invoice.id).subscribe({
+      next: (updated) => {
+        this.requestingControlId.set(null);
+        this.successMessage.set(`Control number issued: ${updated.control_number}. You can now pay.`);
+        setTimeout(() => this.successMessage.set(''), 6000);
+        this.loadAll();
+      },
+      error: () => {
+        this.requestingControlId.set(null);
+        this.successMessage.set('');
+        this.errorMessage.set('Could not request a control number. Please try again.');
+      },
+    });
   }
 
   protected user = () => this.auth.currentUser();
