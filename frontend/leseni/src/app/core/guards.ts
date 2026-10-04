@@ -1,27 +1,44 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
+import { isPlatformBrowser } from '@angular/common';
+import { PLATFORM_ID } from '@angular/core';
 
 import { AuthService, UserRole } from './auth.service';
 
-function requireRoles(roles: UserRole[], stateUrl: string, fallback = '/dashboard') {
+/**
+ * Guards are evaluated during the server render of the initial document too,
+ * where sessionStorage is invisible — blindly redirecting there would bounce
+ * every hard page load to /login even for logged-in users (the session exists
+ * only in the browser). So on the server we always allow the render; on the
+ * client the guard runs again and redirects after that, once storage is
+ * readable — including in the dev server, which SSRs every request.
+ */
+function clientOnlyGuard(
+  guard: (auth: AuthService, router: Router, stateUrl: string) => true | ReturnType<Router['createUrlTree']>,
+  stateUrl: string,
+): true | ReturnType<Router['createUrlTree']> {
   const auth = inject(AuthService);
   const router = inject(Router);
+  if (!isPlatformBrowser(inject(PLATFORM_ID))) return true;
+  return guard(auth, router, stateUrl);
+}
 
-  if (!auth.isLoggedIn()) {
-    return router.createUrlTree(['/login'], { queryParams: { returnUrl: stateUrl } });
-  }
-  if (auth.hasRole(...roles)) return true;
-  return router.createUrlTree([auth.homeRoute()]);
+function requireRoles(roles: UserRole[], stateUrl: string, fallback = '/dashboard') {
+  return clientOnlyGuard((auth, router, url) => {
+    if (!auth.isLoggedIn()) {
+      return router.createUrlTree(['/login'], { queryParams: { returnUrl: url } });
+    }
+    if (auth.hasRole(...roles)) return true;
+    return router.createUrlTree([auth.homeRoute()]);
+  }, stateUrl);
 }
 
 /** Requires a logged-in user; remembers where the user was heading. */
-export const authGuard: CanActivateFn = (_route, state) => {
-  const auth = inject(AuthService);
-  const router = inject(Router);
-
-  if (auth.isLoggedIn()) return true;
-  return router.createUrlTree(['/login'], { queryParams: { returnUrl: state.url } });
-};
+export const authGuard: CanActivateFn = (_route, state) =>
+  clientOnlyGuard((auth, router, url) => {
+    if (auth.isLoggedIn()) return true;
+    return router.createUrlTree(['/login'], { queryParams: { returnUrl: url } });
+  }, state.url);
 
 /** Any LGA staff role (OFFICER, INSPECTOR, APPROVER, ADMIN). */
 export const staffGuard: CanActivateFn = (_route, state) =>
