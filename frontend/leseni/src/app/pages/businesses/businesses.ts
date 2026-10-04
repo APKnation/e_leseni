@@ -21,7 +21,7 @@ interface StepReceipt {
 }
 
 @Component({
-  imports: [FormsModule, RouterLink, DatePipe],
+  imports: [FormsModule, RouterLink, DatePipe, ProfileLink],
   selector: 'app-businesses',
   templateUrl: './businesses.html',
 })

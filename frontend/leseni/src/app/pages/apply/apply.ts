@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 
 import { ApiService } from '../../core/api.service';
+import { ProfileLink } from '../../shared/profile-link';
 import { AuthService } from '../../core/auth.service';
 import { TanzaniaGeoService } from '../../core/tanzania-geo.service';
 import {
@@ -43,7 +44,7 @@ interface UploadRow {
 }
 
 @Component({
-  imports: [FormsModule],
+  imports: [FormsModule, ProfileLink],
   selector: 'app-apply',
   templateUrl: './apply.html',
 })

@@ -30,7 +30,7 @@ interface GatewayLogEntry {
  * live gateway would call. The backend is the real USSD engine (CON/END).
  */
 @Component({
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, ProfileLink],
   selector: 'app-ussd-demo',
   templateUrl: './ussd-demo.html',
 })
