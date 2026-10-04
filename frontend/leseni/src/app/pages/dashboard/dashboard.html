@@ -8,7 +8,7 @@
     </div>
     <div class="flex items-center gap-3">
       <span class="badge-green">{{ user()?.role ? roleLabel[user()!.role] : '' }}</span>
-      <a routerLink="/profile" class="text-sm font-semibold text-muted hover:text-foreground underline decoration-muted/40 hover:decoration-foreground">My Profile</a>
+      <app-profile-link />
       @if (!isStaff()) {
         <a routerLink="/apply" class="btn-primary !py-2">+ New application</a>
       } @else {

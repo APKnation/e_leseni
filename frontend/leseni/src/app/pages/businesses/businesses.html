@@ -7,7 +7,10 @@
         then bring both to your council to apply for a licence.
       </p>
     </div>
-    <button type="button" class="btn-primary" (click)="openWizard()">+ Register a business</button>
+    <div class="flex items-center gap-3">
+      <app-profile-link />
+      <button type="button" class="btn-primary" (click)="openWizard()">+ Register a business</button>
+    </div>
   </div>
 
   @if (errorMessage()) {

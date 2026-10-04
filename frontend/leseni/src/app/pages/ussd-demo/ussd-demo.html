@@ -8,7 +8,10 @@
         gateway (Africa's Talking, etc.) would call.
       </p>
     </div>
-    <a routerLink="/dashboard" class="btn-secondary !py-2">← Back to dashboard</a>
+    <div class="flex items-center gap-2">
+      <app-profile-link />
+      <a routerLink="/dashboard" class="btn-secondary !py-2 whitespace-nowrap">← Back to dashboard</a>
+    </div>
   </div>
 
   @if (errorMessage()) {
