@@ -253,7 +253,7 @@
                 type="button"
                 class="btn-secondary !py-2 !px-3 text-xs"
                 [disabled]="processingId() === app.id"
-                (click)="advance(app, 'RETURNED_FOR_CORRECTION')"
+                (click)="openReturnForm(app)"
               >
                 Return for correction
               </button>
@@ -293,11 +293,41 @@
                   type="button"
                   class="btn-secondary !py-2 !px-3 text-xs"
                   [disabled]="processingId() === app.id"
-                  (click)="status === 'REJECTED' ? openRejectForm(app) : advance(app, status)"
+                  (click)="status === 'REJECTED' ? openRejectForm(app) : (status === 'RETURNED_FOR_CORRECTION' ? openReturnForm(app) : advance(app, status))"
                 >
                   → {{ STATUS_LABELS[status] }}
                 </button>
               }
+            }
+
+            <!-- Return for correction instructions -->
+            @if (returningId() === app.id) {
+              <div class="w-full border border-hairline bg-soft p-4" style="border-radius: 2px;">
+                <p class="text-[14px] font-bold uppercase tracking-wide text-foreground">Return application for correction</p>
+                <label class="mt-3 flex flex-col gap-1.5">
+                  <span class="text-sm font-semibold">
+                    What does the applicant need to correct? They will see this note on their dashboard.
+                  </span>
+                  <textarea
+                    class="input-field"
+                    rows="3"
+                    placeholder="e.g. Please upload an updated tax clearance certificate or re-confirm your premises ward address…"
+                    [ngModel]="returnNote()"
+                    (ngModelChange)="returnNote.set($event)"
+                  ></textarea>
+                </label>
+                <div class="mt-4 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    class="btn-primary !py-2"
+                    [disabled]="processingId() === app.id"
+                    (click)="confirmReturn(app)"
+                  >
+                    Confirm return
+                  </button>
+                  <button type="button" class="btn-secondary" (click)="cancelReturn()">Cancel</button>
+                </div>
+              </div>
             }
 
             <!-- Mandatory rejection reason (any role allowed to reject) -->
