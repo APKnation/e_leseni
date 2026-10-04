@@ -135,7 +135,11 @@ class Application(models.Model):
         elif new_status in (self.Status.APPROVED, self.Status.REJECTED):
             self.decided_at = timezone.now()
         if note:
-            self.rejection_reason = note if new_status == self.Status.REJECTED else self.rejection_reason
+            self.rejection_reason = (
+                note
+                if new_status in (self.Status.REJECTED, self.Status.RETURNED_FOR_CORRECTION)
+                else self.rejection_reason
+            )
         self.save(update_fields=['status', 'submitted_at', 'decided_at', 'rejection_reason', 'updated_at'])
 
         StatusHistory.objects.create(

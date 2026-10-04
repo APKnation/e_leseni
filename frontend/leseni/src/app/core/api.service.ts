@@ -231,8 +231,14 @@ export class ApiService {
     });
   }
 
-  /** Save the NIDA number on the logged-in user's profile. */
-  updateProfile(data: { nida_number?: string; phone_number?: string }): Observable<User> {
+  /** Update profile fields (first_name, last_name, email, phone_number, nida_number) on the logged-in user. */
+  updateProfile(data: {
+    first_name?: string;
+    last_name?: string;
+    email?: string;
+    phone_number?: string;
+    nida_number?: string;
+  }): Observable<User> {
     return this.http.patch<User>(`${this.baseUrl}/auth/me/update/`, data);
   }
 

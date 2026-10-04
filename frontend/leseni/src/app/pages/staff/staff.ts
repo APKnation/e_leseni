@@ -149,6 +149,9 @@ export class Staff implements OnInit {
   /** Rejection form state — a reason is mandatory for every rejection. */
   protected readonly rejectingId = signal<number | null>(null);
   protected readonly rejectReason = signal('');
+  /** Return for correction state — instructions sent to applicant. */
+  protected readonly returningId = signal<number | null>(null);
+  protected readonly returnNote = signal('');
   /** Captured GPS per application id (nulled when capture fails). */
   protected readonly capturedLocation = signal<Map<number, { lat: number; lng: number; accuracy: number } | null>>(new Map());
 
@@ -687,6 +690,44 @@ export class Staff implements OnInit {
           (err?.error?.note ? String(err.error.note) : null) ??
           'Could not reject the application.';
         this.errorMessage.set(typeof detail === 'string' ? detail : 'Could not reject the application.');
+        this.processingId.set(null);
+      },
+    });
+  }
+
+  // -- Return for correction ------------------------------------------------
+
+  protected openReturnForm(app: Application): void {
+    this.returningId.set(app.id);
+    this.returnNote.set('');
+  }
+
+  protected cancelReturn(): void {
+    this.returningId.set(null);
+    this.returnNote.set('');
+  }
+
+  protected confirmReturn(app: Application): void {
+    const note = this.returnNote().trim();
+    if (this.processingId()) return;
+    this.processingId.set(app.id);
+    this.errorMessage.set('');
+    this.successMessage.set('');
+    this.api.transitionApplication(app.id, 'RETURNED_FOR_CORRECTION', note).subscribe({
+      next: (updated) => {
+        this.successMessage.set(
+          `${updated.reference_number} → ${STATUS_LABELS.RETURNED_FOR_CORRECTION} (instructions sent to applicant)`,
+        );
+        this.processingId.set(null);
+        this.cancelReturn();
+        this.load();
+      },
+      error: (err) => {
+        const detail =
+          err?.error?.detail ??
+          (err?.error?.note ? String(err.error.note) : null) ??
+          'Could not return the application for correction.';
+        this.errorMessage.set(typeof detail === 'string' ? detail : 'Could not return the application for correction.');
         this.processingId.set(null);
       },
     });

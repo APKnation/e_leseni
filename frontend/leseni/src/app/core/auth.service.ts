@@ -131,9 +131,11 @@ export class AuthService {
     this.currentUserSignal.set(res.user);
   }
 
-  updateUserSession(user: User): void {
-    sessionStorage.setItem(USER_KEY, JSON.stringify(user));
-    this.currentUserSignal.set(user);
+  updateUserSession(user: Partial<User>): void {
+    const current = this.currentUserSignal();
+    const merged = current ? ({ ...current, ...user } as User) : (user as User);
+    sessionStorage.setItem(USER_KEY, JSON.stringify(merged));
+    this.currentUserSignal.set(merged);
   }
 
   private readStoredUser(): User | null {
