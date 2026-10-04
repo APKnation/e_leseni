@@ -5,6 +5,7 @@ import { RouterLink } from '@angular/router';
 
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
+import { ProfileLink } from '../../shared/profile-link';
 
 /** One line of the phone-screen transcript. */
 interface LogEntry {

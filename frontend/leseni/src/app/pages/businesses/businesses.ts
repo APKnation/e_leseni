@@ -6,6 +6,7 @@ import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
 import { TanzaniaGeoService } from '../../core/tanzania-geo.service';
+import { ProfileLink } from '../../shared/profile-link';
 import {
   Business,
   BusinessActivity,
