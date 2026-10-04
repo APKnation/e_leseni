@@ -8,18 +8,55 @@ from .models import PasswordResetToken, User
 class UserSerializer(serializers.ModelSerializer):
     lga_name = serializers.CharField(source='lga.name', read_only=True, default=None)
     has_nida = serializers.SerializerMethodField()
+    password = serializers.CharField(write_only=True, required=False, min_length=8)
 
     class Meta:
         model = User
         fields = [
             'id', 'username', 'first_name', 'last_name', 'email',
-            'role', 'phone_number', 'nida_number', 'has_nida', 'lga', 'lga_name', 'is_lga_staff',
+            'role', 'phone_number', 'nida_number', 'has_nida', 'lga', 'lga_name',
+            'is_lga_staff', 'is_active', 'date_joined', 'password',
         ]
-        read_only_fields = ['id', 'is_lga_staff', 'lga_name', 'has_nida']
+        read_only_fields = ['id', 'is_lga_staff', 'lga_name', 'has_nida', 'date_joined']
 
     def get_has_nida(self, obj):
         """Frontends show a NIDA checkmark without exposing the full number."""
         return bool(obj.nida_number)
+
+    def validate_nida_number(self, value):
+        """NIDA is 20 digits when provided (users can add it later)."""
+        value = (value or '').strip()
+        if value and not value.isdigit():
+            raise serializers.ValidationError('NIDA number must contain only digits (20 digits).')
+        if value and len(value) != 20:
+            raise serializers.ValidationError('NIDA number must be exactly 20 digits.')
+        return value
+
+    def create(self, validated_data):
+        password = validated_data.pop('password', None)
+        if not password:
+            raise serializers.ValidationError({'password': 'Password is required when creating a new user.'})
+        user = User(**validated_data)
+        user.set_password(password)
+        user.save()
+        return user
+
+    def update(self, instance, validated_data):
+        password = validated_data.pop('password', None)
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        if password:
+            instance.set_password(password)
+        instance.save()
+        return instance
+
+
+class AdminPasswordResetSerializer(serializers.Serializer):
+    new_password = serializers.CharField(write_only=True, min_length=8)
+
+    def validate_new_password(self, value):
+        validate_password(value)
+        return value
 
 
 class RegisterSerializer(serializers.ModelSerializer):

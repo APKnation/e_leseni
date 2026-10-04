@@ -1,9 +1,11 @@
+from django.db import models
 from rest_framework import generics, permissions, status, viewsets
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 
 from .models import PasswordResetToken, User
 from .serializers import (
+    AdminPasswordResetSerializer,
     ChangePasswordSerializer,
     LoginSerializer,
     PasswordResetConfirmSerializer,
@@ -88,13 +90,63 @@ def mock_nida_verify(request):
     })
 
 
-class UserViewSet(viewsets.ReadOnlyModelViewSet):
-    """Staff directory; search and filter by role/LGA."""
+class IsAdminOrReadOnly(permissions.BasePermission):
+    """Allows staff/authenticated users to view the directory, but only ADMIN or superuser can create/modify users."""
 
-    queryset = User.objects.select_related('lga').all()
+    def has_permission(self, request, view):
+        if not (request.user and request.user.is_authenticated):
+            return False
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        return request.user.role == User.Roles.ADMIN or request.user.is_superuser
+
+
+class UserViewSet(viewsets.ModelViewSet):
+    """User directory and full CRUD management for administrators."""
+
+    queryset = User.objects.select_related('lga').all().order_by('-date_joined')
     serializer_class = UserSerializer
-    filterset_fields = ['role', 'lga']
+    permission_classes = [IsAdminOrReadOnly]
+    filterset_fields = ['role', 'lga', 'is_active']
     search_fields = ['username', 'first_name', 'last_name', 'email', 'phone_number']
+
+    @action(detail=True, methods=['post'], url_path='reset-password')
+    def reset_password(self, request, pk=None):
+        user = self.get_object()
+        serializer = AdminPasswordResetSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user.set_password(serializer.validated_data['new_password'])
+        user.save(update_fields=['password'])
+        return Response({'detail': f'Password updated successfully for {user.username}.'})
+
+    @action(detail=True, methods=['post'], url_path='toggle-active')
+    def toggle_active(self, request, pk=None):
+        user = self.get_object()
+        if user == request.user:
+            return Response({'detail': 'You cannot deactivate your own account.'}, status=status.HTTP_400_BAD_REQUEST)
+        user.is_active = not user.is_active
+        user.save(update_fields=['is_active'])
+        return Response({
+            'detail': f'User {user.username} is now {"active" if user.is_active else "inactive"}.',
+            'is_active': user.is_active,
+        })
+
+    def destroy(self, request, *args, **kwargs):
+        user = self.get_object()
+        if user == request.user:
+            return Response({'detail': 'You cannot delete your own account.'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            return super().destroy(request, *args, **kwargs)
+        except models.ProtectedError:
+            user.is_active = False
+            user.save(update_fields=['is_active'])
+            return Response(
+                {
+                    'detail': f'User {user.username} has linked records (applications, inspections, or audits) and was deactivated instead of deleted.',
+                    'deactivated': True,
+                },
+                status=status.HTTP_200_OK,
+            )
 
 
 class PasswordResetRequestView(generics.GenericAPIView):
