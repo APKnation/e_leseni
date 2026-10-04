@@ -1,93 +1,120 @@
-# e_leseni
+# e-Leseni (e-Licensing Platform for Tanzania LGAs)
 
+[![Django](https://img.shields.io/badge/Django-5.0+-green.svg)](https://www.djangoproject.com/)
+[![Angular](https://img.shields.io/badge/Angular-18-red.svg)](https://angular.dev/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4-blue.svg)](https://tailwindcss.com/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15+-blue.svg)](https://www.postgresql.org/)
 
+**e-Leseni** is an end-to-end digital licensing and revenue administration platform designed for Local Government Authorities (LGAs / Halmashauri) in Tanzania. It digitises the complete licensing journey: from inter-agency verification (BRELA, TRA, NIDA) to field inspections with GPS, council approvals, GePG electronic payments, and cryptographically verified digital licences with QR codes.
 
-## Getting started
+---
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+## 📖 Documentation Index
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+- **[Complete Project Flow & Architecture](docs/PROJECT_FLOW.md)**: Full technical breakdown of system architecture, state machines, actors, and workflows.
+- **[Business Owner User Guide](docs/USER_GUIDE.md)**: Citizen walkthrough from account registration to licence issuance.
 
-## Add your files
+---
 
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/ee/gitlab-basics/add-file.html#add-a-file-using-the-command-line) or push an existing Git repository with the following command:
+## 🏛️ The Complete System Flow
 
 ```
-cd existing_repo
-git remote add origin http://102.223.8.140:9000/apknation/e_leseni.git
-git branch -M main
-git push -uf origin main
+1. Register & NIDA Verification
+   └── Citizen creates account with NIDA & phone number
+
+2. Business Registration Wizard
+   └── TRA TIN + BRELA Registration + Street ID Letter + Premises Location
+
+3. Inter-Agency Verification
+   └── Auto-verification with TRA, BRELA, and NIDA
+
+4. Licence Application
+   └── Select Council & Licence Type → Upload mandatory documents (PDF)
+
+5. Council Workflow (Staff Area)
+   ├── Licensing Officer: Reviews dossier, returns for correction, or schedules inspection
+   ├── Field Inspector: Verifies physical premises via device GPS & records pass/fail findings
+   └── Approver: Final statutory review & approval
+
+6. Invoicing & GePG Payment
+   └── Auto-invoice generation → GePG control number sent via SMS → Mobile Money / Bank settlement
+
+7. Licence Issuance & QR Verification
+   └── Digital licence issued → Public QR code verification portal (/verify) → PDF Certificate
 ```
 
-## Integrate with your tools
+---
 
-- [ ] [Set up project integrations](http://102.223.8.140:9000/apknation/e_leseni/-/settings/integrations)
+## 👥 System Roles & Workspaces
 
-## Collaborate with your team
+| Role | Interface Route | Key Capabilities |
+|------|-----------------|------------------|
+| **Applicant** | `/dashboard`, `/businesses`, `/apply` | Register businesses, apply for licences, pay invoices, download licences. |
+| **Licensing Officer** | `/staff/review` | Review queue, return for correction with instructions, schedule inspections, manage council licence catalog & activities. |
+| **Field Inspector** | `/staff/inspections` | Inspection queue, capture device GPS location, submit pass/fail findings. |
+| **Licensing Approver** | `/staff/approvals` | Review inspected applications, approve licences, initiate invoicing. |
+| **System Admin** | `/staff/admin`, `/staff/users` | Full CRUD user management (create, edit, reset passwords, activate/deactivate staff per LGA), cross-council oversight. |
 
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Set auto-merge](https://docs.gitlab.com/ee/user/project/merge_requests/merge_when_pipeline_succeeds.html)
+---
 
-## Test and Deploy
+## 🚀 Getting Started
 
-Use the built-in continuous integration in GitLab.
+### Prerequisites
+- Python 3.12+
+- Node.js 22+ & npm
+- PostgreSQL
 
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/index.html)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
+### 1. Backend Setup (Django + DRF)
 
-***
+```bash
+cd backend
 
-# Editing this README
+# Create and activate virtual environment
+python3 -m venv .venv
+source .venv/bin/activate
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+# Install dependencies
+pip install -r requirements.txt
 
-## Suggestions for a good README
+# Run migrations
+python manage.py migrate
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+# Run tests
+python manage.py test
 
-## Name
-Choose a self-explaining name for your project.
+# Start backend server
+python manage.py runserver
+```
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+Backend API will be accessible at: `http://localhost:8000/api/`  
+OpenAPI Documentation at: `http://localhost:8000/api/docs/`
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+### 2. Frontend Setup (Angular 18)
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+```bash
+cd frontend/leseni
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+# Install dependencies
+npm install
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+# Start development server
+ng serve
+```
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+Frontend application will be accessible at: `http://localhost:4200/`
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+---
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+## 📲 Omnichannel Access
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+- **Web Portal**: Full-featured responsive web application for desktop, tablet, and mobile.
+- **USSD Gateway (`*152*00#`)**: Lightweight text-based interface allowing informal sector traders and citizens with basic feature phones to apply, check status, and request GePG payment control numbers.
+- **SMS Notifications**: Automated SMS dispatch to applicants at every lifecycle milestone (receipt, review updates, inspection, approval, control number, payment confirmation, licence issuance).
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+---
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+## 🛡️ Security & Compliance
 
-## License
-For open source projects, say how it is licensed.
-
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+- **Cryptographic Licence Verification**: QR code payloads signed with SHA-256 HMAC tokens.
+- **eGA Standards Compliance**: Aligned with Tanzania e-Government Authority (eGA) interoperability guidelines and GovESB standards.
+- **Audit Trails**: Every state change recorded with timestamps, user credentials, and operational notes.
