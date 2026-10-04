@@ -19,6 +19,21 @@ export interface User {
   lga: number | null;
   lga_name: string | null;
   is_lga_staff: boolean;
+  is_active?: boolean;
+  date_joined?: string;
+}
+
+export interface CreateUserData {
+  username: string;
+  email?: string;
+  first_name?: string;
+  last_name?: string;
+  phone_number?: string;
+  nida_number?: string;
+  role: UserRole;
+  lga?: number | null;
+  password?: string;
+  is_active?: boolean;
 }
 
 /** Home route for each role — staff land on their own workspace. */

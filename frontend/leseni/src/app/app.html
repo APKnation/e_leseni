@@ -24,6 +24,9 @@
             <a [routerLink]="auth.homeRoute()" routerLinkActive="nav-active"
                class="nav-link">My workspace</a>
           }
+          @if (auth.role() === 'ADMIN') {
+            <a routerLink="/staff/users" routerLinkActive="nav-active" class="nav-link">Users & Staff</a>
+          }
           <a routerLink="/dashboard" routerLinkActive="nav-active" class="nav-link">Dashboard</a>
           @if (!auth.isStaff()) {
             <a routerLink="/businesses" routerLinkActive="nav-active" class="nav-link">My businesses</a>
@@ -76,6 +79,9 @@
           @if (auth.isLoggedIn()) {
             @if (auth.isStaff()) {
               <a [routerLink]="auth.homeRoute()" routerLinkActive="nav-active" class="nav-link" (click)="closeMenu()">My workspace</a>
+            }
+            @if (auth.role() === 'ADMIN') {
+              <a routerLink="/staff/users" routerLinkActive="nav-active" class="nav-link" (click)="closeMenu()">Users & Staff</a>
             }
             <a routerLink="/dashboard"  routerLinkActive="nav-active" class="nav-link" (click)="closeMenu()">Dashboard</a>
             @if (!auth.isStaff()) {

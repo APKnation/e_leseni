@@ -20,6 +20,9 @@
       <span class="badge-green">{{ workspace.badge }}</span>
       <a routerLink="/profile" class="text-sm font-semibold text-muted underline hover:text-foreground">My Profile</a>
       @if (isAdmin) {
+        <a routerLink="/staff/users" class="btn-primary !py-1.5 !px-3 text-xs">
+          Manage Users & Staff →
+        </a>
         <a routerLink="/staff/review" class="text-sm font-semibold text-muted underline hover:text-foreground">
           Switch workspace
         </a>

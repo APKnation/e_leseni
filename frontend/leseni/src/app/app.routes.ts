@@ -83,5 +83,10 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/staff/staff').then((m) => m.Staff),
     canActivate: [adminGuard],
   },
+  {
+    path: 'staff/users',
+    loadComponent: () => import('./pages/users/users').then((m) => m.Users),
+    canActivate: [adminGuard],
+  },
   { path: '**', redirectTo: '' },
 ];

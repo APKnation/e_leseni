@@ -3,7 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { API_BASE_URL } from './api.config';
-import { User } from './auth.service';
+import { CreateUserData, User } from './auth.service';
 import {
   Application,
   Business,
@@ -373,5 +373,47 @@ export class ApiService {
       current_password: currentPassword,
       new_password: newPassword,
     });
+  }
+
+  // -- Users / Staff Management (Admin) ------------------------------------
+
+  users(params?: {
+    role?: string;
+    lga?: number | string;
+    search?: string;
+    is_active?: boolean;
+    page?: number;
+  }): Observable<Paginated<User>> {
+    let httpParams = new HttpParams();
+    if (params) {
+      if (params.role) httpParams = httpParams.set('role', params.role);
+      if (params.lga) httpParams = httpParams.set('lga', String(params.lga));
+      if (params.search) httpParams = httpParams.set('search', params.search);
+      if (params.is_active !== undefined) httpParams = httpParams.set('is_active', String(params.is_active));
+      if (params.page) httpParams = httpParams.set('page', String(params.page));
+    }
+    return this.http.get<Paginated<User>>(`${this.baseUrl}/users/`, { params: httpParams });
+  }
+
+  createUser(payload: CreateUserData): Observable<User> {
+    return this.http.post<User>(`${this.baseUrl}/users/`, payload);
+  }
+
+  updateUser(id: number, payload: Partial<CreateUserData>): Observable<User> {
+    return this.http.patch<User>(`${this.baseUrl}/users/${id}/`, payload);
+  }
+
+  deleteUser(id: number): Observable<{ detail?: string; deactivated?: boolean }> {
+    return this.http.delete<{ detail?: string; deactivated?: boolean }>(`${this.baseUrl}/users/${id}/`);
+  }
+
+  resetUserPassword(id: number, newPassword: string): Observable<{ detail: string }> {
+    return this.http.post<{ detail: string }>(`${this.baseUrl}/users/${id}/reset-password/`, {
+      new_password: newPassword,
+    });
+  }
+
+  toggleUserActive(id: number): Observable<{ detail: string; is_active: boolean }> {
+    return this.http.post<{ detail: string; is_active: boolean }>(`${this.baseUrl}/users/${id}/toggle-active/`, {});
   }
 }

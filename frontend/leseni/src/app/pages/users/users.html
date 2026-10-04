@@ -1,0 +1,563 @@
+<div class="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+
+  <!-- Header -->
+  <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-hairline pb-6">
+    <div>
+      <div class="flex items-center gap-3">
+        <h1 class="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">System Users & Staff</h1>
+        <span class="bg-primary/15 px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-success-deep" style="border-radius: 2px;">
+          ADMIN CONTROL
+        </span>
+      </div>
+      <p class="mt-1 text-sm text-muted">
+        Create, edit, assign councils, and manage roles for Licensing Officers, Inspectors, Approvers, and Admins.
+      </p>
+    </div>
+    <div class="flex items-center gap-3">
+      <a routerLink="/staff/admin" class="btn-secondary !py-2 !px-4 text-sm">
+        ← Staff Queue
+      </a>
+      <button
+        type="button"
+        class="btn-primary !py-2 !px-5 text-sm inline-flex items-center gap-2"
+        (click)="openCreateModal()"
+      >
+        <span>+ Add User / Staff</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Feedback notifications -->
+  @if (successMessage()) {
+    <div class="mt-6 flex items-center justify-between border border-success-deep/40 bg-primary/10 px-4 py-3 text-sm font-semibold text-success-deep" style="border-radius: 2px;">
+      <span>{{ successMessage() }}</span>
+      <button type="button" class="text-success-deep hover:opacity-75" (click)="clearMessages()">✕</button>
+    </div>
+  }
+
+  @if (errorMessage()) {
+    <div class="mt-6 flex items-center justify-between border border-danger/40 bg-danger/10 px-4 py-3 text-sm font-semibold text-danger" style="border-radius: 2px;">
+      <span>{{ errorMessage() }}</span>
+      <button type="button" class="text-danger hover:opacity-75" (click)="clearMessages()">✕</button>
+    </div>
+  }
+
+  <!-- Filters & Search Toolbar -->
+  <div class="mt-6 grid gap-3 rounded-lg border border-hairline bg-soft p-4 sm:grid-cols-2 lg:grid-cols-4">
+    <!-- Search -->
+    <div>
+      <label class="block text-xs font-semibold text-muted mb-1">Search Directory</label>
+      <input
+        type="text"
+        class="input-field !py-1.5 text-sm"
+        placeholder="Username, name, email, phone…"
+        [ngModel]="searchQuery()"
+        (ngModelChange)="searchQuery.set($event); onFilterChange()"
+      />
+    </div>
+
+    <!-- Role Filter -->
+    <div>
+      <label class="block text-xs font-semibold text-muted mb-1">Role</label>
+      <select
+        class="input-field !py-1.5 text-sm"
+        [ngModel]="roleFilter()"
+        (ngModelChange)="roleFilter.set($event); onFilterChange()"
+      >
+        <option value="">All Roles</option>
+        @for (r of ALL_ROLES; track r) {
+          <option [value]="r">{{ ROLE_LABELS[r] }}</option>
+        }
+      </select>
+    </div>
+
+    <!-- Council / LGA Filter -->
+    <div>
+      <label class="block text-xs font-semibold text-muted mb-1">Council / LGA</label>
+      <select
+        class="input-field !py-1.5 text-sm"
+        [ngModel]="lgaFilter()"
+        (ngModelChange)="lgaFilter.set($event); onFilterChange()"
+      >
+        <option value="">All Councils</option>
+        @for (l of lgas(); track l.id) {
+          <option [value]="l.id">{{ l.name }} ({{ l.region }})</option>
+        }
+      </select>
+    </div>
+
+    <!-- Status Filter -->
+    <div>
+      <label class="block text-xs font-semibold text-muted mb-1">Status</label>
+      <select
+        class="input-field !py-1.5 text-sm"
+        [ngModel]="statusFilter()"
+        (ngModelChange)="statusFilter.set($event); onFilterChange()"
+      >
+        <option value="">All Statuses</option>
+        <option value="active">Active Accounts Only</option>
+        <option value="inactive">Inactive Accounts Only</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- User Count & Quick stats -->
+  <div class="mt-4 flex items-center justify-between text-xs text-muted">
+    <span>Showing <strong>{{ users().length }}</strong> user accounts</span>
+    @if (loading()) {
+      <span class="inline-flex items-center gap-1.5 text-primary">
+        <span class="h-2 w-2 animate-spin rounded-full border border-primary border-t-transparent"></span>
+        Refreshing…
+      </span>
+    }
+  </div>
+
+  <!-- Users Table / Card list -->
+  <div class="mt-3 overflow-hidden border border-hairline bg-surface" style="border-radius: 2px;">
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-sm">
+        <thead class="border-b border-hairline bg-soft text-xs uppercase tracking-wider text-muted">
+          <tr>
+            <th scope="col" class="px-4 py-3">User & Contact</th>
+            <th scope="col" class="px-4 py-3">Role</th>
+            <th scope="col" class="px-4 py-3">Council / LGA</th>
+            <th scope="col" class="px-4 py-3">NIDA Status</th>
+            <th scope="col" class="px-4 py-3">Account Status</th>
+            <th scope="col" class="px-4 py-3 text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-hairline">
+          @for (user of users(); track user.id) {
+            <tr class="transition-colors hover:bg-soft/50">
+              <!-- User & Contact -->
+              <td class="px-4 py-3">
+                <div class="font-bold text-foreground">{{ user.username }}</div>
+                <div class="text-xs text-muted">
+                  {{ user.first_name }} {{ user.last_name }}
+                  @if (user.email) { · {{ user.email }} }
+                  @if (user.phone_number) { · {{ user.phone_number }} }
+                </div>
+              </td>
+
+              <!-- Role -->
+              <td class="px-4 py-3 whitespace-nowrap">
+                <span class="border px-2 py-0.5 text-xs font-bold" style="border-radius: 2px;" [class]="getRoleBadgeClass(user.role)">
+                  {{ ROLE_LABELS[user.role] || user.role }}
+                </span>
+              </td>
+
+              <!-- Council / LGA -->
+              <td class="px-4 py-3 whitespace-nowrap">
+                @if (user.lga_name) {
+                  <span class="font-medium text-foreground">{{ user.lga_name }}</span>
+                } @else if (user.role === 'ADMIN' || user.role === 'APPLICANT') {
+                  <span class="text-xs text-muted">National / All LGAs</span>
+                } @else {
+                  <span class="text-xs text-warning font-semibold">⚠️ Unassigned LGA</span>
+                }
+              </td>
+
+              <!-- NIDA Status -->
+              <td class="px-4 py-3 whitespace-nowrap">
+                @if (user.has_nida) {
+                  <span class="inline-flex items-center gap-1 text-xs font-semibold text-success-deep">
+                    <span class="h-1.5 w-1.5 rounded-full bg-primary"></span> NIDA on file
+                  </span>
+                } @else {
+                  <span class="text-xs text-muted">— None</span>
+                }
+              </td>
+
+              <!-- Account Status -->
+              <td class="px-4 py-3 whitespace-nowrap">
+                @if (user.is_active !== false) {
+                  <span class="inline-flex items-center gap-1 text-xs font-bold text-success-deep">
+                    <span class="h-2 w-2 rounded-full bg-emerald-500"></span> Active
+                  </span>
+                } @else {
+                  <span class="inline-flex items-center gap-1 text-xs font-bold text-danger">
+                    <span class="h-2 w-2 rounded-full bg-rose-500"></span> Inactive
+                  </span>
+                }
+              </td>
+
+              <!-- Actions -->
+              <td class="px-4 py-3 text-right whitespace-nowrap">
+                <div class="inline-flex items-center gap-1.5">
+                  <!-- Edit button -->
+                  <button
+                    type="button"
+                    class="btn-secondary !py-1 !px-2.5 text-xs"
+                    (click)="openEditModal(user)"
+                    title="Edit profile & role"
+                  >
+                    Edit
+                  </button>
+
+                  <!-- Reset password button -->
+                  <button
+                    type="button"
+                    class="btn-secondary !py-1 !px-2.5 text-xs"
+                    (click)="openResetModal(user)"
+                    title="Set new password"
+                  >
+                    Reset PW
+                  </button>
+
+                  <!-- Toggle active button -->
+                  @if (user.id !== auth.currentUser()?.id) {
+                    <button
+                      type="button"
+                      class="btn-secondary !py-1 !px-2.5 text-xs"
+                      [class]="user.is_active !== false ? '!text-warning !border-warning/50' : '!text-success-deep !border-primary/50'"
+                      [disabled]="actionInProgressId() === user.id"
+                      (click)="toggleActive(user)"
+                      title="Toggle active status"
+                    >
+                      {{ user.is_active !== false ? 'Deactivate' : 'Activate' }}
+                    </button>
+
+                    <!-- Delete button -->
+                    <button
+                      type="button"
+                      class="btn-secondary !py-1 !px-2 text-xs !border-danger/40 !text-danger hover:!bg-danger/10"
+                      [disabled]="actionInProgressId() === user.id"
+                      (click)="deleteUser(user)"
+                      title="Delete or retire account"
+                    >
+                      ✕
+                    </button>
+                  }
+                </div>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="6" class="p-8 text-center text-muted">
+                No users match the search criteria.
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── MODAL: Create User / Staff ────────────────────────────────────────── -->
+  @if (showCreateModal()) {
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
+      <div class="w-full max-w-xl border border-hairline bg-surface p-6 shadow-2xl" style="border-radius: 2px;">
+        <div class="flex items-center justify-between border-b border-hairline pb-4">
+          <h2 class="text-xl font-bold text-foreground">Add New System User / Staff</h2>
+          <button type="button" class="text-muted hover:text-foreground text-lg" (click)="closeCreateModal()">✕</button>
+        </div>
+
+        <form class="mt-4 flex flex-col gap-4" (ngSubmit)="submitCreate()">
+          <!-- Role & LGA selection -->
+          <div class="grid gap-3 sm:grid-cols-2">
+            <label class="flex flex-col gap-1.5 text-xs font-semibold">
+              System Role *
+              <select
+                class="input-field"
+                [ngModel]="createForm().role"
+                (ngModelChange)="createForm.update(f => ({ ...f, role: $event }))"
+                name="role"
+                required
+              >
+                @for (r of ALL_ROLES; track r) {
+                  <option [value]="r">{{ ROLE_LABELS[r] }}</option>
+                }
+              </select>
+            </label>
+
+            <label class="flex flex-col gap-1.5 text-xs font-semibold">
+              Assigned Council / LGA
+              @if (['OFFICER', 'INSPECTOR', 'APPROVER'].includes(createForm().role)) {
+                <span class="text-[10px] text-danger font-normal">(Required for LGA staff)</span>
+              }
+              <select
+                class="input-field"
+                [ngModel]="createForm().lga"
+                (ngModelChange)="createForm.update(f => ({ ...f, lga: $event ? +$event : null }))"
+                name="lga"
+              >
+                <option [ngValue]="null">— Select council —</option>
+                @for (l of lgas(); track l.id) {
+                  <option [value]="l.id">{{ l.name }} ({{ l.region }})</option>
+                }
+              </select>
+            </label>
+          </div>
+
+          <!-- Account credentials -->
+          <div class="grid gap-3 sm:grid-cols-2">
+            <label class="flex flex-col gap-1.5 text-xs font-semibold">
+              Username *
+              <input
+                type="text"
+                class="input-field"
+                placeholder="e.g. jmwita"
+                [ngModel]="createForm().username"
+                (ngModelChange)="createForm.update(f => ({ ...f, username: $event }))"
+                name="username"
+                required
+              />
+            </label>
+
+            <label class="flex flex-col gap-1.5 text-xs font-semibold">
+              Initial Password * (min 8 chars)
+              <input
+                type="password"
+                class="input-field"
+                placeholder="••••••••"
+                [ngModel]="createForm().password"
+                (ngModelChange)="createForm.update(f => ({ ...f, password: $event }))"
+                name="password"
+                required
+                minlength="8"
+              />
+            </label>
+          </div>
+
+          <!-- Names -->
+          <div class="grid gap-3 sm:grid-cols-2">
+            <label class="flex flex-col gap-1.5 text-xs font-semibold">
+              First Name
+              <input
+                type="text"
+                class="input-field"
+                placeholder="e.g. John"
+                [ngModel]="createForm().first_name"
+                (ngModelChange)="createForm.update(f => ({ ...f, first_name: $event }))"
+                name="first_name"
+              />
+            </label>
+
+            <label class="flex flex-col gap-1.5 text-xs font-semibold">
+              Last Name
+              <input
+                type="text"
+                class="input-field"
+                placeholder="e.g. Mwita"
+                [ngModel]="createForm().last_name"
+                (ngModelChange)="createForm.update(f => ({ ...f, last_name: $event }))"
+                name="last_name"
+              />
+            </label>
+          </div>
+
+          <!-- Contact details -->
+          <div class="grid gap-3 sm:grid-cols-2">
+            <label class="flex flex-col gap-1.5 text-xs font-semibold">
+              Email Address
+              <input
+                type="email"
+                class="input-field"
+                placeholder="john.mwita@council.go.tz"
+                [ngModel]="createForm().email"
+                (ngModelChange)="createForm.update(f => ({ ...f, email: $event }))"
+                name="email"
+              />
+            </label>
+
+            <label class="flex flex-col gap-1.5 text-xs font-semibold">
+              Phone Number
+              <input
+                type="tel"
+                class="input-field"
+                placeholder="07XXXXXXXX"
+                [ngModel]="createForm().phone_number"
+                (ngModelChange)="createForm.update(f => ({ ...f, phone_number: $event }))"
+                name="phone_number"
+              />
+            </label>
+          </div>
+
+          <label class="flex items-center gap-2 text-xs font-semibold text-foreground">
+            <input
+              type="checkbox"
+              class="rounded border-hairline text-primary focus:ring-primary"
+              [ngModel]="createForm().is_active"
+              (ngModelChange)="createForm.update(f => ({ ...f, is_active: $event }))"
+              name="is_active"
+            />
+            Account active immediately upon creation
+          </label>
+
+          <!-- Buttons -->
+          <div class="mt-4 flex items-center justify-end gap-3 border-t border-hairline pt-4">
+            <button type="button" class="btn-secondary" (click)="closeCreateModal()">
+              Cancel
+            </button>
+            <button type="submit" class="btn-primary !px-5" [disabled]="saving()">
+              @if (saving()) { Creating… } @else { Create User }
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+  <!-- ── MODAL: Edit User ──────────────────────────────────────────────────── -->
+  @if (editingUser()) {
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
+      <div class="w-full max-w-xl border border-hairline bg-surface p-6 shadow-2xl" style="border-radius: 2px;">
+        <div class="flex items-center justify-between border-b border-hairline pb-4">
+          <div>
+            <h2 class="text-xl font-bold text-foreground">Edit User: {{ editingUser()?.username }}</h2>
+            <p class="text-xs text-muted">Update system role, LGA assignment, and contact information.</p>
+          </div>
+          <button type="button" class="text-muted hover:text-foreground text-lg" (click)="closeEditModal()">✕</button>
+        </div>
+
+        <form class="mt-4 flex flex-col gap-4" (ngSubmit)="submitEdit()">
+          <!-- Role & LGA selection -->
+          <div class="grid gap-3 sm:grid-cols-2">
+            <label class="flex flex-col gap-1.5 text-xs font-semibold">
+              System Role *
+              <select
+                class="input-field"
+                [ngModel]="editForm().role"
+                (ngModelChange)="editForm.update(f => ({ ...f, role: $event }))"
+                name="role"
+                required
+              >
+                @for (r of ALL_ROLES; track r) {
+                  <option [value]="r">{{ ROLE_LABELS[r] }}</option>
+                }
+              </select>
+            </label>
+
+            <label class="flex flex-col gap-1.5 text-xs font-semibold">
+              Council / LGA
+              <select
+                class="input-field"
+                [ngModel]="editForm().lga"
+                (ngModelChange)="editForm.update(f => ({ ...f, lga: $event ? +$event : null }))"
+                name="lga"
+              >
+                <option [ngValue]="null">— Select council —</option>
+                @for (l of lgas(); track l.id) {
+                  <option [value]="l.id">{{ l.name }} ({{ l.region }})</option>
+                }
+              </select>
+            </label>
+          </div>
+
+          <!-- Names -->
+          <div class="grid gap-3 sm:grid-cols-2">
+            <label class="flex flex-col gap-1.5 text-xs font-semibold">
+              First Name
+              <input
+                type="text"
+                class="input-field"
+                [ngModel]="editForm().first_name"
+                (ngModelChange)="editForm.update(f => ({ ...f, first_name: $event }))"
+                name="first_name"
+              />
+            </label>
+
+            <label class="flex flex-col gap-1.5 text-xs font-semibold">
+              Last Name
+              <input
+                type="text"
+                class="input-field"
+                [ngModel]="editForm().last_name"
+                (ngModelChange)="editForm.update(f => ({ ...f, last_name: $event }))"
+                name="last_name"
+              />
+            </label>
+          </div>
+
+          <!-- Contact details -->
+          <div class="grid gap-3 sm:grid-cols-2">
+            <label class="flex flex-col gap-1.5 text-xs font-semibold">
+              Email Address
+              <input
+                type="email"
+                class="input-field"
+                [ngModel]="editForm().email"
+                (ngModelChange)="editForm.update(f => ({ ...f, email: $event }))"
+                name="email"
+              />
+            </label>
+
+            <label class="flex flex-col gap-1.5 text-xs font-semibold">
+              Phone Number
+              <input
+                type="tel"
+                class="input-field"
+                [ngModel]="editForm().phone_number"
+                (ngModelChange)="editForm.update(f => ({ ...f, phone_number: $event }))"
+                name="phone_number"
+              />
+            </label>
+          </div>
+
+          <label class="flex items-center gap-2 text-xs font-semibold text-foreground">
+            <input
+              type="checkbox"
+              class="rounded border-hairline text-primary focus:ring-primary"
+              [ngModel]="editForm().is_active"
+              (ngModelChange)="editForm.update(f => ({ ...f, is_active: $event }))"
+              name="is_active"
+            />
+            Account is Active
+          </label>
+
+          <!-- Buttons -->
+          <div class="mt-4 flex items-center justify-end gap-3 border-t border-hairline pt-4">
+            <button type="button" class="btn-secondary" (click)="closeEditModal()">
+              Cancel
+            </button>
+            <button type="submit" class="btn-primary !px-5" [disabled]="saving()">
+              @if (saving()) { Saving… } @else { Save Changes }
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+  <!-- ── MODAL: Reset Password ─────────────────────────────────────────────── -->
+  @if (resetUser()) {
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
+      <div class="w-full max-w-md border border-hairline bg-surface p-6 shadow-2xl" style="border-radius: 2px;">
+        <div class="flex items-center justify-between border-b border-hairline pb-4">
+          <h2 class="text-xl font-bold text-foreground">Reset Password</h2>
+          <button type="button" class="text-muted hover:text-foreground text-lg" (click)="closeResetModal()">✕</button>
+        </div>
+
+        <form class="mt-4 flex flex-col gap-4" (ngSubmit)="submitResetPassword()">
+          <p class="text-sm text-muted">
+            Enter a new password for user <strong class="text-foreground">{{ resetUser()?.username }}</strong>.
+          </p>
+
+          <label class="flex flex-col gap-1.5 text-xs font-semibold">
+            New Password (minimum 8 characters)
+            <input
+              type="password"
+              class="input-field"
+              placeholder="••••••••"
+              [ngModel]="newPassword()"
+              (ngModelChange)="newPassword.set($event)"
+              name="newPassword"
+              required
+              minlength="8"
+            />
+          </label>
+
+          <div class="mt-4 flex items-center justify-end gap-3 border-t border-hairline pt-4">
+            <button type="button" class="btn-secondary" (click)="closeResetModal()">
+              Cancel
+            </button>
+            <button type="submit" class="btn-primary !px-5" [disabled]="saving()">
+              @if (saving()) { Updating… } @else { Update Password }
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+</div>
