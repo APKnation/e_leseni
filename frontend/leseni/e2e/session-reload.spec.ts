@@ -34,4 +34,24 @@ test.describe('Session survives hard reload', () => {
     await page.goto('/dashboard', { waitUntil: 'domcontentloaded' });
     await expect(page).toHaveURL(/\/login\?returnUrl=/);
   });
+
+  test('expired access token is silently refreshed (no logout)', async ({ page }) => {
+    await login(page, 'applicant1', 'Demo@1234');
+
+    // Corrupt the access token but keep the valid refresh token — simulates
+    // the 2-hour access token expiry while the 7-day refresh is still valid.
+    await page.evaluate(() => sessionStorage.setItem('leseni.access', 'expired-or-garbage'));
+
+    // Reload: client boot fires API calls, gets 401s, silently refreshes
+    await page.goto('/dashboard', { waitUntil: 'domcontentloaded' });
+    await expect(page).toHaveURL(/\/dashboard/);
+    await expect(page.getByRole('heading', { name: /Karibu/ })).toBeVisible();
+
+    // The access token was rotated (no longer the corrupt value) and the
+    // user stayed logged in instead of being bounced to /login.
+    await expect
+      .poll(() => page.evaluate(() => sessionStorage.getItem('leseni.access')), { timeout: 10_000 })
+      .not.toBe('expired-or-garbage');
+    await expect(page.getByRole('button', { name: 'Log out' })).toBeVisible();
+  });
 });

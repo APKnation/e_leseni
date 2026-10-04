@@ -145,3 +145,62 @@ class AdminUserCrudTests(TestCase):
         self.assertEqual(res.status_code, status.HTTP_204_NO_CONTENT)
         self.assertFalse(User.objects.filter(id=disposable.id).exists())
 
+
+class TokenRotationBlacklistTests(TestCase):
+    """JWT session contract: rotation with blacklist.
+
+    The web client silently refreshes on 401 and stores the rotated pair, so
+    reusing an old refresh token must be rejected (BLACKLIST_AFTER_ROTATION)
+    while the rotated one keeps working.
+    """
+
+    def setUp(self):
+        self.client = APIClient()
+        self.user = User.objects.create_user(
+            username='rotator',
+            email='rotator@example.com',
+            password='RotatePassword123!',
+            role=User.Roles.APPLICANT,
+        )
+
+    def _login(self):
+        res = self.client.post('/api/auth/login/', {
+            'username': 'rotator', 'password': 'RotatePassword123!',
+        })
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        return res.data
+
+    def _refresh(self, token: str):
+        return self.client.post('/api/auth/refresh/', {'refresh': token})
+
+    def test_refresh_returns_rotated_pair(self):
+        tokens = self._login()
+        res = self._refresh(tokens['refresh'])
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        # ROTATE_REFRESH_TOKENS: the backend hands back a new refresh too
+        self.assertIn('access', res.data)
+        self.assertIn('refresh', res.data)
+        self.assertNotEqual(res.data['refresh'], tokens['refresh'])
+
+    def test_reused_old_refresh_token_is_blacklisted(self):
+        tokens = self._login()
+        old_refresh = tokens['refresh']
+        first = self._refresh(old_refresh)
+        self.assertEqual(first.status_code, status.HTTP_200_OK)
+
+        # Replaying the already-rotated token is rejected (blacklisted)...
+        replay = self._refresh(old_refresh)
+        self.assertEqual(replay.status_code, status.HTTP_401_UNAUTHORIZED)
+
+        # ...and the fresh pair still works.
+        second = self._refresh(first.data['refresh'])
+        self.assertEqual(second.status_code, status.HTTP_200_OK)
+
+    def test_access_token_survives_refresh_rotation(self):
+        """Rotation blacklists the old refresh token, never the access token."""
+        tokens = self._login()
+        self._refresh(tokens['refresh'])
+        me = self.client.get('/api/auth/me/', HTTP_AUTHORIZATION=f"Bearer {tokens['access']}")
+        self.assertEqual(me.status_code, status.HTTP_200_OK)
+        self.assertEqual(me.data['username'], 'rotator')
+

@@ -119,9 +119,12 @@ export class AuthService {
     );
   }
 
-  refresh(): Observable<{ access: string }> {
-    const refresh = sessionStorage.getItem(REFRESH_KEY) ?? '';
-    return this.http.post<{ access: string }>(`${this.baseUrl}/auth/refresh/`, { refresh });
+  /** POST /auth/refresh/ — the backend rotates tokens, so a new refresh may come back. */
+  refresh(): Observable<{ access: string; refresh?: string }> {
+    return this.http.post<{ access: string; refresh?: string }>(
+      `${this.baseUrl}/auth/refresh/`,
+      { refresh: this.refreshToken ?? '' },
+    );
   }
 
   me(): Observable<User> {
@@ -136,7 +139,29 @@ export class AuthService {
   }
 
   get accessToken(): string | null {
-    return sessionStorage.getItem(TOKEN_KEY);
+    try {
+      return sessionStorage.getItem(TOKEN_KEY);
+    } catch {
+      return null; // server-side render: no storage
+    }
+  }
+
+  get refreshToken(): string | null {
+    try {
+      return sessionStorage.getItem(REFRESH_KEY);
+    } catch {
+      return null; // server-side render: no storage
+    }
+  }
+
+  /** Persist rotated tokens from a silent refresh (access always, refresh when rotated). */
+  setTokens(access: string, refresh?: string): void {
+    try {
+      sessionStorage.setItem(TOKEN_KEY, access);
+      if (refresh) sessionStorage.setItem(REFRESH_KEY, refresh);
+    } catch {
+      // server-side render: no storage
+    }
   }
 
   private storeSession(res: AuthResponse): void {
