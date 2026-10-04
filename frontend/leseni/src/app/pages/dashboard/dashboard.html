@@ -17,6 +17,25 @@
     </div>
   </div>
 
+  <!-- NIDA gate: councils cannot approve without a NIDA number on the profile. -->
+  @if (!isStaff() && user()?.has_nida === false) {
+    <div
+      class="mt-6 flex flex-col gap-3 border border-warning/40 bg-warning/10 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+      style="border-radius: 2px;"
+      data-testid="nida-banner"
+    >
+      <div>
+        <p class="text-sm font-semibold text-warning">Your profile has no NIDA number</p>
+        <p class="text-sm text-muted">
+          Councils cannot approve your licence applications until your 20-digit NIDA number is on your profile.
+        </p>
+      </div>
+      <a routerLink="/profile" [queryParams]="{ edit: 1 }" class="btn-primary whitespace-nowrap !py-2 text-sm">
+        Add your NIDA number →
+      </a>
+    </div>
+  }
+
   @if (successMessage()) {
     <p class="mt-6 px-4 py-3 text-sm font-semibold text-success-deep border border-primary/40 bg-primary/5" style="border-radius: 2px;">
       {{ successMessage() }}

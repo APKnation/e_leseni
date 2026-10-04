@@ -227,7 +227,7 @@ class ApplicationTransitionView(generics.GenericAPIView):
                         'detail': (
                             f'{application.applicant.get_full_name() or application.applicant.username} '
                             'has no NIDA number on their profile. The applicant must add it '
-                            '(Dashboard → NIDA verification) before this licence can be approved.'
+                            '(Profile → Edit Profile → NIDA Number) before this licence can be approved.'
                         )
                     },
                     status=status.HTTP_400_BAD_REQUEST,
