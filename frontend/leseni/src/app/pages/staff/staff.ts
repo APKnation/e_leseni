@@ -394,9 +394,16 @@ export class Staff implements OnInit {
           next: (page) => {
             this.allLgas.set(page.results);
             // Derive the region list from the LGAs so the region dropdown only
-            // offers regions that actually have councils on the platform.
-            const regions = [...new Set(page.results.map((l) => l.region))].sort();
-            this.catalogueRegions.set(regions.map((region) => ({ region, lga_count: 0 })));
+            // offers regions that actually have councils on the platform, and
+            // count each region's councils for the "Region (n)" labels.
+            const counts = new Map<string, number>();
+            for (const lga of page.results) {
+              counts.set(lga.region, (counts.get(lga.region) ?? 0) + 1);
+            }
+            const regions = [...counts.keys()].sort();
+            this.catalogueRegions.set(
+              regions.map((region) => ({ region, lga_count: counts.get(region) ?? 0 })),
+            );
             // Pre-select the pinned council's region, if any, so the cascade
             // starts coherent and the council select is immediately usable.
             const pinned = this.officerLgaId();

@@ -523,7 +523,7 @@
                 >
                   <option value="" disabled>— choose a region —</option>
                   @for (region of catalogueRegions(); track region.region) {
-                    <option [value]="region.region">{{ region.region }}</option>
+                    <option [value]="region.region">{{ region.region }} ({{ region.lga_count }})</option>
                   }
                 </select>
               </label>
