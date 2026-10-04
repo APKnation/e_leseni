@@ -61,7 +61,10 @@ try {
     document.querySelector('.text-xs.font-bold')?.textContent ?? '',
   );
   check('keypad caption says it types the service code', keypadCaption.includes('service code'), keypadCaption.trim());
-  await page.click('#btn-dial');
+  // Press Enter in the dial field (the "call key") — a raw click here can land
+  // under the sticky header depending on scroll position.
+  await page.focus('#ussd-dial');
+  await page.keyboard.press('Enter');
   await page.waitForFunction(
     () => document.querySelector('#ussd-screen')?.innerText.includes('Apply for licence'),
     { timeout: 15000 },
@@ -85,7 +88,8 @@ try {
     { timeout: 5000 },
   );
   check('keypad tap lands in the reply input', true);
-  await page.click('#btn-send-reply');
+  await page.focus('#ussd-reply');
+  await page.keyboard.press('Enter'); // submits the reply form
   await page.waitForFunction(
     () => document.querySelector('#ussd-screen')?.innerText.includes('Status - pick application'),
     { timeout: 15000 },
