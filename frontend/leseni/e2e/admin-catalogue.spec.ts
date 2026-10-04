@@ -57,12 +57,16 @@ test.describe('Admin council catalogue cascade', () => {
       page.getByText(/fee|validity|months|No licence types/i).first(),
     ).toBeVisible();
 
-    // Switching the region resets the council selection
+    // Switching the region resets the council selection; the placeholder now
+    // reflects that a (new) region is picked: "— choose a council —"
     const otherRegion = regionTexts.find((t) => t !== pickedRegion);
     if (otherRegion) {
       await regionSelect.selectOption(otherRegion.replace(/\s*\(\d+\)$/, ''));
       await expect(councilSelect).toHaveValue('');
-      await expect(councilSelect.locator('option').first()).toHaveText(/choose a region first/);
+      await expect(councilSelect.locator('option').first()).toHaveText(/— choose a council —/);
+      const newCouncilTexts = (await councilSelect.locator('option').allTextContents())
+        .filter((t) => t && !t.includes('choose a council'));
+      expect(newCouncilTexts.length).toBe(Number(otherRegion.match(/\((\d+)\)$/)?.[1]));
     }
   });
 });
