@@ -38,6 +38,22 @@ Have these ready to make the process smooth:
    - **Get Started** — creates a new account (use this if you are new).
    - **Log in** — for people who already have an account.
 
+### 🔑 Pre-Seeded Demo Login Credentials
+
+If you want to test existing accounts without registering from scratch, use any of these:
+
+| Role | Username | Password | Notes / Data |
+|------|----------|----------|--------------|
+| **System Admin** | `admin` | `Demo@1234` | Full user CRUD management & all LGA oversight |
+| **Licensing Officer** | `officer1` | `Demo@1234` | LGA Officer queue (review, return, schedule) |
+| **Field Inspector** | `inspector1` | `Demo@1234` | Inspector queue (GPS verification, record findings) |
+| **Licensing Approver** | `approver1` | `Demo@1234` | Council approval queue & invoicing |
+| **Applicant (Citizen)** | `applicant1` | `Demo@1234` | Business owner ("Mama Neema Foods") |
+| **Mufindi Officer** | `officer_mufindi` | `Demo@1234` | Mufindi DC staff review queue |
+| **Mufindi Inspector** | `inspector_mufindi` | `Demo@1234` | Mufindi DC field inspection queue |
+| **Mufindi Approver** | `approver_mufindi` | `Demo@1234` | Mufindi DC licence approvals |
+| **Mufindi Citizen** | `applicant_mufindi` | `Demo@1234` | Owner of "Mufindi Highland Tea & Timber" |
+
 ---
 
 ## Step 2 — Create your account

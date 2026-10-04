@@ -57,6 +57,25 @@
 
 ---
 
+## 🔑 Demo Login Credentials
+
+The database includes pre-seeded accounts for every role:
+
+| Role | Username | Password | Council / Scope | Primary Workspace |
+|------|----------|----------|-----------------|-------------------|
+| **System Admin** | `admin` | `Demo@1234` | All LGAs (National) | `/staff/users` (User CRUD) & `/staff/admin` |
+| **Licensing Officer** | `officer1` | `Demo@1234` | Ilala Municipal | `/staff/review` |
+| **Field Inspector** | `inspector1` | `Demo@1234` | Ilala Municipal | `/staff/inspections` |
+| **Licensing Approver** | `approver1` | `Demo@1234` | Ilala Municipal | `/staff/approvals` |
+| **Applicant (Citizen 1)** | `applicant1` | `Demo@1234` | Citizen Owner | `/dashboard` & `/businesses` ("Mama Neema Foods") |
+| **Applicant (Citizen 2)** | `applicant2` | `Demo@1234` | Citizen Owner | `/dashboard` & `/apply` ("Komba Hardware") |
+| **Mufindi Officer** | `officer_mufindi` | `Demo@1234` | Mufindi DC (Iringa) | `/staff/review` |
+| **Mufindi Inspector** | `inspector_mufindi` | `Demo@1234` | Mufindi DC (Iringa) | `/staff/inspections` |
+| **Mufindi Approver** | `approver_mufindi` | `Demo@1234` | Mufindi DC (Iringa) | `/staff/approvals` |
+| **Mufindi Applicant** | `applicant_mufindi` | `Demo@1234` | Mufindi Citizen | `/dashboard` ("Mufindi Highland Tea & Timber") |
+
+---
+
 ## 🚀 Getting Started
 
 ### Prerequisites

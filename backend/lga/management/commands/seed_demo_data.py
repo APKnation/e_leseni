@@ -34,6 +34,7 @@ KEY_LGAS = [
     {'name': 'Kinondoni', 'region': 'Dar es Salaam', 'code': 'DS-KINONDONI'},
     {'name': 'Temeke', 'region': 'Dar es Salaam', 'code': 'DS-TEMEKE'},
     {'name': 'Moshi Municipal', 'region': 'Kilimanjaro', 'code': 'KI-MOSHI_MUNICIPAL'},
+    {'name': 'Mufindi', 'region': 'Iringa', 'code': 'IR-MUFINDI'},
 ]
 
 # Standard licences created for EVERY LGA so area-based selection always works.
@@ -187,6 +188,34 @@ USERS = [
         'username': 'applicant2',
         'first_name': 'Joseph', 'last_name': 'Komba',
         'email': 'applicant2@leseni.local', 'phone_number': '0712000222',
+        'role': User.Roles.APPLICANT, 'is_staff': False, 'is_superuser': False,
+        'lga': None,
+    },
+    {
+        'username': 'officer_mufindi',
+        'first_name': 'Daudi', 'last_name': 'Mwalimu',
+        'email': 'officer.mufindi@leseni.local', 'phone_number': '0755000101',
+        'role': User.Roles.OFFICER, 'is_staff': True, 'is_superuser': False,
+        'lga': 'IR-MUFINDI',
+    },
+    {
+        'username': 'inspector_mufindi',
+        'first_name': 'Grace', 'last_name': 'Mrema',
+        'email': 'inspector.mufindi@leseni.local', 'phone_number': '0755000102',
+        'role': User.Roles.INSPECTOR, 'is_staff': True, 'is_superuser': False,
+        'lga': 'IR-MUFINDI',
+    },
+    {
+        'username': 'approver_mufindi',
+        'first_name': 'Emanuel', 'last_name': 'Lwila',
+        'email': 'approver.mufindi@leseni.local', 'phone_number': '0755000103',
+        'role': User.Roles.APPROVER, 'is_staff': True, 'is_superuser': False,
+        'lga': 'IR-MUFINDI',
+    },
+    {
+        'username': 'applicant_mufindi',
+        'first_name': 'Rehema', 'last_name': 'Kinyaga',
+        'email': 'rehema.kinyaga@gmail.com', 'phone_number': '0755000104',
         'role': User.Roles.APPLICANT, 'is_staff': False, 'is_superuser': False,
         'lga': None,
     },

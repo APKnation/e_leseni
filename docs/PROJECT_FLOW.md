@@ -58,6 +58,41 @@
 
 ---
 
+## 2.1 Demo & System Login Accounts
+
+The database includes pre-configured accounts for each role across the licensing lifecycle:
+
+### Primary Council Dataset (Ilala Municipal Council)
+
+| System Role | Username | Password | Council / Scope | Key Capabilities & Workspace |
+|-------------|----------|----------|-----------------|------------------------------|
+| **System Admin** | `admin` | `Demo@1234` | All LGAs (National) | User CRUD (`/staff/users`), cross-council queue, password reset |
+| **Licensing Officer** | `officer1` | `Demo@1234` | Ilala Municipal | Review queue (`/staff/review`), return for correction, scheduling |
+| **Field Inspector** | `inspector1` | `Demo@1234` | Ilala Municipal | Inspection queue (`/staff/inspections`), GPS capture, findings report |
+| **Licensing Approver** | `approver1` | `Demo@1234` | Ilala Municipal | Approval queue (`/staff/approvals`), statutory approval, invoicing |
+| **Applicant (Citizen 1)** | `applicant1` | `Demo@1234` | Citizen Owner | "Mama Neema Foods" owner (`/dashboard`, `/businesses`, `/apply`) |
+| **Applicant (Citizen 2)** | `applicant2` | `Demo@1234` | Citizen Owner | "Komba Hardware" owner (`/dashboard`, `/businesses`, `/apply`) |
+
+### Secondary Council Dataset (Dar es Salaam City Council)
+
+| System Role | Username | Password | Council / Scope | Key Capabilities |
+|-------------|----------|----------|-----------------|------------------|
+| **Licensing Officer** | `officer` | `Password1234!` | Dar es Salaam City | Review queue & scheduling |
+| **Field Inspector** | `inspector` | `Password1234!` | Dar es Salaam City | Inspection queue & GPS verification |
+| **Licensing Approver** | `approver` | `Password1234!` | Dar es Salaam City | Approval queue & licence issuance |
+| **Applicant** | `applicant` | `Password1234!` | Citizen Owner | Application filing & GePG payments |
+
+### Mufindi District Council Dataset (Iringa Region)
+
+| System Role | Username | Password | Council / Scope | Key Capabilities & Sample Data |
+|-------------|----------|----------|-----------------|--------------------------------|
+| **Licensing Officer** | `officer_mufindi` | `Demo@1234` | Mufindi DC (Iringa) | Reviews applications for Mufindi, schedules inspections, returns with notes |
+| **Field Inspector** | `inspector_mufindi` | `Demo@1234` | Mufindi DC (Iringa) | Conducts premises inspections across Mufindi wards (Igowole, etc.) with GPS |
+| **Licensing Approver** | `approver_mufindi` | `Demo@1234` | Mufindi DC (Iringa) | Statutory approval for Mufindi businesses & advances to GePG invoicing |
+| **Applicant (Citizen)** | `applicant_mufindi` | `Demo@1234` | Citizen Owner | "Mufindi Highland Tea & Timber" owner, application in queue for review |
+
+---
+
 ## 3. The Complete End-to-End Lifecycle Flow
 
 ```mermaid
