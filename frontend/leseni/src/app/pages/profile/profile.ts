@@ -49,6 +49,13 @@ export class Profile {
     this.activeTab.set('edit');
   }
 
+  constructor() {
+    // Deep link (e.g. the dashboard NIDA banner): /profile?edit=1 opens the edit tab.
+    if (this.route.snapshot.queryParamMap.get('edit') === '1') {
+      this.openEdit();
+    }
+  }
+
   protected saveProfile(): void {
     if (this.saving()) return;
     this.saving.set(true);
