@@ -33,6 +33,7 @@
             <a routerLink="/apply"      routerLinkActive="nav-active" class="nav-link">Apply</a>
           }
           <a routerLink="/profile" routerLinkActive="nav-active" class="nav-link">Profile</a>
+          <a routerLink="/ussd-demo" routerLinkActive="nav-active" class="nav-link">USSD demo</a>
           <button type="button" class="nav-link ml-1" (click)="logout()">Log out</button>
         } @else {
           <a routerLink="/" routerLinkActive="nav-active" [routerLinkActiveOptions]="{ exact: true }" class="nav-link">Home</a>
@@ -89,6 +90,7 @@
               <a routerLink="/apply"      routerLinkActive="nav-active" class="nav-link" (click)="closeMenu()">Apply</a>
             }
             <a routerLink="/profile"    routerLinkActive="nav-active" class="nav-link" (click)="closeMenu()">Profile</a>
+            <a routerLink="/ussd-demo"  routerLinkActive="nav-active" class="nav-link" (click)="closeMenu()">USSD demo</a>
             <div class="my-2 border-t border-hairline"></div>
             <button type="button" class="nav-link w-full text-left" (click)="logout()">Log out</button>
           } @else {

@@ -2,7 +2,7 @@ import { HttpClient, HttpParams, HttpResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
-import { API_BASE_URL } from './api.config';
+import { API_BASE_URL, SERVER_BASE_URL } from './api.config';
 import { CreateUserData, User } from './auth.service';
 import {
   Application,
@@ -348,6 +348,15 @@ export class ApiService {
       `${this.baseUrl}/invoices/${invoiceId}/pay/`,
       data,
     );
+  }
+
+  /** DEMO USSD: one gateway round-trip (Africa's Talking style, CON/END plain text). */
+  ussdGateway(sessionId: string, phone: string, text: string): Observable<string> {
+    const body = new HttpParams()
+      .set('sessionId', sessionId)
+      .set('phoneNumber', phone)
+      .set('text', text);
+    return this.http.post(`${SERVER_BASE_URL}/ussd/gateway/`, body, { responseType: 'text' });
   }
 
   // -- Licences ------------------------------------------------------------

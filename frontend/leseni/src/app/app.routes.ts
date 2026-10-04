@@ -58,6 +58,12 @@ export const routes: Routes = [
     canActivate: [authGuard],
   },
   {
+    // Simulates dialing the service code against the real USSD gateway.
+    path: 'ussd-demo',
+    loadComponent: () => import('./pages/ussd-demo/ussd-demo').then((m) => m.UssdDemo),
+    canActivate: [authGuard],
+  },
+  {
     // Lands each staff role on its own workspace.
     path: 'staff',
     pathMatch: 'full',

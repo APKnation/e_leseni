@@ -1,0 +1,201 @@
+<section class="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6">
+  <div class="flex flex-wrap items-center justify-between gap-4">
+    <div>
+      <h1 class="text-3xl font-bold">USSD simulator</h1>
+      <p class="mt-1 text-muted">
+        Try the full e-Leseni phone menu without a SIM card — this page talks to the
+        same <code class="font-mono text-sm">/ussd/gateway/</code> endpoint a real telco
+        gateway (Africa's Talking, etc.) would call.
+      </p>
+    </div>
+    <a routerLink="/dashboard" class="btn-secondary !py-2">← Back to dashboard</a>
+  </div>
+
+  @if (errorMessage()) {
+    <p class="mt-6 px-4 py-3 text-sm font-semibold text-danger border border-danger/30 bg-danger/5" style="border-radius: 2px;">
+      {{ errorMessage() }}
+    </p>
+  }
+
+  <div class="mt-8 grid gap-8 lg:grid-cols-[minmax(0,380px)_1fr]">
+    <!-- Phone mockup -->
+    <div class="card flex flex-col gap-4 self-start">
+      <div class="flex items-center justify-between gap-2">
+        <p class="text-sm font-bold uppercase tracking-wide text-muted">Simulated phone</p>
+        @if (sessionId()) {
+          <span class="font-mono text-[10px] text-muted" [title]="sessionId()">session active</span>
+        }
+      </div>
+
+      <!-- Dialer -->
+      <form class="flex flex-col gap-3" (ngSubmit)="dialNow()">
+        <label class="block">
+          <span class="text-sm font-bold text-muted">Service code</span>
+          <input
+            id="ussd-dial"
+            type="text"
+            class="input-field mt-1 font-mono"
+            placeholder="*152*00#"
+            [ngModel]="dial()"
+            (ngModelChange)="dial.set($event)"
+            name="dial"
+          >
+        </label>
+        <label class="block">
+          <span class="text-sm font-bold text-muted">Your phone number</span>
+          <input
+            id="ussd-phone"
+            type="tel"
+            class="input-field mt-1 font-mono"
+            placeholder="0712000111"
+            [ngModel]="phone()"
+            (ngModelChange)="phone.set($event)"
+            name="phone"
+          >
+        </label>
+        <button
+          id="btn-dial"
+          type="submit"
+          class="btn-primary !py-2"
+          [disabled]="busy()"
+        >
+          {{ busy() && !screen() ? 'Dialing…' : 'Dial' }}
+        </button>
+      </form>
+
+      <!-- Screen -->
+      <div
+        id="ussd-screen"
+        class="min-h-48 border border-hairline-strong/30 bg-surface p-3 font-mono text-[13px] leading-relaxed text-foreground"
+        style="border-radius: 2px;"
+      >
+        @if (transcript().length === 0) {
+          <p class="text-muted">No session. Dial {{ serviceCode }} to start.</p>
+        } @else {
+          @for (entry of transcript(); track $index) {
+            @if (entry.from === 'you') {
+              <p class="text-primary">› {{ entry.text }}</p>
+            } @else if (entry.from === 'system') {
+              <p class="text-muted">{{ entry.text }}</p>
+            } @else {
+              <p class="whitespace-pre-wrap">{{ entry.text }}</p>
+            }
+          }
+        }
+      </div>
+
+      <!-- Keypad -->
+      <div class="flex flex-col gap-2">
+        <div class="flex items-center justify-between gap-2">
+          <p class="text-xs font-bold uppercase tracking-wide text-muted">
+            Keypad — typing {{ keypadEditsDial() ? 'service code' : 'reply' }}
+          </p>
+          <button
+            id="btn-backspace"
+            type="button"
+            class="grid h-8 w-10 place-items-center border border-hairline bg-soft font-mono text-sm text-muted transition-colors hover:text-foreground disabled:opacity-40"
+            style="border-radius: 2px;"
+            aria-label="Backspace"
+            [disabled]="busy()"
+            (click)="backspace()"
+          >
+            ⌫
+          </button>
+        </div>
+        <div class="grid grid-cols-3 gap-2">
+          @for (key of keys; track key) {
+            <button
+              type="button"
+              class="keypad-key grid h-11 place-items-center border border-hairline bg-soft font-mono text-base font-bold text-foreground transition-colors hover:bg-primary/10 disabled:opacity-40"
+              style="border-radius: 2px;"
+              [disabled]="busy()"
+              (click)="pressKey(key)"
+            >
+              {{ key }}
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- Reply (only while the session is open) -->
+      @if (screen() && !sessionEnded()) {
+        <form class="flex gap-2" (ngSubmit)="sendReply()">
+          <input
+            id="ussd-reply"
+            type="text"
+            class="input-field font-mono"
+            autocomplete="off"
+            placeholder="Reply (e.g. 1)"
+            [ngModel]="reply()"
+            (ngModelChange)="reply.set($event)"
+            name="reply"
+          >
+          <button
+            id="btn-send-reply"
+            type="submit"
+            class="btn-primary whitespace-nowrap !py-2"
+            [disabled]="busy()"
+          >
+            {{ busy() ? '…' : 'Send' }}
+          </button>
+        </form>
+      }
+
+      @if (sessionId() && !sessionEnded()) {
+        <button
+          id="btn-end-session"
+          type="button"
+          class="btn-secondary !py-2 text-sm"
+          (click)="endSession()"
+        >
+          End session
+        </button>
+      }
+    </div>
+
+    <!-- Explainer -->
+    <div class="flex flex-col gap-6">
+      <div class="card flex flex-col gap-3">
+        <h2 class="text-lg font-bold">The menu you get</h2>
+        <pre class="font-mono text-sm whitespace-pre-wrap text-foreground">e-Leseni
+1. Apply for licence
+2. Check application status
+3. Get control number
+4. Pay invoice
+5. My licences
+0. Exit</pre>
+        <p class="text-sm text-muted">
+          Every reply is a number (or text, e.g. a business name when applying). Use
+          <span class="font-mono">0</span> to go back. Applications, invoices and payments
+          created here are real rows in the same database as the web app.
+        </p>
+      </div>
+
+      <div class="card flex flex-col gap-3">
+        <h2 class="text-lg font-bold">How the integration works</h2>
+        <ol class="list-inside list-decimal flex flex-col gap-2 text-sm text-muted">
+          <li>
+            A phone dials <span class="font-mono text-foreground">{{ serviceCode }}</span> — the
+            mobile operator opens a session and calls our gateway.
+          </li>
+          <li>
+            The gateway POSTs <span class="font-mono text-foreground">sessionId</span>,
+            <span class="font-mono text-foreground">phoneNumber</span> and
+            <span class="font-mono text-foreground">text</span> (the choices so far, joined by
+            <span class="font-mono text-foreground">*</span>) to
+            <span class="font-mono text-foreground">/ussd/gateway/</span>.
+          </li>
+          <li>
+            The backend answers plain text starting with
+            <span class="font-mono text-foreground">CON</span> (keep the session open) or
+            <span class="font-mono text-foreground">END</span> (close it) — exactly what this
+            simulator shows on the phone screen.
+          </li>
+          <li>
+            To go live, point a real gateway at the same endpoint — no code changes.
+          </li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</section>

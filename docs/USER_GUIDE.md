@@ -71,8 +71,9 @@ If you want to test existing accounts without registering from scratch, use any 
    **Dashboard**.
 
 > ⚠️ The NIDA number matters. Without it you cannot register a business, and
-> no licence can be approved for you. If you skipped it, add it later under
-> **Profile**.
+> no licence can be approved for you. If you skipped it, a **yellow banner on
+> your dashboard** reminds you and links you straight to the fix — see
+> *The NIDA banner* in Step 3.
 
 ---
 
@@ -87,7 +88,65 @@ After logging in you land on the dashboard, which shows:
   4. ☐ Apply for your first LGA licence
   5. ☐ Receive your licence
 - **Stats** — active applications, invoices awaiting payment, active licences.
+- A **yellow NIDA banner** when your profile has no NIDA number (see below).
 - A **+ New application** shortcut for when you are ready to apply for a licence.
+
+### The NIDA banner — when your profile has no NIDA number
+
+A council officer **cannot approve** any of your licence applications while
+your profile has no NIDA number on file. So this never catches you by
+surprise, the dashboard shows a yellow warning banner above everything else
+whenever the NIDA number is missing:
+
+```
+┌──────────────────────────────────────────────────────────────────────┐
+│ Karibu, Neema                                                        │
+│ Your licence applications, payments and licences.                    │
+│                       (Applicant) · My Profile · [ + New application ] │
+│                                                                      │
+│  ┌────────────────────────────────────────────────────────────────┐  │
+│  │ Your profile has no NIDA number                                │  │
+│  │                                                                │  │
+│  │ Councils cannot approve your licence applications until        │  │
+│  │ your 20-digit NIDA number is on your profile.                  │  │
+│  │                                                                │  │
+│  │                                [ Add your NIDA number → ]      │  │
+│  └────────────────────────────────────────────────────────────────┘  │
+│                                                                      │
+│   Active applications     Awaiting payment     Active licences       │
+│           2                      0                     0             │
+│                                                                      │
+│   Your licensing journey                                             │
+│   ☐ Register your business with BRELA                                │
+│   ☐ Get your TIN from TRA                                            │
+│   ☐ …                                                                │
+└──────────────────────────────────────────────────────────────────────┘
+```
+
+It appears only for citizens — council staff never see it — and only while
+the NIDA number is missing from your profile.
+
+**Walkthrough — from banner to fixed profile:**
+
+1. Click **Add your NIDA number →** on the banner.
+2. The **Profile** page opens straight on the *Edit Profile* form with your
+   details pre-filled.
+3. Type your NIDA number — exactly **20 digits** — into the **NIDA Number**
+   field.
+4. Click **Save Changes**. You see *"Profile updated successfully."* and the
+   profile view now shows your masked NIDA (●●●●●●…) with a green
+   **Verified** badge.
+5. Return to the dashboard — the banner is gone. No logout or refresh needed;
+   you only ever do this once.
+
+**What the council sees:** in the officers' review queue, every application
+carries a tag next to the applicant's name — a green **NIDA** tag when the
+number is on file, or an amber **no NIDA** tag (hover: *"No NIDA — cannot be
+approved"*) until you add it. If an officer attempts the approval anyway,
+the application is returned with the message *"…has no NIDA number on their
+profile. The applicant must add it (Profile → Edit Profile → NIDA Number)
+before this licence can be approved."* — the dashboard banner is how you fix
+exactly that.
 
 Each checklist item has a button that takes you to the right page. The next
 section covers the first three items — the business registration wizard.
@@ -174,7 +233,8 @@ its card to run the checks again.
 > - *No street identification letter* → use **Upload document** on the
 >   business card and pick the kind *Street identification letter*.
 > - *Missing TIN or BRELA number* → finish the wizard first (steps 2–3).
-> - *No NIDA on your profile* → add it under **Profile**.
+> - *No NIDA on your profile* → use the yellow banner on your dashboard
+>   (Step 3) or add it under **Profile**.
 > - Any extra supporting documents (lease agreement, TIN certificate, etc.)
 >   can be attached with **Upload document** as well.
 
@@ -236,7 +296,9 @@ before uploading.
 
 **Can I use e-Leseni without a smartphone?**
 Yes. Dial **\*152*00#** (USSD) to apply and check your application status
-from any phone.
+from any phone. You can also try the whole menu from your browser on the
+**USSD demo** page (Dashboard → USSD demo): it simulates the phone screen
+against the same gateway endpoint a mobile operator would call.
 
 **My business is missing / belongs to another account.**
 Businesses belong to the account that created them. Log in with the account
