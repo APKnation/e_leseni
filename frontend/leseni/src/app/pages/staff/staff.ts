@@ -6,7 +6,7 @@ import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { AuthService, ROLE_LABELS, UserRole } from '../../core/auth.service';
 import { RealtimeService } from '../../core/realtime.service';
-import { Application, ApplicationStatus, BusinessActivity, Inspection, LGA, LicenceType, STATUS_LABELS, STATUS_STYLES } from '../../core/models';
+import { Application, ApplicationStatus, BusinessActivity, Inspection, LGA, LicenceType, RegionInfo, STATUS_LABELS, STATUS_STYLES } from '../../core/models';
 
 interface QueueFilter {
   label: string;
@@ -182,6 +182,10 @@ export class Staff implements OnInit {
   protected readonly showCatalog = signal(false);
   protected readonly officerLgaId = signal<number | null>(this.auth.currentUser()?.lga ?? null);
   protected readonly allLgas = signal<LGA[]>([]);
+  /** Regions for the admin's region → council cascade in the catalogue picker. */
+  protected readonly catalogueRegions = signal<RegionInfo[]>([]);
+  /** Region filter picked before the council in the catalogue picker. */
+  protected readonly catalogueRegion = signal<string>('');
   protected readonly catalogue = signal<LicenceType[]>([]);
   protected readonly loadingCatalog = signal(false);
   protected readonly editingLicenceId = signal<number | 'new' | null>(null);
@@ -387,7 +391,18 @@ export class Staff implements OnInit {
     if (this.showCatalog()) {
       if (this.allLgas().length === 0) {
         this.api.lgas().subscribe({
-          next: (page) => this.allLgas.set(page.results),
+          next: (page) => {
+            this.allLgas.set(page.results);
+            // Derive the region list from the LGAs so the region dropdown only
+            // offers regions that actually have councils on the platform.
+            const regions = [...new Set(page.results.map((l) => l.region))].sort();
+            this.catalogueRegions.set(regions.map((region) => ({ region, lga_count: 0 })));
+            // Pre-select the pinned council's region, if any, so the cascade
+            // starts coherent and the council select is immediately usable.
+            const pinned = this.officerLgaId();
+            const pinnedLga = pinned ? page.results.find((l) => l.id === pinned) : null;
+            if (pinnedLga) this.catalogueRegion.set(pinnedLga.region);
+          },
           error: () => {},
         });
       }
@@ -395,6 +410,25 @@ export class Staff implements OnInit {
     } else {
       this.cancelLicenceEdit();
     }
+  }
+
+  /** Region picked first in the catalogue cascade; resets the council. */
+  protected onCatalogRegionChange(region: string): void {
+    this.catalogueRegion.set(region);
+    // Keep a non-matching pinned council only if the admin picks its region.
+    const pinned = this.officerLgaId();
+    const pinnedLga = pinned ? this.allLgas().find((l) => l.id === pinned) : null;
+    if (pinnedLga && region && pinnedLga.region !== region) {
+      this.officerLgaId.set(null);
+      this.catalogue.set([]);
+    }
+  }
+
+  /** Councils of the catalogue's selected region (all councils when no region is picked). */
+  protected catalogueLgas(): LGA[] {
+    const region = this.catalogueRegion();
+    const lgas = this.allLgas();
+    return region ? lgas.filter((l) => l.region === region) : lgas;
   }
 
   /** Admins may browse any council; officers are pinned to their own. */

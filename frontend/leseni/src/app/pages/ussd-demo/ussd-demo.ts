@@ -12,6 +12,17 @@ interface LogEntry {
   text: string;
 }
 
+/** One gateway round-trip, shown in the protocol log. */
+interface GatewayLogEntry {
+  at: string;
+  sessionId: string;
+  phone: string;
+  text: string;
+  prefix: 'CON' | 'END' | 'ERROR';
+  body: string;
+  ms: number;
+}
+
 /**
  * USSD demo — because a real telco gateway (Africa's Talking etc.) costs
  * money, this page replays exactly what the phone would do: dial a service
@@ -43,6 +54,9 @@ export class UssdDemo {
   protected readonly reply = signal('');
   protected readonly sessionId = signal('');
 
+  /** Raw gateway request/response pairs for the protocol log. */
+  protected readonly gatewayLog = signal<GatewayLogEntry[]>([]);
+
   private accumulatedText = '';
 
   /** Dial the service code: starts a fresh USSD session at the main menu. */
@@ -63,6 +77,7 @@ export class UssdDemo {
     this.transcript.set([
       { from: 'system', text: `Dialing ${code} from ${this.phone()}…` },
     ]);
+    this.gatewayLog.set([]);
     this.sessionEnded.set(false);
     this.reply.set('');
     void this.gatewayCall(''); // first gateway call: empty text = main menu
@@ -89,11 +104,21 @@ export class UssdDemo {
 
   private gatewayCall(text: string): void {
     this.busy.set(true);
+    const startedAt = Date.now();
     this.api.ussdGateway(this.sessionId(), this.phone(), text).subscribe({
       next: (raw) => {
         this.busy.set(false);
         const isEnd = raw.startsWith('END');
         const body = raw.replace(/^(CON|END)\s*/, '').trim();
+        this.logRequest({
+          at: new Date().toLocaleTimeString(),
+          sessionId: this.sessionId(),
+          phone: this.phone(),
+          text,
+          prefix: isEnd ? 'END' : 'CON',
+          body,
+          ms: Date.now() - startedAt,
+        });
         if (text === '') {
           this.transcript.update((log) => [...log, { from: 'you', text: this.dial().trim() }]);
         } else {
@@ -112,9 +137,22 @@ export class UssdDemo {
       },
       error: () => {
         this.busy.set(false);
+        this.logRequest({
+          at: new Date().toLocaleTimeString(),
+          sessionId: this.sessionId(),
+          phone: this.phone(),
+          text,
+          prefix: 'ERROR',
+          body: 'Could not reach /ussd/gateway/ — is the backend running?',
+          ms: Date.now() - startedAt,
+        });
         this.errorMessage.set('Could not reach the USSD gateway. Is the backend running?');
       },
     });
+  }
+
+  private logRequest(entry: GatewayLogEntry): void {
+    this.gatewayLog.update((log) => [...log, entry].slice(-50));
   }
 
   protected readonly serviceCode = UssdDemo.SERVICE_CODE;

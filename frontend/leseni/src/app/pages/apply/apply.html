@@ -35,40 +35,42 @@
       <div class="card flex flex-col gap-4">
         <h2 class="text-lg font-bold">1. Where is the licence for?</h2>
 
-        <label class="flex flex-col gap-2 text-sm font-semibold">
-          Region
-          <select
-            class="input-field"
-            name="region"
-            required
-            [ngModel]="regionName()"
-            (ngModelChange)="onRegionChange($event)"
-          >
-            <option [ngValue]="null" disabled>— choose a region —</option>
-            @for (region of regions(); track region.region) {
-              <option [value]="region.region">{{ region.region }}</option>
-            }
-          </select>
-        </label>
+        <div class="grid gap-4 sm:grid-cols-2">
+          <label class="flex flex-col gap-2 text-sm font-semibold">
+            Region
+            <select
+              class="input-field"
+              name="region"
+              required
+              [ngModel]="regionName()"
+              (ngModelChange)="onRegionChange($event)"
+            >
+              <option [ngValue]="null" disabled>— choose a region —</option>
+              @for (region of regions(); track region.region) {
+                <option [value]="region.region">{{ region.region }}</option>
+              }
+            </select>
+          </label>
 
-        <label class="flex flex-col gap-2 text-sm font-semibold">
-          Council / LGA
-          <select
-            class="input-field"
-            name="lga"
-            required
-            [disabled]="!regionName()"
-            [ngModel]="lgaId()"
-            (ngModelChange)="onLgaChange($event)"
-          >
-            <option [ngValue]="null" disabled>
-              {{ regionName() ? '— choose a council —' : 'select a region first' }}
-            </option>
-            @for (lga of lgas(); track lga.id) {
-              <option [ngValue]="lga.id">{{ lga.name }}</option>
-            }
-          </select>
-        </label>
+          <label class="flex flex-col gap-2 text-sm font-semibold">
+            Council / LGA
+            <select
+              class="input-field"
+              name="lga"
+              required
+              [disabled]="!regionName()"
+              [ngModel]="lgaId()"
+              (ngModelChange)="onLgaChange($event)"
+            >
+              <option [ngValue]="null" disabled>
+                {{ regionName() ? '— choose a council —' : 'select a region first' }}
+              </option>
+              @for (lga of lgas(); track lga.id) {
+                <option [ngValue]="lga.id">{{ lga.name }}</option>
+              }
+            </select>
+          </label>
+        </div>
       </div>
 
       <!-- Step 2: Kind of business & licence -->

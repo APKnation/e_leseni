@@ -513,16 +513,33 @@
             </p>
           </div>
           <div class="flex flex-wrap items-center gap-2">
+            @if (isAdmin) {
+              <label class="flex items-center gap-2 text-sm text-muted">
+                <span class="font-semibold">Region</span>
+                <select
+                  class="rounded bg-surface border border-muted/20 px-2 py-1 text-sm text-foreground"
+                  [ngModel]="catalogueRegion()"
+                  (ngModelChange)="onCatalogRegionChange($event)"
+                >
+                  <option value="" disabled>— choose a region —</option>
+                  @for (region of catalogueRegions(); track region.region) {
+                    <option [value]="region.region">{{ region.region }}</option>
+                  }
+                </select>
+              </label>
+            }
             <label class="flex items-center gap-2 text-sm text-muted">
               <span class="font-semibold">Council</span>
               <select
                 class="rounded bg-surface border border-muted/20 px-2 py-1 text-sm text-foreground"
-                [disabled]="!isAdmin"
+                [disabled]="!isAdmin || (isAdmin && !catalogueRegion())"
                 [ngModel]="officerLgaId() ?? ''"
                 (ngModelChange)="onCatalogCouncilChange($event)"
               >
-                <option value="" disabled>— choose a council —</option>
-                @for (lga of allLgas(); track lga.id) {
+                <option value="" disabled>
+                  {{ isAdmin ? (catalogueRegion() ? '— choose a council —' : 'choose a region first') : '— your council —' }}
+                </option>
+                @for (lga of catalogueLgas(); track lga.id) {
                   <option [value]="lga.id">{{ lga.name }}</option>
                 }
               </select>

@@ -172,6 +172,54 @@
       </div>
 
       <div class="card flex flex-col gap-3">
+        <div class="flex items-center justify-between gap-2">
+          <h2 class="text-lg font-bold">Gateway log — live protocol</h2>
+          @if (gatewayLog().length > 0) {
+            <span class="font-mono text-xs text-muted">{{ gatewayLog().length }} round-trip{{ gatewayLog().length === 1 ? '' : 's' }}</span>
+          }
+        </div>
+        @if (gatewayLog().length === 0) {
+          <p class="text-sm text-muted">
+            Every POST to <code class="font-mono">/ussd/gateway/</code> and its raw
+            <code class="font-mono">CON</code>/<code class="font-mono">END</code> response
+            appears here as it happens.
+          </p>
+        } @else {
+          <ol class="flex flex-col gap-3">
+            @for (entry of gatewayLog(); track $index) {
+              <li
+                class="border p-3 font-mono text-xs leading-relaxed"
+                style="border-radius: 2px;"
+                [class]="entry.prefix === 'ERROR'
+                  ? 'border-danger/40 bg-danger/5'
+                  : entry.prefix === 'END'
+                    ? 'border-warning/40 bg-warning/5'
+                    : 'border-hairline bg-soft'"
+                data-testid="gateway-log-entry"
+              >
+                <div class="flex flex-wrap items-center gap-2">
+                  <span class="text-muted">#{{ $index + 1 }} · {{ entry.at }} · {{ entry.ms }} ms</span>
+                  <span
+                    class="px-1.5 font-bold"
+                    style="border-radius: 2px;"
+                    [class]="entry.prefix === 'ERROR'
+                      ? 'bg-danger/15 text-danger'
+                      : entry.prefix === 'END'
+                        ? 'bg-warning/15 text-warning'
+                        : 'bg-primary/15 text-success-deep'"
+                  >{{ entry.prefix }}</span>
+                </div>
+                <p class="mt-1 break-all whitespace-pre-wrap text-muted">
+                  POST /ussd/gateway/ — sessionId={{ entry.sessionId }} · phoneNumber={{ entry.phone }} · text="{{ entry.text }}"
+                </p>
+                <p class="mt-1 break-all whitespace-pre-wrap">{{ entry.body }}</p>
+              </li>
+            }
+          </ol>
+        }
+      </div>
+
+      <div class="card flex flex-col gap-3">
         <h2 class="text-lg font-bold">How the integration works</h2>
         <ol class="list-inside list-decimal flex flex-col gap-2 text-sm text-muted">
           <li>
